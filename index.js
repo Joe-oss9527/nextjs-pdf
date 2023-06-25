@@ -42,7 +42,7 @@ const queue = async.queue(async function (task, callback) {
   await scrapePage(url, index);
 
   callback();
-}, 5); // Limit the concurrency to 5.
+}, 1); // Limit the concurrency to 5.
 
 queue.drain(async function () {
   console.log("All items have been processed");
@@ -65,9 +65,38 @@ queue.drain(async function () {
   fs.writeFileSync(`${pdfDir}/merged.pdf`, pdfBytes);
 });
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+const scrollDown = async () => {
+  document.querySelector('article')
+    .scrollIntoView({ behavior: 'smooth', block: 'end', inline: 'end' });
+}
+
+async function autoScroll(page){
+  await page.evaluate(async () => {
+      await new Promise((resolve) => {
+          var totalHeight = 0;
+          var distance = 100;
+          var timer = setInterval(() => {
+              var scrollHeight = document.body.scrollHeight;
+              window.scrollBy(0, distance);
+              totalHeight += distance;
+
+              if(totalHeight >= scrollHeight - window.innerHeight){
+                  clearInterval(timer);
+                  resolve();
+              }
+          }, 100);
+      });
+  });
+}
+
 async function scrapePage(url, index) {
   const browser = await puppeteer.launch({
-    headless: "new", // Using the new headless mode.
+    // headless: "new", // Using the new headless mode.
+    // headless: false, // Using the new headless mode.
   });
 
   const page = await browser.newPage();
@@ -80,12 +109,30 @@ async function scrapePage(url, index) {
 
   if (isUsingAppRouter.indexOf("Using App Router") > -1) {
 
+    await sleep(200);
+    // window.scrollTo(0, document.body.scrollHeight);
+  //   await page.setViewport({
+  //     width: 1200,
+  //     height: 1800
+  // });
+
+  await autoScroll(page);
+  await sleep(200);
+  // await autoScroll(page);
+  // await sleep(200);
+  // await autoScroll(page);
+  // await sleep(200);
+
     // Here we are using the `evaluate` method to modify the page's DOM.
     await page.evaluate(() => {
-      window.scrollBy(0, window.innerHeight);
-      window.scrollTo(0, 0);
-      // scroll to bottom
+      // remove image loading=lazy
+      const images = document.querySelectorAll("img[loading=lazy]");
+      for (let i = 0; i < images.length; i++) {
+        images[i].removeAttribute("loading");
+      }
+      // scroll to the bottom of the page
       window.scrollTo(0, document.body.scrollHeight);
+    
       // Select all the content outside the <article> tags and remove it.
       document.body.innerHTML = document.querySelector("article").outerHTML;
     });
