@@ -1,0 +1,22 @@
+{
+  "name": "crawnextjs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "async": "^3.2.4",
+    "axios": "^1.4.0",
+    "cheerio": "^1.0.0-rc.12",
+    "fs-extra": "^11.1.1",
+    "pdf-lib": "^1.17.1",
+    "pdf-merger-js": "^4.3.0",
+    "pdfkit": "^0.13.0",
+    "puppeteer": "^20.7.3"
+  }
+}
