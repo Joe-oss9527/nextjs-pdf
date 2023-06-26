@@ -6,7 +6,7 @@ const PDFLib = require("pdf-lib");
 const PDFDocument = PDFLib.PDFDocument;
 const path = require("path");
 
-const rootURL = "https://nextjs.org/docs";
+const rootURL = "https://react.dev/learn";
 let visitedLinks = new Set();
 let pdfDocs = [];
 
@@ -68,7 +68,7 @@ queue.drain(async function () {
   }
 
   const pdfBytes = await pdfDoc.save();
-  fs.writeFileSync(`${pdfDir}/nextjs-docs.pdf`, pdfBytes);
+  fs.writeFileSync(`${pdfDir}/react.dev-docs.pdf`, pdfBytes);
 });
 
 // 解决图片懒加载问题
@@ -100,29 +100,46 @@ async function scrapePage(url, index) {
   await page.goto(url, { waitUntil: "networkidle0" });
   await page.waitForSelector("article");
 
-  const content = await page.content();
-  const $ = cheerio.load(content);
-  const isUsingAppRouter = $('main button[role="combobox"]').text();
+  page.$eval("article", (element) => {
+    // show more code
+    // select all sp-layout tags which has no sp-layout-expanded class and click them
+    element
+      .querySelectorAll(".sp-layout:not(.sp-layout-expanded) button")
+      .forEach((layout) => layout.click());
+    // show more details
+    // select all details tags which has no open attribute and click them
+    element
+      .querySelectorAll("details:not([open]) button")
+      .forEach((detail) => detail.click());
+    
+    // select all buttons which has "Show solution" text and click them
+    element
+      .querySelectorAll("button")
+      .forEach((button) => {
+        if (button.textContent.trim() === "Show solution") {
+          button.click();
+        }
+      });  
 
-  if (isUsingAppRouter.indexOf("Using App Router") > -1) {
-    await autoScroll(page);
+  });
 
-    // Here we are using the `evaluate` method to modify the page's DOM.
-    await page.evaluate(() => {
-      // Select all the content outside the <article> tags and remove it.
-      document.body.innerHTML = document.querySelector("article").outerHTML;
-    });
+  await autoScroll(page);
 
-    const pdfPath = `${pdfDir}/${url.split("/").pop()}.pdf`;
-    await page.pdf({
-      path: pdfPath,
-      format: "A4",
-      margin: { top: "1cm", right: "1cm", bottom: "1cm", left: "1cm" },
-    });
-    pdfDocs.push({ pdfPath, index });
+  // Here we are using the `evaluate` method to modify the page's DOM.
+  await page.evaluate(() => {
+    // Select all the content outside the <article> tags and remove it.
+    document.body.innerHTML = document.querySelector("article").outerHTML;
+  });
 
-    console.log(`Scraped ${visitedLinks.size} / ${queue.length()} urls`);
-  }
+  const pdfPath = `${pdfDir}/${url.split("/").pop()}.pdf`;
+  await page.pdf({
+    path: pdfPath,
+    format: "A4",
+    margin: { top: "1cm", right: "1cm", bottom: "1cm", left: "1cm" },
+  });
+  pdfDocs.push({ pdfPath, index });
+
+  console.log(`Scraped ${visitedLinks.size} / ${queue.length()} urls`);
 
   await browser.close();
 }
@@ -132,22 +149,17 @@ async function scrapeNavLinks(url) {
   const page = await browser.newPage();
   // Wait until all page content is loaded, including images.
   await page.goto(url, { waitUntil: "networkidle0" });
-  await page.waitForSelector("main nav.docs-scrollbar");
+  await page.waitForSelector("aside");
 
   const content = await page.content();
   const $ = cheerio.load(content);
-
-  const isUsingAppRouter = $('main button[role="combobox"]').text();
-
-  if (isUsingAppRouter.indexOf("Using App Router") > -1) {
-    const navLinks = $("main nav.docs-scrollbar a");
-    let index = 0;
-    for (let i = 0; i < navLinks.length; i++) {
-      const link = $(navLinks[i]).attr("href");
-      const fullLink = new URL(link, rootURL).href;
-      if (fullLink.startsWith(rootURL)) {
-        queue.push({ url: fullLink, index: index++ });
-      }
+  const navLinks = $("aside a");
+  let index = 0;
+  for (let i = 0; i < navLinks.length; i++) {
+    const link = $(navLinks[i]).attr("href");
+    const fullLink = new URL(link, rootURL).href;
+    if (fullLink.startsWith(rootURL)) {
+      queue.push({ url: fullLink, index: index++ });
     }
   }
 
