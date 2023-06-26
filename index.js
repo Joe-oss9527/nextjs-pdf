@@ -12,6 +12,8 @@ let pdfDocs = [];
 
 const pdfDir = "./pdfs";
 
+process.setMaxListeners(20); // Increase the limit to 15 or a value suitable for your application
+
 function createPdfsFolder() {
   if (fs.existsSync(pdfDir)) {
     try {
@@ -42,7 +44,7 @@ const queue = async.queue(async function (task, callback) {
   await scrapePage(url, index);
 
   callback();
-}, 1); // Limit the concurrency to 5.
+}, 15); // Limit the concurrency to 5.
 
 queue.drain(async function () {
   console.log("All items have been processed");
@@ -58,11 +60,12 @@ queue.drain(async function () {
     const indices = srcPdfDoc.getPageIndices();
 
     const [copiedPage] = await pdfDoc.copyPages(srcPdfDoc, indices);
+    console.log(`Copied ${pdfPath}`, copiedPage, indices)
     pdfDoc.addPage(copiedPage);
   }
 
   const pdfBytes = await pdfDoc.save();
-  fs.writeFileSync(`${pdfDir}/merged.pdf`, pdfBytes);
+  fs.writeFileSync(`${pdfDir}/nextjs-docs.pdf`, pdfBytes);
 });
 
 function sleep(ms) {
@@ -97,6 +100,8 @@ async function scrapePage(url, index) {
   const browser = await puppeteer.launch({
     // headless: "new", // Using the new headless mode.
     // headless: false, // Using the new headless mode.
+    // headless: true, // Using the new headless mode.
+    headless: "old", // Using the old headless mode.
   });
 
   const page = await browser.newPage();
@@ -109,7 +114,7 @@ async function scrapePage(url, index) {
 
   if (isUsingAppRouter.indexOf("Using App Router") > -1) {
 
-    await sleep(200);
+    // await sleep(200);
     // window.scrollTo(0, document.body.scrollHeight);
   //   await page.setViewport({
   //     width: 1200,
@@ -117,7 +122,7 @@ async function scrapePage(url, index) {
   // });
 
   await autoScroll(page);
-  await sleep(200);
+  // await sleep(200);
   // await autoScroll(page);
   // await sleep(200);
   // await autoScroll(page);
@@ -125,13 +130,13 @@ async function scrapePage(url, index) {
 
     // Here we are using the `evaluate` method to modify the page's DOM.
     await page.evaluate(() => {
-      // remove image loading=lazy
-      const images = document.querySelectorAll("img[loading=lazy]");
-      for (let i = 0; i < images.length; i++) {
-        images[i].removeAttribute("loading");
-      }
-      // scroll to the bottom of the page
-      window.scrollTo(0, document.body.scrollHeight);
+      // // remove image loading=lazy
+      // const images = document.querySelectorAll("img[loading=lazy]");
+      // for (let i = 0; i < images.length; i++) {
+      //   images[i].removeAttribute("loading");
+      // }
+      // // scroll to the bottom of the page
+      // window.scrollTo(0, document.body.scrollHeight);
     
       // Select all the content outside the <article> tags and remove it.
       document.body.innerHTML = document.querySelector("article").outerHTML;
