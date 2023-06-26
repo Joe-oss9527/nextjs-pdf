@@ -12,11 +12,12 @@ let pdfDocs = [];
 
 const pdfDir = "./pdfs";
 
-process.setMaxListeners(20); // Increase the limit to 15 or a value suitable for your application
+process.setMaxListeners(20); // Increase the limit to 20 or a value suitable for your application
 
 function createPdfsFolder() {
   if (fs.existsSync(pdfDir)) {
     try {
+      console.log(`Deleting ${pdfDir}...`);
       fs.rmSync(pdfDir, { recursive: true, force: true });
     } catch (err) {
       console.error(`Error while deleting ${pdfDir}.`, err);
@@ -24,6 +25,7 @@ function createPdfsFolder() {
   }
 
   try {
+    console.log(`Creating ${pdfDir}...`);
     fs.mkdirSync(pdfDir);
   } catch (err) {
     console.error(`Error while creating ${pdfDir}.`, err);
@@ -44,7 +46,7 @@ const queue = async.queue(async function (task, callback) {
   await scrapePage(url, index);
 
   callback();
-}, 15); // Limit the concurrency to 5.
+}, 15); // Limit the concurrency to 15.
 
 queue.drain(async function () {
   console.log("All items have been processed");
@@ -59,48 +61,38 @@ queue.drain(async function () {
 
     const indices = srcPdfDoc.getPageIndices();
 
-    const [copiedPage] = await pdfDoc.copyPages(srcPdfDoc, indices);
-    console.log(`Copied ${pdfPath}`, copiedPage, indices)
-    pdfDoc.addPage(copiedPage);
+    const copiedPages = await pdfDoc.copyPages(srcPdfDoc, indices);
+    for (let copiedPage of copiedPages) {
+      pdfDoc.addPage(copiedPage);
+    }
   }
 
   const pdfBytes = await pdfDoc.save();
   fs.writeFileSync(`${pdfDir}/nextjs-docs.pdf`, pdfBytes);
 });
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-const scrollDown = async () => {
-  document.querySelector('article')
-    .scrollIntoView({ behavior: 'smooth', block: 'end', inline: 'end' });
-}
-
-async function autoScroll(page){
+// 解决图片懒加载问题
+async function autoScroll(page) {
   await page.evaluate(async () => {
-      await new Promise((resolve) => {
-          var totalHeight = 0;
-          var distance = 100;
-          var timer = setInterval(() => {
-              var scrollHeight = document.body.scrollHeight;
-              window.scrollBy(0, distance);
-              totalHeight += distance;
+    await new Promise((resolve) => {
+      var totalHeight = 0;
+      var distance = 100;
+      var timer = setInterval(() => {
+        var scrollHeight = document.body.scrollHeight;
+        window.scrollBy(0, distance);
+        totalHeight += distance;
 
-              if(totalHeight >= scrollHeight - window.innerHeight){
-                  clearInterval(timer);
-                  resolve();
-              }
-          }, 100);
-      });
+        if (totalHeight >= scrollHeight - window.innerHeight) {
+          clearInterval(timer);
+          resolve();
+        }
+      }, 100);
+    });
   });
 }
 
 async function scrapePage(url, index) {
   const browser = await puppeteer.launch({
-    // headless: "new", // Using the new headless mode.
-    // headless: false, // Using the new headless mode.
-    // headless: true, // Using the new headless mode.
     headless: "old", // Using the old headless mode.
   });
 
@@ -113,37 +105,20 @@ async function scrapePage(url, index) {
   const isUsingAppRouter = $('main button[role="combobox"]').text();
 
   if (isUsingAppRouter.indexOf("Using App Router") > -1) {
-
-    // await sleep(200);
-    // window.scrollTo(0, document.body.scrollHeight);
-  //   await page.setViewport({
-  //     width: 1200,
-  //     height: 1800
-  // });
-
-  await autoScroll(page);
-  // await sleep(200);
-  // await autoScroll(page);
-  // await sleep(200);
-  // await autoScroll(page);
-  // await sleep(200);
+    await autoScroll(page);
 
     // Here we are using the `evaluate` method to modify the page's DOM.
     await page.evaluate(() => {
-      // // remove image loading=lazy
-      // const images = document.querySelectorAll("img[loading=lazy]");
-      // for (let i = 0; i < images.length; i++) {
-      //   images[i].removeAttribute("loading");
-      // }
-      // // scroll to the bottom of the page
-      // window.scrollTo(0, document.body.scrollHeight);
-    
       // Select all the content outside the <article> tags and remove it.
       document.body.innerHTML = document.querySelector("article").outerHTML;
     });
 
     const pdfPath = `${pdfDir}/${url.split("/").pop()}.pdf`;
-    await page.pdf({ path: pdfPath, format: "A4", margin: { top: '1cm', right: '1cm', bottom: '1cm', left: '1cm' } });
+    await page.pdf({
+      path: pdfPath,
+      format: "A4",
+      margin: { top: "1cm", right: "1cm", bottom: "1cm", left: "1cm" },
+    });
     pdfDocs.push({ pdfPath, index });
 
     console.log(`Scraped ${visitedLinks.size} / ${queue.length()} urls`);
