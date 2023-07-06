@@ -6,7 +6,10 @@ const PDFLib = require("pdf-lib");
 const PDFDocument = PDFLib.PDFDocument;
 const path = require("path");
 
-const rootURL = "https://react.dev/learn";
+// Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36
+const userAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko)";
+
+const rootURL = "https://www.tesla.cn/ownersmanual/modely/zh_cn/";
 let visitedLinks = new Set();
 let pdfDocs = [];
 
@@ -68,7 +71,7 @@ queue.drain(async function () {
   }
 
   const pdfBytes = await pdfDoc.save();
-  fs.writeFileSync(`${pdfDir}/react.dev-docs.pdf`, pdfBytes);
+  fs.writeFileSync(`${pdfDir}/modely-manual.pdf`, pdfBytes);
 });
 
 // 解决图片懒加载问题
@@ -97,31 +100,10 @@ async function scrapePage(url, index) {
   });
 
   const page = await browser.newPage();
+  // set user agent to prevent the website from blocking our request
+  await page.setUserAgent(userAgent);
   await page.goto(url, { waitUntil: "networkidle0" });
   await page.waitForSelector("article");
-
-  page.$eval("article", (element) => {
-    // show more code
-    // select all sp-layout tags which has no sp-layout-expanded class and click them
-    element
-      .querySelectorAll(".sp-layout:not(.sp-layout-expanded) button")
-      .forEach((layout) => layout.click());
-    // show more details
-    // select all details tags which has no open attribute and click them
-    element
-      .querySelectorAll("details:not([open]) button")
-      .forEach((detail) => detail.click());
-    
-    // select all buttons which has "Show solution" text and click them
-    element
-      .querySelectorAll("button")
-      .forEach((button) => {
-        if (button.textContent.trim() === "Show solution") {
-          button.click();
-        }
-      });  
-
-  });
 
   await autoScroll(page);
 
@@ -145,25 +127,32 @@ async function scrapePage(url, index) {
 }
 
 async function scrapeNavLinks(url) {
-  const browser = await puppeteer.launch({ headless: "new" });
-  const page = await browser.newPage();
-  // Wait until all page content is loaded, including images.
-  await page.goto(url, { waitUntil: "networkidle0" });
-  await page.waitForSelector("aside");
-
-  const content = await page.content();
-  const $ = cheerio.load(content);
-  const navLinks = $("aside a");
-  let index = 0;
-  for (let i = 0; i < navLinks.length; i++) {
-    const link = $(navLinks[i]).attr("href");
-    const fullLink = new URL(link, rootURL).href;
-    if (fullLink.startsWith(rootURL)) {
-      queue.push({ url: fullLink, index: index++ });
+  try {
+    const browser = await puppeteer.launch({ headless: "new" });
+    const page = await browser.newPage();
+    // set user agent to prevent the website from blocking our request
+    await page.setUserAgent(userAgent);
+    // Wait until all page content is loaded, including images.
+    await page.goto(url, { waitUntil: "networkidle0" });
+    await page.waitForSelector("aside");
+  
+    const content = await page.content();
+    const $ = cheerio.load(content);
+    const navLinks = $("aside a");
+    let index = 0;
+    for (let i = 0; i < navLinks.length; i++) {
+      const link = $(navLinks[i]).attr("href");
+      const fullLink = new URL(link, rootURL).href;
+      if (fullLink.startsWith(rootURL)) {
+        queue.push({ url: fullLink, index: index++ });
+      }
     }
+  
+    await browser.close();
+    
+  } catch (error) {
+    console.error("出错了", error);
   }
-
-  await browser.close();
 }
 
 createPdfsFolder();
