@@ -9,7 +9,8 @@ const path = require("path");
 // Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36
 const userAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko)";
 
-const rootURL = "https://www.tesla.cn/ownersmanual/modely/zh_cn/";
+const part = "about";
+const rootURL = `https://www.prisma.io/docs/${part}`;
 let visitedLinks = new Set();
 let pdfDocs = [];
 
@@ -71,7 +72,7 @@ queue.drain(async function () {
   }
 
   const pdfBytes = await pdfDoc.save();
-  fs.writeFileSync(`${pdfDir}/modely-manual.pdf`, pdfBytes);
+  fs.writeFileSync(`${pdfDir}/prisma-${part}.pdf`, pdfBytes);
 });
 
 // 解决图片懒加载问题
@@ -126,6 +127,16 @@ async function scrapePage(url, index) {
   await browser.close();
 }
 
+function addLinksToQueue(links, index) {
+  for (let link of links) {
+    const fullLink = new URL(link.href, rootURL).href;
+    if (fullLink.startsWith(rootURL)) {
+      queue.push({ url: fullLink, index: index++ });
+      addLinksToQueue(link.sublinks, index);
+    }
+  }
+}
+
 async function scrapeNavLinks(url) {
   try {
     const browser = await puppeteer.launch({ headless: "new" });
@@ -136,23 +147,72 @@ async function scrapeNavLinks(url) {
     await page.goto(url, { waitUntil: "networkidle0" });
     await page.waitForSelector("aside");
   
-    const content = await page.content();
-    const $ = cheerio.load(content);
-    const navLinks = $("aside a");
+    const navLinks = await getNavLinks(page);
+
     let index = 0;
-    for (let i = 0; i < navLinks.length; i++) {
-      const link = $(navLinks[i]).attr("href");
-      const fullLink = new URL(link, rootURL).href;
-      if (fullLink.startsWith(rootURL)) {
-        queue.push({ url: fullLink, index: index++ });
-      }
-    }
-  
+    addLinksToQueue(navLinks, index);
+
     await browser.close();
     
   } catch (error) {
     console.error("出错了", error);
   }
+}
+
+async function getNavLinks(page) {
+  const navlinks = await page.evaluate(async () => {
+    const links = Array.from(document.querySelectorAll('aside a'));
+    const navlinks = [];
+
+    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    const getSublinks = async (link) => {
+      // get the button element under the link
+      const button = link.querySelector('button.item-collapser');
+      if (!button) return [];
+
+      button.click();
+
+      await delay(1000); // Adjust the delay as needed to wait for sublinks to appear
+
+      if (!link.nextElementSibling) return [];
+
+      const sublinks = Array.from(link.nextElementSibling.querySelectorAll('ul a'));
+    
+      const sublinkObjects = [];
+
+      for (const sublink of sublinks) {
+        const _subLinks = await getSublinks(sublink);
+        sublinkObjects.push({
+          text: sublink.innerText,
+          href: sublink.href,
+          sublinks: _subLinks,
+        });
+        console.log(sublink.innerText, sublink.href);
+      }
+
+      return sublinkObjects;
+    };
+
+    for (const link of links) {
+      const navlink = {
+        text: link.innerText,
+        href: link.href,
+        sublinks: [],
+      };
+
+      const sublinks = await getSublinks(link);
+      navlink.sublinks = sublinks;
+
+      console.log(link.innerText, link.href);
+
+      navlinks.push(navlink);
+    }
+
+    return navlinks;
+  });
+
+  return navlinks;
 }
 
 createPdfsFolder();
