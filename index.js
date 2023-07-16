@@ -9,8 +9,9 @@ const path = require("path");
 // Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36
 const userAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko)";
 
-const part = "about";
-const rootURL = `https://www.prisma.io/docs/${part}`;
+const part = "vue3-guide";
+const ROOTURL = `https://cn.vuejs.org/guide/`;
+const rootURL = `https://cn.vuejs.org/guide/introduction.html`;
 let visitedLinks = new Set();
 let pdfDocs = [];
 
@@ -50,7 +51,7 @@ const queue = async.queue(async function (task, callback) {
   await scrapePage(url, index);
 
   callback();
-}, 15); // Limit the concurrency to 15.
+}, 1); // Limit the concurrency to 15.
 
 queue.drain(async function () {
   console.log("All items have been processed");
@@ -72,7 +73,7 @@ queue.drain(async function () {
   }
 
   const pdfBytes = await pdfDoc.save();
-  fs.writeFileSync(`${pdfDir}/prisma-${part}.pdf`, pdfBytes);
+  fs.writeFileSync(`${pdfDir}/${part}.pdf`, pdfBytes);
 });
 
 // 解决图片懒加载问题
@@ -104,14 +105,15 @@ async function scrapePage(url, index) {
   // set user agent to prevent the website from blocking our request
   await page.setUserAgent(userAgent);
   await page.goto(url, { waitUntil: "networkidle0" });
-  await page.waitForSelector("article");
+  // const articleSelector = "main";
+  // await page.waitForSelector(articleSelector);
 
   await autoScroll(page);
 
   // Here we are using the `evaluate` method to modify the page's DOM.
   await page.evaluate(() => {
     // Select all the content outside the <article> tags and remove it.
-    document.body.innerHTML = document.querySelector("article").outerHTML;
+    document.body.innerHTML = document.querySelector("main").outerHTML;
   });
 
   const pdfPath = `${pdfDir}/${url.split("/").pop()}.pdf`;
@@ -127,16 +129,6 @@ async function scrapePage(url, index) {
   await browser.close();
 }
 
-function addLinksToQueue(links, index) {
-  for (let link of links) {
-    const fullLink = new URL(link.href, rootURL).href;
-    if (fullLink.startsWith(rootURL)) {
-      queue.push({ url: fullLink, index: index++ });
-      addLinksToQueue(link.sublinks, index);
-    }
-  }
-}
-
 async function scrapeNavLinks(url) {
   try {
     const browser = await puppeteer.launch({ headless: "new" });
@@ -148,9 +140,17 @@ async function scrapeNavLinks(url) {
     await page.waitForSelector("aside");
   
     const navLinks = await getNavLinks(page);
-
+    // console.log(navLinks);
     let index = 0;
-    addLinksToQueue(navLinks, index);
+    const _rootURL = ROOTURL;
+    console.log("_rootURL", _rootURL)
+    for (let link of navLinks) {
+      const fullLink = new URL(link, _rootURL).href;
+      // console.log("fullLink", fullLink)
+      if (fullLink.startsWith(_rootURL)) {
+        queue.push({ url: fullLink, index: index++ });
+      }
+    }
 
     await browser.close();
     
@@ -161,52 +161,16 @@ async function scrapeNavLinks(url) {
 
 async function getNavLinks(page) {
   const navlinks = await page.evaluate(async () => {
-    const links = Array.from(document.querySelectorAll('aside a'));
-    const navlinks = [];
-
     const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-    const getSublinks = async (link) => {
-      // get the button element under the link
-      const button = link.querySelector('button.item-collapser');
-      if (!button) return [];
+    const button = document.querySelector('button.api-switch');
+    button.click();
+    await delay(1000); // Adjust the delay as needed to wait for sublinks to appear
 
-      button.click();
-
-      await delay(1000); // Adjust the delay as needed to wait for sublinks to appear
-
-      if (!link.nextElementSibling) return [];
-
-      const sublinks = Array.from(link.nextElementSibling.querySelectorAll('ul a'));
-    
-      const sublinkObjects = [];
-
-      for (const sublink of sublinks) {
-        const _subLinks = await getSublinks(sublink);
-        sublinkObjects.push({
-          text: sublink.innerText,
-          href: sublink.href,
-          sublinks: _subLinks,
-        });
-        console.log(sublink.innerText, sublink.href);
-      }
-
-      return sublinkObjects;
-    };
-
+    const links = Array.from(document.querySelectorAll('aside a'));
+    const navlinks = [];
     for (const link of links) {
-      const navlink = {
-        text: link.innerText,
-        href: link.href,
-        sublinks: [],
-      };
-
-      const sublinks = await getSublinks(link);
-      navlink.sublinks = sublinks;
-
-      console.log(link.innerText, link.href);
-
-      navlinks.push(navlink);
+      navlinks.push(link.href);
     }
 
     return navlinks;
