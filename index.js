@@ -9,7 +9,7 @@ const path = require("path");
 // Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36
 const userAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko)";
 
-const part = "vue3-guide";
+const part = "vue3-guide-cn";
 const ROOTURL = `http://localhost:5173/guide/`;
 const rootURL = `http://localhost:5173/guide/introduction.html`;
 let visitedLinks = new Set();
@@ -97,8 +97,10 @@ async function autoScroll(page) {
 }
 
 async function scrapePage(url, index) {
+  // const proxyAddress = 'http://127.0.0.1:7890'; // 替换成你的代理地址和端口
   const browser = await puppeteer.launch({
     headless: "old", // Using the old headless mode.
+    // args: [`--proxy-server=${proxyAddress}`], // Pass the proxy address here.
   });
 
   const page = await browser.newPage();
