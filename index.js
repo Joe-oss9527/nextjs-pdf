@@ -6,7 +6,7 @@ const PDFLib = require("pdf-lib");
 const PDFDocument = PDFLib.PDFDocument;
 const path = require("path");
 
-const rootURL = "https://react.dev/learn";
+const rootURL = "https://react.dev/reference/react";
 let visitedLinks = new Set();
 let pdfDocs = [];
 
@@ -68,7 +68,7 @@ queue.drain(async function () {
   }
 
   const pdfBytes = await pdfDoc.save();
-  fs.writeFileSync(`${pdfDir}/react.dev-docs.pdf`, pdfBytes);
+  fs.writeFileSync(`${pdfDir}/react.dev-reference.pdf`, pdfBytes);
 });
 
 // 解决图片懒加载问题
@@ -135,7 +135,7 @@ async function scrapePage(url, index) {
   await page.pdf({
     path: pdfPath,
     format: "A4",
-    margin: { top: "1cm", right: "1cm", bottom: "1cm", left: "1cm" },
+    margin: { top: "2cm", right: "1cm", bottom: "2cm", left: "1cm" },
   });
   pdfDocs.push({ pdfPath, index });
 
