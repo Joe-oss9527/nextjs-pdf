@@ -6,7 +6,9 @@ const PDFLib = require("pdf-lib");
 const PDFDocument = PDFLib.PDFDocument;
 const path = require("path");
 
-const rootURL = "https://react.dev/reference/react";
+// the next sibling of id=repos-sticky-header is code block
+const indexPage = "https://github.com/getify/You-Dont-Know-JS/blob/2nd-ed/types-grammar/README.md";
+const rootURL = "https://github.com/getify/You-Dont-Know-JS/blob/2nd-ed/types-grammar";
 let visitedLinks = new Set();
 let pdfDocs = [];
 
@@ -68,7 +70,7 @@ queue.drain(async function () {
   }
 
   const pdfBytes = await pdfDoc.save();
-  fs.writeFileSync(`${pdfDir}/react.dev-reference.pdf`, pdfBytes);
+  fs.writeFileSync(`${pdfDir}/types-grammar-you-dont-know-js-2nd.pdf`, pdfBytes);
 });
 
 // 解决图片懒加载问题
@@ -149,11 +151,11 @@ async function scrapeNavLinks(url) {
   const page = await browser.newPage();
   // Wait until all page content is loaded, including images.
   await page.goto(url, { waitUntil: "networkidle0" });
-  await page.waitForSelector("aside");
+  await page.waitForSelector("article");
 
   const content = await page.content();
   const $ = cheerio.load(content);
-  const navLinks = $("aside a");
+  const navLinks = $("article a");
   let index = 0;
   for (let i = 0; i < navLinks.length; i++) {
     const link = $(navLinks[i]).attr("href");
@@ -168,4 +170,4 @@ async function scrapeNavLinks(url) {
 
 createPdfsFolder();
 
-scrapeNavLinks(rootURL).catch(console.error);
+scrapeNavLinks(indexPage).catch(console.error);
