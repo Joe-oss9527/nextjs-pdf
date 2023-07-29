@@ -9,9 +9,9 @@ const path = require("path");
 // Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36
 const userAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko)";
 
-const part = "vue3-guide-cn";
-const ROOTURL = `http://localhost:5173/guide/`;
-const rootURL = `http://localhost:5173/guide/introduction.html`;
+const part = "nextjs-learn";
+const ROOTURL = `https://nextjs.org/learn`;
+const rootURL = `https://nextjs.org/learn/foundations/about-nextjs`;
 let visitedLinks = new Set();
 let pdfDocs = [];
 
@@ -115,13 +115,13 @@ async function scrapePage(url, index) {
   // Here we are using the `evaluate` method to modify the page's DOM.
   await page.evaluate(() => {
     // Select all the content outside the <article> tags and remove it.
-    document.body.innerHTML = document.querySelector("main").outerHTML;
+    document.body.innerHTML = document.querySelector(".lesson-area").outerHTML;
   });
 
   const pdfPath = `${pdfDir}/${url.split("/").pop()}.pdf`;
   await page.pdf({
     path: pdfPath,
-    format: "A5",
+    format: "A4",
     margin: { top: "2cm", right: "1cm", bottom: "2cm", left: "1cm" },
   });
   pdfDocs.push({ pdfPath, index });
@@ -139,49 +139,80 @@ async function scrapeNavLinks(url) {
     await page.setUserAgent(userAgent);
     // Wait until all page content is loaded, including images.
     await page.goto(url, { waitUntil: "networkidle0" });
-    await page.waitForSelector("aside");
+    await page.waitForSelector(".navigation-area");
   
-    const navLinks = await getNavLinks(page);
-    // console.log(navLinks);
+    // const navLinks = await getNavLinks(page);
+    const navTopLinks = await getTopNavLinks(page);
+    // console.log("navTopLinks", navTopLinks);
+    const allNavLinks = []
+    for(let navTopLink of navTopLinks) {
+      const navSubLinks = await getSubNavLinks(navTopLink);
+      console.log("navSubLinks", navSubLinks);
+      allNavLinks.push(...navSubLinks);
+    }
+    
     let index = 0;
     const _rootURL = ROOTURL;
     console.log("_rootURL", _rootURL)
-    for (let link of navLinks) {
+    for (let link of allNavLinks) {
       const fullLink = new URL(link, _rootURL).href;
       // console.log("fullLink", fullLink)
       if (fullLink.startsWith(_rootURL)) {
         queue.push({ url: fullLink, index: index++ });
       }
     }
-
     await browser.close();
+
+  } catch (error) {
+    console.error("出错了", error);
+  }
+}
+
+async function getTopNavLinks(page) {
+  const navlinks = await page.evaluate(async () => {
+    const links = Array.from(document.querySelectorAll('.navigation-area a'));
+
+    let navlinks = [];
+    for (const link of links) {
+      navlinks.push(link.href);
+    }
+    navlinks = navlinks.filter((link) => link.includes("learn")).filter((link) => !link.includes("what-is-nextjs"));
+    return navlinks;
+  });
+  
+  return navlinks;
+}
+
+async function getSubNavLinks(topNavLink) {
+  try {
+    const browser = await puppeteer.launch({ headless: "new" });
+    const page = await browser.newPage();
+    // set user agent to prevent the website from blocking our request
+    await page.setUserAgent(userAgent);
+    // Wait until all page content is loaded, including images.
+    await page.goto(topNavLink, { waitUntil: "networkidle0" });
+    await page.waitForSelector(".navigation-area");
+  
+    // get element node whick href is topNavLink
+    const navlinks = await page.evaluate(async (topNavLink) => {
+      // get the node which href is href="/learn/foundations/about-nextjs"
+      const anchor = document.querySelector(`a[href="${topNavLink.replace("https://nextjs.org", "")}"]`);
+      // get the parent node of the node
+      const parent = anchor.parentNode;
+      // get the sublinks
+      const sublinks = Array.from(parent.querySelectorAll("ul a"));
+      return sublinks.map((link) => link.href);
+    }, topNavLink);
+    
+    await browser.close();
+
+    return navlinks;
     
   } catch (error) {
     console.error("出错了", error);
   }
 }
 
-async function getNavLinks(page) {
-  const navlinks = await page.evaluate(async () => {
-    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-    // const button = document.querySelector('button.api-switch');
-    // button.click();
-    // await delay(1000); // Adjust the delay as needed to wait for sublinks to appear
-
-    const links = Array.from(document.querySelectorAll('aside a'));
-    const navlinks = [];
-    for (const link of links) {
-      navlinks.push(link.href);
-    }
-
-    console.log("navlinks", navlinks);
-    return navlinks;
-  });
-
-  return navlinks;
-}
-
 createPdfsFolder();
 
-scrapeNavLinks(rootURL).catch(console.error);
+scrapeNavLinks(ROOTURL).catch(console.error);
