@@ -7,8 +7,8 @@ const PDFDocument = PDFLib.PDFDocument;
 const path = require("path");
 
 // the next sibling of id=repos-sticky-header is code block
-const indexPage = "https://github.com/getify/You-Dont-Know-JS/blob/2nd-ed/types-grammar/README.md";
-const rootURL = "https://github.com/getify/You-Dont-Know-JS/blob/2nd-ed/types-grammar";
+const indexPage = "https://wangdoc.com/typescript/";
+const rootURL = "https://wangdoc.com/typescript/";
 let visitedLinks = new Set();
 let pdfDocs = [];
 
@@ -70,7 +70,7 @@ queue.drain(async function () {
   }
 
   const pdfBytes = await pdfDoc.save();
-  fs.writeFileSync(`${pdfDir}/types-grammar-you-dont-know-js-2nd.pdf`, pdfBytes);
+  fs.writeFileSync(`${pdfDir}/TypeScript 教程.pdf`, pdfBytes);
 });
 
 // 解决图片懒加载问题
@@ -102,29 +102,6 @@ async function scrapePage(url, index) {
   await page.goto(url, { waitUntil: "networkidle0" });
   await page.waitForSelector("article");
 
-  page.$eval("article", (element) => {
-    // show more code
-    // select all sp-layout tags which has no sp-layout-expanded class and click them
-    element
-      .querySelectorAll(".sp-layout:not(.sp-layout-expanded) button")
-      .forEach((layout) => layout.click());
-    // show more details
-    // select all details tags which has no open attribute and click them
-    element
-      .querySelectorAll("details:not([open]) button")
-      .forEach((detail) => detail.click());
-    
-    // select all buttons which has "Show solution" text and click them
-    element
-      .querySelectorAll("button")
-      .forEach((button) => {
-        if (button.textContent.trim() === "Show solution") {
-          button.click();
-        }
-      });  
-
-  });
-
   await autoScroll(page);
 
   // Here we are using the `evaluate` method to modify the page's DOM.
@@ -151,11 +128,11 @@ async function scrapeNavLinks(url) {
   const page = await browser.newPage();
   // Wait until all page content is loaded, including images.
   await page.goto(url, { waitUntil: "networkidle0" });
-  await page.waitForSelector("article");
+  await page.waitForSelector("aside");
 
   const content = await page.content();
   const $ = cheerio.load(content);
-  const navLinks = $("article a");
+  const navLinks = $("aside a");
   let index = 0;
   for (let i = 0; i < navLinks.length; i++) {
     const link = $(navLinks[i]).attr("href");
