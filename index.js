@@ -10,7 +10,7 @@ const path = require("path");
 const userAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko)";
 
 const part = "nextjs-learn";
-const ROOTURL = `https://nextjs.org/learn`;
+const ROOTURL = `https://nextjs.org/learn/dashboard-app`;
 const rootURL = `https://nextjs.org/learn/foundations/about-nextjs`;
 let visitedLinks = new Set();
 let pdfDocs = [];
@@ -131,18 +131,33 @@ async function scrapePage(url, index) {
   await browser.close();
 }
 
+
+
 async function scrapeNavLinks(url) {
+  console.log("scrapeNavLinks", url)
   try {
-    const browser = await puppeteer.launch({ headless: "new" });
+    const proxyAddress = 'http://127.0.0.1:7890'; // 替换成你的代理地址和端口
+    const browser = await puppeteer.launch({ headless: false,
+    args: [`--proxy-server=${proxyAddress}`], // Pass the proxy address here.
+    });
     const page = await browser.newPage();
     // set user agent to prevent the website from blocking our request
     await page.setUserAgent(userAgent);
     // Wait until all page content is loaded, including images.
     await page.goto(url, { waitUntil: "networkidle0" });
-    await page.waitForSelector(".navigation-area");
+    // await page.waitForSelector(".navigation-area");
+
+    // click the buttion with the id `radix-:r1g:-content-nav`
+    // Click the button with the specified id radix-:r1g:-trigger-nav
+    await page.click('button#radix-\\:r1g\\:-trigger-nav');
+    // wait a second
+     await new Promise(r => setTimeout(r, 1000));
+
+    console.log(1111)
   
     // const navLinks = await getNavLinks(page);
     const navTopLinks = await getTopNavLinks(page);
+    console.log('navT', navTopLinks)
     // console.log("navTopLinks", navTopLinks);
     const allNavLinks = []
     for(let navTopLink of navTopLinks) {
@@ -170,15 +185,17 @@ async function scrapeNavLinks(url) {
 
 async function getTopNavLinks(page) {
   const navlinks = await page.evaluate(async () => {
-    const links = Array.from(document.querySelectorAll('.navigation-area a'));
+    const links = Array.from(document.querySelectorAll('div#radix-\\:r1g\\:-content-nav a'));
 
     let navlinks = [];
     for (const link of links) {
       navlinks.push(link.href);
     }
-    navlinks = navlinks.filter((link) => link.includes("learn")).filter((link) => !link.includes("what-is-nextjs"));
+    // navlinks = navlinks.filter((link) => link.includes("learn")).filter((link) => !link.includes("what-is-nextjs"));
     return navlinks;
   });
+
+  console.log('navlinks', navlinks)
   
   return navlinks;
 }
