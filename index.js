@@ -4,9 +4,8 @@ const fs = require("fs");
 const async = require("async");
 const PDFLib = require("pdf-lib");
 const PDFDocument = PDFLib.PDFDocument;
-const path = require("path");
 
-const rootURL = "https://nextjs.org/docs";
+const rootURL = "https://stylexjs.com/docs/learn/";
 let visitedLinks = new Set();
 let pdfDocs = [];
 
@@ -68,7 +67,7 @@ queue.drain(async function () {
   }
 
   const pdfBytes = await pdfDoc.save();
-  fs.writeFileSync(`${pdfDir}/nextjs-docs.pdf`, pdfBytes);
+  fs.writeFileSync(`${pdfDir}/stylex-docs.pdf`, pdfBytes);
 });
 
 // 解决图片懒加载问题
@@ -93,62 +92,102 @@ async function autoScroll(page) {
 
 async function scrapePage(url, index) {
   const browser = await puppeteer.launch({
-    headless: "old", // Using the old headless mode.
+    headless: "new", // Using the old headless mode.
   });
 
   const page = await browser.newPage();
   await page.goto(url, { waitUntil: "networkidle0" });
   await page.waitForSelector("article");
 
-  const content = await page.content();
-  const $ = cheerio.load(content);
-  const isUsingAppRouter = $('main button[role="combobox"]').text();
+  await autoScroll(page);
 
-  if (isUsingAppRouter.indexOf("Using App Router") > -1) {
-    await autoScroll(page);
+  // Here we are using the `evaluate` method to modify the page's DOM.
+  await page.evaluate(() => {
+    // Select all the content outside the <article> tags and remove it.
+    // document.body.innerHTML = document.querySelector("article").outerHTML;
 
-    // Here we are using the `evaluate` method to modify the page's DOM.
-    await page.evaluate(() => {
-      // Select all the content outside the <article> tags and remove it.
-      document.body.innerHTML = document.querySelector("article").outerHTML;
+    // details  标签默认是关闭的，需要手动打开
+    const details = document.querySelectorAll("details");
+    details.forEach((detail) => {
+      detail.setAttribute("open", "true");
     });
 
-    const pdfPath = `${pdfDir}/${url.split("/").pop()}.pdf`;
-    await page.pdf({
-      path: pdfPath,
-      format: "A4",
-      margin: { top: "1cm", right: "1cm", bottom: "1cm", left: "1cm" },
-    });
-    pdfDocs.push({ pdfPath, index });
+    // hide the header
+    // document.querySelector("header").style.display = "none";
+    // // hide the footer
+    // document.querySelector("footer").style.display = "none";
+    // // hide the sidebar
+    // document.querySelector("aside").style.display = "none";
+    // // hide the navbar
+    // document.querySelector("nav").style.display = "none";
+    // // hide the button of 'theme-back-to-top-button'
+    // document.querySelector(".theme-back-to-top-button").style.display = "none";
+    // // hide the .theme-doc-toc-desktop
+    // document.querySelector(".theme-doc-toc-desktop").style.display = "none";
+  });
 
-    console.log(`Scraped ${visitedLinks.size} / ${queue.length()} urls`);
-  }
+  console.log(`Scraping ${url}...`);
+  const fileName = url.split("/").filter((s) => s).pop();
+  console.log(`saving pdf: ${fileName}`);
+
+  const pdfPath = `${pdfDir}/${fileName}.pdf`;
+  await page.pdf({
+    path: pdfPath,
+    format: "A4",
+    margin: { top: "1cm", right: "1cm", bottom: "1cm", left: "1cm" },
+  });
+  pdfDocs.push({ pdfPath, index });
+
+  console.log(`Scraped ${visitedLinks.size} / ${queue.length()} urls`);
 
   await browser.close();
 }
 
 async function scrapeNavLinks(url) {
-  const browser = await puppeteer.launch({ headless: "new" });
+  const browser = await puppeteer.launch({
+    headless: "new",
+  });
   const page = await browser.newPage();
   // Wait until all page content is loaded, including images.
   await page.goto(url, { waitUntil: "networkidle0" });
-  await page.waitForSelector("main nav.docs-scrollbar");
 
-  const content = await page.content();
-  const $ = cheerio.load(content);
+  const allLinks = await page.evaluate(async () => {
+    // Select all the content outside the <article> tags and remove it.
+    document.querySelector("button[class^='navbar__toggle']").click();
 
-  const isUsingAppRouter = $('main button[role="combobox"]').text();
+    // wait for 1 second
+    await delay(2000);
 
-  if (isUsingAppRouter.indexOf("Using App Router") > -1) {
-    const navLinks = $("main nav.docs-scrollbar a");
-    let index = 0;
-    for (let i = 0; i < navLinks.length; i++) {
-      const link = $(navLinks[i]).attr("href");
-      const fullLink = new URL(link, rootURL).href;
-      if (fullLink.startsWith(rootURL)) {
-        queue.push({ url: fullLink, index: index++ });
+    const categoryButtons = document.querySelectorAll(
+      ".theme-doc-sidebar-item-category"
+    );
+
+    let results = [];
+    categoryButtons.forEach((button) => {
+      // 点击没有展开时，可能是选择的子元素不对
+      const a = button.querySelector("a");
+      if (a) {
+        a.click();
       }
+    });
+    const list = document.querySelectorAll(
+      ".theme-doc-sidebar-menu a[href]:not([href='#'])"
+    );
+    list.forEach((a) => {
+      results.push(a.href);
+    });
+    return results;
+    function delay(time) {
+      return new Promise(function (resolve) {
+        setTimeout(resolve, time);
+      });
     }
+  });
+  console.log("all links: ", allLinks);
+
+  let index = 0;
+  for (let link of allLinks) {
+    queue.push({ url: link, index: index++ });
   }
 
   await browser.close();
