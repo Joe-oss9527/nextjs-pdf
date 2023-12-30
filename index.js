@@ -194,12 +194,12 @@ async function scrapeNavLinks(url) {
       "aside nav ul a[href]:not([href='#'])"
     );
 
-    let allDocUrls = [];
+    let allDocUrls = new Set();
     allDocLinks.forEach((a) => {
-      allDocUrls.push(a.href);
+      allDocUrls.add(a.href);
     });
 
-    return allDocUrls;
+    return [...allDocUrls];
 
     function delay(time) {
       return new Promise(function (resolve) {
@@ -215,6 +215,8 @@ async function scrapeNavLinks(url) {
   for (let link of allDocLinks) {
     queue.push({ url: link, index: index++ });
   }
+
+  await page.close();
 }
 
 async function main() {
