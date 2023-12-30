@@ -4,7 +4,11 @@ const async = require("async");
 const PDFLib = require("pdf-lib");
 const PDFDocument = PDFLib.PDFDocument;
 
-const rootURL = "https://react.dev/learn";
+// Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36
+const userAgent =
+  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko)";
+
+const rootURL = "https://cn.vuejs.org/guide/introduction.html";
 const pdfDir = "./pdfs";
 
 const MAX_CONCURRENCY = 15;
@@ -31,60 +35,43 @@ class Scraper {
 
   async scrapePage(url, index) {
     const page = await this.browser.newPage();
-    await page.goto(url, { waitUntil: "networkidle0" });
-    await page.waitForSelector("article");
+    try {
+      await page.setUserAgent(userAgent);
+      await page.goto(url, { waitUntil: "networkidle0" });
+      await page.waitForSelector("main");
 
-    await this.autoScroll(page);
+      await this.autoScroll(page);
 
-    await page.evaluate(async () => {
-      const details = document.querySelectorAll("details");
-      details.forEach((detail) => {
-        detail.setAttribute("open", "true");
+      await page.evaluate(() => {
+        // Select all the content outside the <article> tags and remove it.
+        document.body.innerHTML = document.querySelector("main").outerHTML;
       });
 
-      await delay(1000);
+      const fileName = url
+        .split("/")
+        .filter((s) => s)
+        .pop();
+      console.log(`saving pdf: ${fileName}`);
 
-      // find all button elements which has the class "sandpack-expand"
-      const sandpackExpandButtons = document.querySelectorAll(
-        "button.sandpack-expand"
-      );
-
-      // click all the buttons
-      sandpackExpandButtons.forEach(async (button) => {
-        // scroll to the button
-        button.scrollIntoView();
-        await delay(1000);
-        button.click();
+      const pdfPath = `${pdfDir}/${fileName}.pdf`;
+      await page.pdf({
+        path: pdfPath,
+        format: "A4",
+        margin: { top: "1cm", right: "1cm", bottom: "1cm", left: "1cm" },
       });
+      pdfDocs.push({ pdfPath, index });
 
-      // Select all the content outside the <article> tags and remove it.
-      document.body.innerHTML = document.querySelector("article").outerHTML;
-
-      function delay(time) {
-        return new Promise(function (resolve) {
-          setTimeout(resolve, time);
-        });
-      }
-    });
-
-    console.log(`Scraping ${url}...`);
-    const fileName = url
-      .split("/")
-      .filter((s) => s)
-      .pop();
-    console.log(`saving pdf: ${fileName}`);
-
-    const pdfPath = `${pdfDir}/${fileName}.pdf`;
-    await page.pdf({
-      path: pdfPath,
-      format: "A4",
-      margin: { top: "1cm", right: "1cm", bottom: "1cm", left: "1cm" },
-    });
-    pdfDocs.push({ pdfPath, index });
-
-    console.log(`Scraped ${visitedLinks.size} / ${queue.length()} urls`);
-
-    await page.close();
+      console.log(`Scraped ${visitedLinks.size} / ${queue.length()} urls`);
+    } catch (error) {
+      console.log("====================================");
+      console.log("Error: ", error);
+      console.log("====================================");
+    } finally {
+      await page.close();
+      console.log("====================================");
+      console.log("End to scraping: ", url);
+      console.log("====================================");
+    }
   }
 
   async autoScroll(page) {
@@ -119,7 +106,9 @@ const queue = async.queue(async function (task, callback) {
   }
 
   visitedLinks.add(url);
-
+  console.log("====================================");
+  console.log("Start to scraping: ", "index: ", index, "url: ", url);
+  console.log("====================================");
   await scraper.scrapePage(url, index);
 
   callback();
@@ -146,11 +135,11 @@ queue.drain(async function () {
   }
 
   const pdfBytes = await pdfDoc.save();
-  await fs.writeFile(`${pdfDir}/nextjs-docs.pdf`, pdfBytes);
+  await fs.writeFile(`${pdfDir}/vue-docs.pdf`, pdfBytes);
   console.log(
     "All pdfs have been merged",
     "the path is: ",
-    `${pdfDir}/nextjs-docs.pdf`
+    `${pdfDir}/vue-docs.pdf`
   );
 
   await scraper.close();
@@ -176,40 +165,35 @@ async function scrapeNavLinks(url) {
   await scraper.initialize();
 
   const page = await scraper.browser.newPage();
+  await page.setUserAgent(userAgent);
   await page.goto(url, { waitUntil: "networkidle0" });
 
   const allDocLinks = await page.evaluate(async () => {
-    // trigger the click event of the navbar toggle button
-    // which is under the aside element
-    // which id is end with "-trigger-nav"
-    // document.querySelector("aside button[aria-label='View Chapters']").click();
-
-    document.querySelector("button[aria-label='Menu']").click();
-
-    // wait for 1 second
-    await delay(2000);
-
     // get all the links under the element which has the attr "aria-labelledby="radix-:ri:"
     let allDocLinks = document.querySelectorAll(
-      "aside nav ul a[href]:not([href='#'])"
+      "aside a[href]:not([href='#'])"
     );
 
     let allDocUrls = new Set();
     allDocLinks.forEach((a) => {
-      allDocUrls.add(a.href);
+      const link = a.href;
+      if (link.includes("introduction") && !link.endsWith(".html")) {
+        return;
+      }
+      allDocUrls.add(link);
     });
 
     return [...allDocUrls];
-
-    function delay(time) {
-      return new Promise(function (resolve) {
-        setTimeout(resolve, time);
-      });
-    }
   });
 
   console.log("====================================");
-  console.log("All docs links: ", allDocLinks);
+  console.log(
+    "All docs links: ",
+    "total pages: ",
+    allDocLinks.length,
+    " ",
+    allDocLinks
+  );
   console.log("====================================");
   let index = 0;
   for (let link of allDocLinks) {
