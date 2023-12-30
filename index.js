@@ -4,7 +4,7 @@ const async = require("async");
 const PDFLib = require("pdf-lib");
 const PDFDocument = PDFLib.PDFDocument;
 
-const rootURL = "https://nextjs.org/docs";
+const rootURL = "https://nextjs.org/learn/dashboard-app";
 const pdfDir = "./pdfs";
 
 const MAX_CONCURRENCY = 15;
@@ -41,7 +41,7 @@ class Scraper {
       // details.forEach((detail) => {
       //   detail.setAttribute("open", "true");
       // });
-      
+
       // Select all the content outside the <article> tags and remove it.
       document.body.innerHTML = document.querySelector("article").outerHTML;
     });
@@ -106,7 +106,8 @@ const queue = async.queue(async function (task, callback) {
 
 queue.drain(async function () {
   console.log("All items have been processed");
-
+  console.log("====================================");
+  console.log("Generate final pdf...");
   pdfDocs.sort((a, b) => a.index - b.index);
 
   const pdfDoc = await PDFDocument.create();
@@ -124,11 +125,11 @@ queue.drain(async function () {
   }
 
   const pdfBytes = await pdfDoc.save();
-  await fs.writeFile(`${pdfDir}/nextjs-docs.pdf`, pdfBytes);
+  await fs.writeFile(`${pdfDir}/nextjs-learn.pdf`, pdfBytes);
   console.log(
     "All pdfs have been merged",
     "the path is: ",
-    `${pdfDir}/nextjs-docs.pdf`
+    `${pdfDir}/nextjs-learn.pdf`
   );
 
   await scraper.close();
@@ -157,14 +158,26 @@ async function scrapeNavLinks(url) {
   await page.goto(url, { waitUntil: "networkidle0" });
 
   const allDocLinks = await page.evaluate(async () => {
+    // trigger the click event of the navbar toggle button
+    // which is under the aside element
+    // which id is end with "-trigger-nav"
+    document.querySelector("aside button[aria-label='View Chapters']").click();
+
     // document.querySelector("button[class^='navbar__toggle']").click();
 
     // wait for 1 second
     await delay(2000);
 
-    const allDocLinks = document.querySelectorAll(
-      "main nav.styled-scrollbar a[href]:not([href='#'])"
+    // get all the links under the element which has the attr "aria-labelledby="radix-:ri:"
+    let allDocLinks = document.querySelectorAll(
+      "div[role='dialog'] a[href]:not([href='#'])"
     );
+
+    if (!allDocLinks) {
+      allDocLinks = document.querySelectorAll(
+        "aside [id$='-content-nav'] a[href]:not([href='#'])"
+      );
+    }
 
     let allDocUrls = [];
     allDocLinks.forEach((a) => {
@@ -183,7 +196,6 @@ async function scrapeNavLinks(url) {
   console.log("====================================");
   console.log("All docs links: ", allDocLinks);
   console.log("====================================");
-
   let index = 0;
   for (let link of allDocLinks) {
     queue.push({ url: link, index: index++ });
