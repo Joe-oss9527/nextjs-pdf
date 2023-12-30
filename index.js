@@ -1,5 +1,4 @@
 const puppeteer = require("puppeteer");
-const cheerio = require("cheerio");
 const fs = require("fs");
 const async = require("async");
 const PDFLib = require("pdf-lib");
@@ -68,6 +67,7 @@ queue.drain(async function () {
 
   const pdfBytes = await pdfDoc.save();
   fs.writeFileSync(`${pdfDir}/stylex-docs.pdf`, pdfBytes);
+  console.log("All pdfs have been merged", "the path is: ", `${pdfDir}/stylex-docs.pdf`);
 });
 
 // 解决图片懒加载问题
@@ -127,7 +127,10 @@ async function scrapePage(url, index) {
   });
 
   console.log(`Scraping ${url}...`);
-  const fileName = url.split("/").filter((s) => s).pop();
+  const fileName = url
+    .split("/")
+    .filter((s) => s)
+    .pop();
   console.log(`saving pdf: ${fileName}`);
 
   const pdfPath = `${pdfDir}/${fileName}.pdf`;
@@ -151,8 +154,7 @@ async function scrapeNavLinks(url) {
   // Wait until all page content is loaded, including images.
   await page.goto(url, { waitUntil: "networkidle0" });
 
-  const allLinks = await page.evaluate(async () => {
-    // Select all the content outside the <article> tags and remove it.
+  const allDocLinks = await page.evaluate(async () => {
     document.querySelector("button[class^='navbar__toggle']").click();
 
     // wait for 1 second
@@ -162,7 +164,7 @@ async function scrapeNavLinks(url) {
       ".theme-doc-sidebar-item-category"
     );
 
-    let results = [];
+    let allDocUrls = [];
     categoryButtons.forEach((button) => {
       // 点击没有展开时，可能是选择的子元素不对
       const a = button.querySelector("a");
@@ -170,23 +172,25 @@ async function scrapeNavLinks(url) {
         a.click();
       }
     });
-    const list = document.querySelectorAll(
+    const docUrls = document.querySelectorAll(
       ".theme-doc-sidebar-menu a[href]:not([href='#'])"
     );
-    list.forEach((a) => {
-      results.push(a.href);
+    docUrls.forEach((a) => {
+      allDocUrls.push(a.href);
     });
-    return results;
+    return allDocUrls;
     function delay(time) {
       return new Promise(function (resolve) {
         setTimeout(resolve, time);
       });
     }
   });
-  console.log("all links: ", allLinks);
+  console.log("====================================")
+  console.log("All docs links: ", allDocLinks);
+  console.log("====================================")
 
   let index = 0;
-  for (let link of allLinks) {
+  for (let link of allDocLinks) {
     queue.push({ url: link, index: index++ });
   }
 
