@@ -1,34 +1,89 @@
 const puppeteer = require("puppeteer");
-const fs = require("fs");
+const fs = require("fs").promises;
 const async = require("async");
 const PDFLib = require("pdf-lib");
 const PDFDocument = PDFLib.PDFDocument;
 
 const rootURL = "https://stylexjs.com/docs/learn/";
-let visitedLinks = new Set();
-let pdfDocs = [];
-
 const pdfDir = "./pdfs";
 
-process.setMaxListeners(20); // Increase the limit to 20 or a value suitable for your application
+const MAX_CONCURRENCY = 15;
 
-function createPdfsFolder() {
-  if (fs.existsSync(pdfDir)) {
-    try {
-      console.log(`Deleting ${pdfDir}...`);
-      fs.rmSync(pdfDir, { recursive: true, force: true });
-    } catch (err) {
-      console.error(`Error while deleting ${pdfDir}.`, err);
+const visitedLinks = new Set();
+const pdfDocs = [];
+
+class Scraper {
+  constructor() {
+    this.browser = null;
+  }
+
+  async initialize() {
+    this.browser = await puppeteer.launch({
+      headless: "new", // Using the old headless mode.
+    });
+  }
+
+  async close() {
+    if (this.browser) {
+      await this.browser.close();
     }
   }
 
-  try {
-    console.log(`Creating ${pdfDir}...`);
-    fs.mkdirSync(pdfDir);
-  } catch (err) {
-    console.error(`Error while creating ${pdfDir}.`, err);
+  async scrapePage(url, index) {
+    const page = await this.browser.newPage();
+    await page.goto(url, { waitUntil: "networkidle0" });
+    await page.waitForSelector("article");
+
+    await this.autoScroll(page);
+
+    await page.evaluate(() => {
+      const details = document.querySelectorAll("details");
+      details.forEach((detail) => {
+        detail.setAttribute("open", "true");
+      });
+    });
+
+    console.log(`Scraping ${url}...`);
+    const fileName = url
+      .split("/")
+      .filter((s) => s)
+      .pop();
+    console.log(`saving pdf: ${fileName}`);
+
+    const pdfPath = `${pdfDir}/${fileName}.pdf`;
+    await page.pdf({
+      path: pdfPath,
+      format: "A4",
+      margin: { top: "1cm", right: "1cm", bottom: "1cm", left: "1cm" },
+    });
+    pdfDocs.push({ pdfPath, index });
+
+    console.log(`Scraped ${visitedLinks.size} / ${queue.length()} urls`);
+
+    await page.close();
+  }
+
+  async autoScroll(page) {
+    await page.evaluate(async () => {
+      await new Promise((resolve) => {
+        const scrollHeight = document.body.scrollHeight;
+        const distance = 100;
+        const interval = 100;
+
+        const timer = setInterval(() => {
+          window.scrollBy(0, distance);
+
+          if (window.scrollY + window.innerHeight >= scrollHeight) {
+            clearInterval(timer);
+            resolve();
+          }
+        }, interval);
+      });
+    });
   }
 }
+
+const scraper = new Scraper();
 
 const queue = async.queue(async function (task, callback) {
   const url = task.url;
@@ -41,10 +96,10 @@ const queue = async.queue(async function (task, callback) {
 
   visitedLinks.add(url);
 
-  await scrapePage(url, index);
+  await scraper.scrapePage(url, index);
 
   callback();
-}, 15); // Limit the concurrency to 15.
+}, MAX_CONCURRENCY);
 
 queue.drain(async function () {
   console.log("All items have been processed");
@@ -54,7 +109,7 @@ queue.drain(async function () {
   const pdfDoc = await PDFDocument.create();
   for (let _pdfDoc of pdfDocs) {
     const { pdfPath } = _pdfDoc;
-    const pdfBytes = fs.readFileSync(pdfPath);
+    const pdfBytes = await fs.readFile(pdfPath);
     const srcPdfDoc = await PDFDocument.load(pdfBytes);
 
     const indices = srcPdfDoc.getPageIndices();
@@ -66,92 +121,36 @@ queue.drain(async function () {
   }
 
   const pdfBytes = await pdfDoc.save();
-  fs.writeFileSync(`${pdfDir}/stylex-docs.pdf`, pdfBytes);
-  console.log("All pdfs have been merged", "the path is: ", `${pdfDir}/stylex-docs.pdf`);
+  await fs.writeFile(`${pdfDir}/stylex-docs.pdf`, pdfBytes);
+  console.log(
+    "All pdfs have been merged",
+    "the path is: ",
+    `${pdfDir}/stylex-docs.pdf`
+  );
+
+  await scraper.close();
 });
 
-// 解决图片懒加载问题
-async function autoScroll(page) {
-  await page.evaluate(async () => {
-    await new Promise((resolve) => {
-      var totalHeight = 0;
-      var distance = 100;
-      var timer = setInterval(() => {
-        var scrollHeight = document.body.scrollHeight;
-        window.scrollBy(0, distance);
-        totalHeight += distance;
+async function createPdfsFolder() {
+  try {
+    console.log(`Deleting ${pdfDir}...`);
+    await fs.rm(pdfDir, { recursive: true, force: true });
+  } catch (err) {
+    console.error(`Error while deleting ${pdfDir}.`, err);
+  }
 
-        if (totalHeight >= scrollHeight - window.innerHeight) {
-          clearInterval(timer);
-          resolve();
-        }
-      }, 100);
-    });
-  });
-}
-
-async function scrapePage(url, index) {
-  const browser = await puppeteer.launch({
-    headless: "new", // Using the old headless mode.
-  });
-
-  const page = await browser.newPage();
-  await page.goto(url, { waitUntil: "networkidle0" });
-  await page.waitForSelector("article");
-
-  await autoScroll(page);
-
-  // Here we are using the `evaluate` method to modify the page's DOM.
-  await page.evaluate(() => {
-    // Select all the content outside the <article> tags and remove it.
-    // document.body.innerHTML = document.querySelector("article").outerHTML;
-
-    // details  标签默认是关闭的，需要手动打开
-    const details = document.querySelectorAll("details");
-    details.forEach((detail) => {
-      detail.setAttribute("open", "true");
-    });
-
-    // hide the header
-    // document.querySelector("header").style.display = "none";
-    // // hide the footer
-    // document.querySelector("footer").style.display = "none";
-    // // hide the sidebar
-    // document.querySelector("aside").style.display = "none";
-    // // hide the navbar
-    // document.querySelector("nav").style.display = "none";
-    // // hide the button of 'theme-back-to-top-button'
-    // document.querySelector(".theme-back-to-top-button").style.display = "none";
-    // // hide the .theme-doc-toc-desktop
-    // document.querySelector(".theme-doc-toc-desktop").style.display = "none";
-  });
-
-  console.log(`Scraping ${url}...`);
-  const fileName = url
-    .split("/")
-    .filter((s) => s)
-    .pop();
-  console.log(`saving pdf: ${fileName}`);
-
-  const pdfPath = `${pdfDir}/${fileName}.pdf`;
-  await page.pdf({
-    path: pdfPath,
-    format: "A4",
-    margin: { top: "1cm", right: "1cm", bottom: "1cm", left: "1cm" },
-  });
-  pdfDocs.push({ pdfPath, index });
-
-  console.log(`Scraped ${visitedLinks.size} / ${queue.length()} urls`);
-
-  await browser.close();
+  try {
+    console.log(`Creating ${pdfDir}...`);
+    await fs.mkdir(pdfDir);
+  } catch (err) {
+    console.error(`Error while creating ${pdfDir}.`, err);
+  }
 }
 
 async function scrapeNavLinks(url) {
-  const browser = await puppeteer.launch({
-    headless: "new",
-  });
-  const page = await browser.newPage();
-  // Wait until all page content is loaded, including images.
+  await scraper.initialize();
+
+  const page = await scraper.browser.newPage();
   await page.goto(url, { waitUntil: "networkidle0" });
 
   const allDocLinks = await page.evaluate(async () => {
@@ -166,7 +165,6 @@ async function scrapeNavLinks(url) {
 
     let allDocUrls = [];
     categoryButtons.forEach((button) => {
-      // 点击没有展开时，可能是选择的子元素不对
       const a = button.querySelector("a");
       if (a) {
         a.click();
@@ -179,24 +177,27 @@ async function scrapeNavLinks(url) {
       allDocUrls.push(a.href);
     });
     return allDocUrls;
+
     function delay(time) {
       return new Promise(function (resolve) {
         setTimeout(resolve, time);
       });
     }
   });
-  console.log("====================================")
+
+  console.log("====================================");
   console.log("All docs links: ", allDocLinks);
-  console.log("====================================")
+  console.log("====================================");
 
   let index = 0;
   for (let link of allDocLinks) {
     queue.push({ url: link, index: index++ });
   }
-
-  await browser.close();
 }
 
-createPdfsFolder();
+async function main() {
+  await createPdfsFolder();
+  await scrapeNavLinks(rootURL);
+}
 
-scrapeNavLinks(rootURL).catch(console.error);
+main().catch(console.error);
