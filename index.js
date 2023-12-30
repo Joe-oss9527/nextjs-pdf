@@ -4,14 +4,13 @@ const async = require("async");
 const PDFLib = require("pdf-lib");
 const PDFDocument = PDFLib.PDFDocument;
 
-// Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36
 const userAgent =
-  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko)";
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
-const rootURL = "https://cn.vuejs.org/guide/introduction.html";
+const rootURL = "https://vuejs.org/guide/introduction";
 const pdfDir = "./pdfs";
 
-const MAX_CONCURRENCY = 15;
+const MAX_CONCURRENCY = 10;
 
 const visitedLinks = new Set();
 const pdfDocs = [];
@@ -19,12 +18,14 @@ const pdfDocs = [];
 class Scraper {
   constructor() {
     this.browser = null;
+    this.scrapedCount = 0;
   }
 
   async initialize() {
     this.browser = await puppeteer.launch({
       headless: "new", // Using the old headless mode.
     });
+    this.scrapedCount = 0;
   }
 
   async close() {
@@ -34,11 +35,15 @@ class Scraper {
   }
 
   async scrapePage(url, index) {
+    console.log("====================================");
+    console.log("Start to scraping: ", "index: ", index, "url: ", url);
+    console.log("====================================");
     const page = await this.browser.newPage();
     try {
       await page.setUserAgent(userAgent);
-      await page.goto(url, { waitUntil: "networkidle0" });
-      await page.waitForSelector("main");
+      // waitUntil: "networkidle0"; 可能会导致超时
+      // await page.goto(url, { waitUntil: "networkidle0" });
+      await page.goto(url);
 
       await this.autoScroll(page);
 
@@ -61,20 +66,30 @@ class Scraper {
       });
       pdfDocs.push({ pdfPath, index });
 
+      console.log("====================================");
+      console.log("End to scraping: ", "index: ", index, "url: ", url);
+      console.log("====================================");
       console.log(`Scraped ${visitedLinks.size} / ${queue.length()} urls`);
     } catch (error) {
       console.log("====================================");
       console.log("Error: ", error);
       console.log("====================================");
     } finally {
-      await page.close();
       console.log("====================================");
-      console.log("End to scraping: ", url);
+      console.log("Close page: ", page.url());
+      console.log("====================================");
+      await page.close();
+      this.scrapedCount++;
+      console.log("====================================");
+      console.log("Scraped page count: ", this.scrapedCount);
       console.log("====================================");
     }
   }
 
   async autoScroll(page) {
+    console.log("====================================");
+    console.log("Start to scroll page...", page.url());
+    console.log("====================================");
     await page.evaluate(async () => {
       await new Promise((resolve) => {
         const scrollHeight = document.body.scrollHeight;
@@ -101,18 +116,25 @@ const queue = async.queue(async function (task, callback) {
   const index = task.index;
 
   if (visitedLinks.has(url)) {
-    callback();
+    callback && callback();
     return;
   }
-
-  visitedLinks.add(url);
-  console.log("====================================");
-  console.log("Start to scraping: ", "index: ", index, "url: ", url);
-  console.log("====================================");
-  await scraper.scrapePage(url, index);
-
-  callback();
+  try {
+    visitedLinks.add(url);
+    await scraper.scrapePage(url, index);
+    callback && callback();
+  } catch (error) {
+    console.log("====================================");
+    console.log(`Error while scraping ${url}`, error);
+    console.log("====================================");
+    callback && callback();
+  }
 }, MAX_CONCURRENCY);
+
+// assign an error callback
+queue.error(function (err, task) {
+  console.error("task experienced an error", err);
+});
 
 queue.drain(async function () {
   console.log("All items have been processed");
@@ -177,7 +199,7 @@ async function scrapeNavLinks(url) {
     let allDocUrls = new Set();
     allDocLinks.forEach((a) => {
       const link = a.href;
-      if (link.includes("introduction") && !link.endsWith(".html")) {
+      if (link.includes("#")) {
         return;
       }
       allDocUrls.add(link);
