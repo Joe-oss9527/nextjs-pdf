@@ -4,7 +4,7 @@ const async = require("async");
 const PDFLib = require("pdf-lib");
 const PDFDocument = PDFLib.PDFDocument;
 
-const rootURL = "https://nextjs.org/learn/dashboard-app";
+const rootURL = "https://react.dev/learn";
 const pdfDir = "./pdfs";
 
 const MAX_CONCURRENCY = 15;
@@ -36,14 +36,35 @@ class Scraper {
 
     await this.autoScroll(page);
 
-    await page.evaluate(() => {
-      // const details = document.querySelectorAll("details");
-      // details.forEach((detail) => {
-      //   detail.setAttribute("open", "true");
-      // });
+    await page.evaluate(async () => {
+      const details = document.querySelectorAll("details");
+      details.forEach((detail) => {
+        detail.setAttribute("open", "true");
+      });
+
+      await delay(1000);
+
+      // find all button elements which has the class "sandpack-expand"
+      const sandpackExpandButtons = document.querySelectorAll(
+        "button.sandpack-expand"
+      );
+
+      // click all the buttons
+      sandpackExpandButtons.forEach(async (button) => {
+        // scroll to the button
+        button.scrollIntoView();
+        await delay(1000);
+        button.click();
+      });
 
       // Select all the content outside the <article> tags and remove it.
       document.body.innerHTML = document.querySelector("article").outerHTML;
+
+      function delay(time) {
+        return new Promise(function (resolve) {
+          setTimeout(resolve, time);
+        });
+      }
     });
 
     console.log(`Scraping ${url}...`);
@@ -125,11 +146,11 @@ queue.drain(async function () {
   }
 
   const pdfBytes = await pdfDoc.save();
-  await fs.writeFile(`${pdfDir}/nextjs-learn.pdf`, pdfBytes);
+  await fs.writeFile(`${pdfDir}/nextjs-docs.pdf`, pdfBytes);
   console.log(
     "All pdfs have been merged",
     "the path is: ",
-    `${pdfDir}/nextjs-learn.pdf`
+    `${pdfDir}/nextjs-docs.pdf`
   );
 
   await scraper.close();
@@ -161,29 +182,23 @@ async function scrapeNavLinks(url) {
     // trigger the click event of the navbar toggle button
     // which is under the aside element
     // which id is end with "-trigger-nav"
-    document.querySelector("aside button[aria-label='View Chapters']").click();
+    // document.querySelector("aside button[aria-label='View Chapters']").click();
 
-    // document.querySelector("button[class^='navbar__toggle']").click();
+    document.querySelector("button[aria-label='Menu']").click();
 
     // wait for 1 second
     await delay(2000);
 
     // get all the links under the element which has the attr "aria-labelledby="radix-:ri:"
     let allDocLinks = document.querySelectorAll(
-      "div[role='dialog'] a[href]:not([href='#'])"
+      "aside nav ul a[href]:not([href='#'])"
     );
-
-    if (!allDocLinks) {
-      allDocLinks = document.querySelectorAll(
-        "aside [id$='-content-nav'] a[href]:not([href='#'])"
-      );
-    }
 
     let allDocUrls = [];
     allDocLinks.forEach((a) => {
       allDocUrls.push(a.href);
     });
-    
+
     return allDocUrls;
 
     function delay(time) {
