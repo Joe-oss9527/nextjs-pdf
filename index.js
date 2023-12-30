@@ -4,7 +4,7 @@ const async = require("async");
 const PDFLib = require("pdf-lib");
 const PDFDocument = PDFLib.PDFDocument;
 
-const rootURL = "https://stylexjs.com/docs/learn/";
+const rootURL = "https://nextjs.org/docs";
 const pdfDir = "./pdfs";
 
 const MAX_CONCURRENCY = 15;
@@ -37,10 +37,13 @@ class Scraper {
     await this.autoScroll(page);
 
     await page.evaluate(() => {
-      const details = document.querySelectorAll("details");
-      details.forEach((detail) => {
-        detail.setAttribute("open", "true");
-      });
+      // const details = document.querySelectorAll("details");
+      // details.forEach((detail) => {
+      //   detail.setAttribute("open", "true");
+      // });
+      
+      // Select all the content outside the <article> tags and remove it.
+      document.body.innerHTML = document.querySelector("article").outerHTML;
     });
 
     console.log(`Scraping ${url}...`);
@@ -121,11 +124,11 @@ queue.drain(async function () {
   }
 
   const pdfBytes = await pdfDoc.save();
-  await fs.writeFile(`${pdfDir}/stylex-docs.pdf`, pdfBytes);
+  await fs.writeFile(`${pdfDir}/nextjs-docs.pdf`, pdfBytes);
   console.log(
     "All pdfs have been merged",
     "the path is: ",
-    `${pdfDir}/stylex-docs.pdf`
+    `${pdfDir}/nextjs-docs.pdf`
   );
 
   await scraper.close();
@@ -154,28 +157,20 @@ async function scrapeNavLinks(url) {
   await page.goto(url, { waitUntil: "networkidle0" });
 
   const allDocLinks = await page.evaluate(async () => {
-    document.querySelector("button[class^='navbar__toggle']").click();
+    // document.querySelector("button[class^='navbar__toggle']").click();
 
     // wait for 1 second
     await delay(2000);
 
-    const categoryButtons = document.querySelectorAll(
-      ".theme-doc-sidebar-item-category"
+    const allDocLinks = document.querySelectorAll(
+      "main nav.styled-scrollbar a[href]:not([href='#'])"
     );
 
     let allDocUrls = [];
-    categoryButtons.forEach((button) => {
-      const a = button.querySelector("a");
-      if (a) {
-        a.click();
-      }
-    });
-    const docUrls = document.querySelectorAll(
-      ".theme-doc-sidebar-menu a[href]:not([href='#'])"
-    );
-    docUrls.forEach((a) => {
+    allDocLinks.forEach((a) => {
       allDocUrls.push(a.href);
     });
+    
     return allDocUrls;
 
     function delay(time) {
