@@ -7,10 +7,10 @@ const PDFDocument = PDFLib.PDFDocument;
 const userAgent =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
-const rootURL = "https://vuejs.org/guide/introduction";
+const rootURL = "https://cn.vuejs.org/guide/introduction";
 const pdfDir = "./pdfs";
 
-const MAX_CONCURRENCY = 10;
+const MAX_CONCURRENCY = 15;
 
 const visitedLinks = new Set();
 const pdfDocs = [];
@@ -72,7 +72,7 @@ class Scraper {
       console.log(`Scraped ${visitedLinks.size} / ${queue.length()} urls`);
     } catch (error) {
       console.log("====================================");
-      console.log("Error: ", error);
+      console.log("Error while scraping: ", url, error);
       console.log("====================================");
     } finally {
       console.log("====================================");
