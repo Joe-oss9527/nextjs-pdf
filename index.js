@@ -30,40 +30,46 @@ class Scraper {
   }
 
   async scrapePage(url, index) {
-    const page = await this.browser.newPage();
-    await page.goto(url, { waitUntil: "networkidle0" });
-    await page.waitForSelector("article");
+    try {
+      const page = await this.browser.newPage();
+      await page.goto(url, { waitUntil: "networkidle0" });
+      await page.waitForSelector("article");
 
-    await this.autoScroll(page);
+      await this.autoScroll(page);
 
-    await page.evaluate(() => {
-      // const details = document.querySelectorAll("details");
-      // details.forEach((detail) => {
-      //   detail.setAttribute("open", "true");
-      // });
-      
-      // Select all the content outside the <article> tags and remove it.
-      document.body.innerHTML = document.querySelector("article").outerHTML;
-    });
+      await page.evaluate(() => {
+        // const details = document.querySelectorAll("details");
+        // details.forEach((detail) => {
+        //   detail.setAttribute("open", "true");
+        // });
 
-    console.log(`Scraping ${url}...`);
-    const fileName = url
-      .split("/")
-      .filter((s) => s)
-      .pop();
-    console.log(`saving pdf: ${fileName}`);
+        // Select all the content outside the <article> tags and remove it.
+        document.body.innerHTML = document.querySelector("article").outerHTML;
+      });
 
-    const pdfPath = `${pdfDir}/${fileName}.pdf`;
-    await page.pdf({
-      path: pdfPath,
-      format: "A4",
-      margin: { top: "1cm", right: "1cm", bottom: "1cm", left: "1cm" },
-    });
-    pdfDocs.push({ pdfPath, index });
+      console.log(`Scraping ${url}...`);
+      const fileName = url
+        .split("/")
+        .filter((s) => s)
+        .pop();
+      console.log(`saving pdf: ${fileName}`);
 
-    console.log(`Scraped ${visitedLinks.size} / ${queue.length()} urls`);
+      const pdfPath = `${pdfDir}/${fileName}.pdf`;
+      await page.pdf({
+        path: pdfPath,
+        format: "A4",
+        margin: { top: "1cm", right: "1cm", bottom: "1cm", left: "1cm" },
+      });
+      pdfDocs.push({ pdfPath, index });
 
-    await page.close();
+      console.log(`Scraped ${visitedLinks.size} / ${queue.length()} urls`);
+
+      await page.close();
+    } catch (error) {
+      console.log("====================================");
+      console.log("Error while scraping: ", url);
+      console.log("====================================");
+    }
   }
 
   async autoScroll(page) {
@@ -88,7 +94,7 @@ class Scraper {
 
 const scraper = new Scraper();
 
-const queue = async.queue(async function (task, callback) {
+const queue = async.queue(async function (task, callback = () => {}) {
   const url = task.url;
   const index = task.index;
 
@@ -124,11 +130,13 @@ queue.drain(async function () {
   }
 
   const pdfBytes = await pdfDoc.save();
-  await fs.writeFile(`${pdfDir}/nextjs-docs.pdf`, pdfBytes);
+  // add month and year to the pdf name
+  const yearMonth = new Date().toISOString().slice(0, 7);
+  await fs.writeFile(`${pdfDir}/${yearMonth}-nextjs-docs.pdf`, pdfBytes);
   console.log(
     "All pdfs have been merged",
     "the path is: ",
-    `${pdfDir}/nextjs-docs.pdf`
+    `${pdfDir}/${yearMonth}-nextjs-docs.pdf`
   );
 
   await scraper.close();
@@ -166,12 +174,12 @@ async function scrapeNavLinks(url) {
       "main nav.styled-scrollbar a[href]:not([href='#'])"
     );
 
-    let allDocUrls = [];
+    let allDocUrls = new Set();
     allDocLinks.forEach((a) => {
-      allDocUrls.push(a.href);
+      allDocUrls.add(a.href);
     });
-    
-    return allDocUrls;
+
+    return [...allDocUrls];
 
     function delay(time) {
       return new Promise(function (resolve) {
