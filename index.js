@@ -111,23 +111,23 @@ class Scraper {
 
 const scraper = new Scraper();
 
-const queue = async.queue(async function (task, callback) {
+const queue = async.queue(async function (task, callback = f => f) {
   const url = task.url;
   const index = task.index;
 
   if (visitedLinks.has(url)) {
-    callback && callback();
+    callback();
     return;
   }
   try {
     visitedLinks.add(url);
     await scraper.scrapePage(url, index);
-    callback && callback();
+    callback();
   } catch (error) {
     console.log("====================================");
     console.log(`Error while scraping ${url}`, error);
     console.log("====================================");
-    callback && callback();
+    callback();
   }
 }, MAX_CONCURRENCY);
 
