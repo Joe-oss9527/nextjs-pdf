@@ -7,7 +7,7 @@ const PDFDocument = PDFLib.PDFDocument;
 const rootURL = "https://react.dev/learn";
 const pdfDir = "./pdfs";
 
-const MAX_CONCURRENCY = 1;
+const MAX_CONCURRENCY = 15;
 
 const visitedLinks = new Set();
 const pdfDocs = [];
@@ -54,8 +54,8 @@ class Scraper {
         sandpackExpandButtons.forEach(async (button) => {
           // scroll to the button
           button.scrollIntoView();
-          await delay(1000);
           button.click();
+          await delay(1000);
         });
 
         // Select all the content outside the <article> tags and remove it.
