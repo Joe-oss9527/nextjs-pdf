@@ -30,40 +30,44 @@ class Scraper {
   }
 
   async scrapePage(url, index) {
-    const page = await this.browser.newPage();
-    await page.goto(url, { waitUntil: "networkidle0" });
-    await page.waitForSelector("article");
+    try {
+      const page = await this.browser.newPage();
+      await page.goto(url, { waitUntil: "networkidle0" });
+      await page.waitForSelector("article");
 
-    await this.autoScroll(page);
+      await this.autoScroll(page);
 
-    await page.evaluate(() => {
-      // const details = document.querySelectorAll("details");
-      // details.forEach((detail) => {
-      //   detail.setAttribute("open", "true");
-      // });
+      await page.evaluate(() => {
+        // const details = document.querySelectorAll("details");
+        // details.forEach((detail) => {
+        //   detail.setAttribute("open", "true");
+        // });
 
-      // Select all the content outside the <article> tags and remove it.
-      document.body.innerHTML = document.querySelector("article").outerHTML;
-    });
+        // Select all the content outside the <article> tags and remove it.
+        document.body.innerHTML = document.querySelector("article").outerHTML;
+      });
 
-    console.log(`Scraping ${url}...`);
-    const fileName = url
-      .split("/")
-      .filter((s) => s)
-      .pop();
-    console.log(`saving pdf: ${fileName}`);
+      console.log(`Scraping ${url}...`);
+      const fileName = url
+        .split("/")
+        .filter((s) => s)
+        .pop();
+      console.log(`saving pdf: ${fileName}`);
 
-    const pdfPath = `${pdfDir}/${fileName}.pdf`;
-    await page.pdf({
-      path: pdfPath,
-      format: "A4",
-      margin: { top: "1cm", right: "1cm", bottom: "1cm", left: "1cm" },
-    });
-    pdfDocs.push({ pdfPath, index });
+      const pdfPath = `${pdfDir}/${fileName}.pdf`;
+      await page.pdf({
+        path: pdfPath,
+        format: "A4",
+        margin: { top: "1cm", right: "1cm", bottom: "1cm", left: "1cm" },
+      });
+      pdfDocs.push({ pdfPath, index });
 
-    console.log(`Scraped ${visitedLinks.size} / ${queue.length()} urls`);
+      console.log(`Scraped ${visitedLinks.size} / ${queue.length()} urls`);
 
-    await page.close();
+      await page.close();
+    } catch (error) {
+      console.error(`Error scraping ${url}`, error);
+    }
   }
 
   async autoScroll(page) {
@@ -88,7 +92,7 @@ class Scraper {
 
 const scraper = new Scraper();
 
-const queue = async.queue(async function (task, callback) {
+const queue = async.queue(async function (task, callback = () => {}) {
   const url = task.url;
   const index = task.index;
 
@@ -179,12 +183,12 @@ async function scrapeNavLinks(url) {
       );
     }
 
-    let allDocUrls = [];
+    let allDocUrls = new Set();
     allDocLinks.forEach((a) => {
-      allDocUrls.push(a.href);
+      allDocUrls.add(a.href);
     });
-    
-    return allDocUrls;
+
+    return [...allDocUrls];
 
     function delay(time) {
       return new Promise(function (resolve) {
