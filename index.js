@@ -7,7 +7,7 @@ const PDFDocument = PDFLib.PDFDocument;
 const rootURL = "https://react.dev/learn";
 const pdfDir = "./pdfs";
 
-const MAX_CONCURRENCY = 15;
+const MAX_CONCURRENCY = 1;
 
 const visitedLinks = new Set();
 const pdfDocs = [];
@@ -30,61 +30,65 @@ class Scraper {
   }
 
   async scrapePage(url, index) {
-    const page = await this.browser.newPage();
-    await page.goto(url, { waitUntil: "networkidle0" });
-    await page.waitForSelector("article");
+    try {
+      const page = await this.browser.newPage();
+      await page.goto(url, { waitUntil: "networkidle0" });
+      await page.waitForSelector("article");
 
-    await this.autoScroll(page);
+      await this.autoScroll(page);
 
-    await page.evaluate(async () => {
-      const details = document.querySelectorAll("details");
-      details.forEach((detail) => {
-        detail.setAttribute("open", "true");
-      });
-
-      await delay(1000);
-
-      // find all button elements which has the class "sandpack-expand"
-      const sandpackExpandButtons = document.querySelectorAll(
-        "button.sandpack-expand"
-      );
-
-      // click all the buttons
-      sandpackExpandButtons.forEach(async (button) => {
-        // scroll to the button
-        button.scrollIntoView();
-        await delay(1000);
-        button.click();
-      });
-
-      // Select all the content outside the <article> tags and remove it.
-      document.body.innerHTML = document.querySelector("article").outerHTML;
-
-      function delay(time) {
-        return new Promise(function (resolve) {
-          setTimeout(resolve, time);
+      await page.evaluate(async () => {
+        const details = document.querySelectorAll("details");
+        details.forEach((detail) => {
+          detail.setAttribute("open", "true");
         });
-      }
-    });
 
-    console.log(`Scraping ${url}...`);
-    const fileName = url
-      .split("/")
-      .filter((s) => s)
-      .pop();
-    console.log(`saving pdf: ${fileName}`);
+        await delay(1000);
 
-    const pdfPath = `${pdfDir}/${fileName}.pdf`;
-    await page.pdf({
-      path: pdfPath,
-      format: "A4",
-      margin: { top: "1cm", right: "1cm", bottom: "1cm", left: "1cm" },
-    });
-    pdfDocs.push({ pdfPath, index });
+        // find all button elements which has the class "sandpack-expand"
+        const sandpackExpandButtons = document.querySelectorAll(
+          "button.sandpack-expand"
+        );
 
-    console.log(`Scraped ${visitedLinks.size} / ${queue.length()} urls`);
+        // click all the buttons
+        sandpackExpandButtons.forEach(async (button) => {
+          // scroll to the button
+          button.scrollIntoView();
+          await delay(1000);
+          button.click();
+        });
 
-    await page.close();
+        // Select all the content outside the <article> tags and remove it.
+        document.body.innerHTML = document.querySelector("article").outerHTML;
+
+        function delay(time) {
+          return new Promise(function (resolve) {
+            setTimeout(resolve, time);
+          });
+        }
+      });
+
+      console.log(`Scraping ${url}...`);
+      const fileName = url
+        .split("/")
+        .filter((s) => s)
+        .pop();
+      console.log(`saving pdf: ${fileName}`);
+
+      const pdfPath = `${pdfDir}/${fileName}.pdf`;
+      await page.pdf({
+        path: pdfPath,
+        format: "A4",
+        margin: { top: "1cm", right: "1cm", bottom: "1cm", left: "1cm" },
+      });
+      pdfDocs.push({ pdfPath, index });
+
+      console.log(`Scraped ${visitedLinks.size} / ${queue.length()} urls`);
+
+      await page.close();
+    } catch (error) {
+      console.error("error while scraping page: ", url, error);
+    }
   }
 
   async autoScroll(page) {
@@ -109,7 +113,7 @@ class Scraper {
 
 const scraper = new Scraper();
 
-const queue = async.queue(async function (task, callback) {
+const queue = async.queue(async function (task, callback = () => {}) {
   const url = task.url;
   const index = task.index;
 
