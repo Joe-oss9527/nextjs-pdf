@@ -4,7 +4,7 @@ const async = require("async");
 const PDFLib = require("pdf-lib");
 const PDFDocument = PDFLib.PDFDocument;
 
-const rootURL = "https://stylexjs.com/docs/learn/";
+const rootURL = "https://pptr.dev/";
 const pdfDir = "./pdfs";
 
 const MAX_CONCURRENCY = 15;
@@ -121,11 +121,12 @@ queue.drain(async function () {
   }
 
   const pdfBytes = await pdfDoc.save();
-  await fs.writeFile(`${pdfDir}/stylex-docs.pdf`, pdfBytes);
+  const fileNameWithDate = `${pdfDir}/pptr.dev-docs-${new Date().toISOString()}.pdf`
+  await fs.writeFile(fileNameWithDate, pdfBytes);
   console.log(
     "All pdfs have been merged",
     "the path is: ",
-    `${pdfDir}/stylex-docs.pdf`
+    fileNameWithDate
   );
 
   await scraper.close();
@@ -154,7 +155,7 @@ async function scrapeNavLinks(url) {
   await page.goto(url, { waitUntil: "networkidle0" });
 
   const allDocLinks = await page.evaluate(async () => {
-    document.querySelector("button[class^='navbar__toggle']").click();
+    document.querySelector("button[aria-label='Toggle navigation bar']").click();
 
     // wait for 1 second
     await delay(2000);
@@ -164,10 +165,10 @@ async function scrapeNavLinks(url) {
     );
 
     let allDocUrls = [];
-    categoryButtons.forEach((button) => {
-      const a = button.querySelector("a");
-      if (a) {
-        a.click();
+    categoryButtons.forEach((li) => {
+      const button = li.querySelector("button");
+      if (button) {
+        button.click();
       }
     });
     const docUrls = document.querySelectorAll(
