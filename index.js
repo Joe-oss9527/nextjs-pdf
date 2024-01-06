@@ -125,7 +125,7 @@ queue.drain(async function () {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  });
+  }).replace(/\//g, "-");
   const fileNameWithDate = `${pdfDir}/pptr.dev-docs-${currentDate}.pdf`;
   await fs.writeFile(fileNameWithDate, pdfBytes);
   console.log(
