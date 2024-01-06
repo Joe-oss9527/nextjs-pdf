@@ -4,7 +4,7 @@ const async = require("async");
 const PDFLib = require("pdf-lib");
 const PDFDocument = PDFLib.PDFDocument;
 
-const rootURL = "https://pptr.dev/";
+const rootURL = "https://playwright.dev/docs/intro";
 const pdfDir = "./pdfs";
 
 const MAX_CONCURRENCY = 15;
@@ -121,7 +121,7 @@ queue.drain(async function () {
   }
 
   const pdfBytes = await pdfDoc.save();
-  const fileNameWithDate = `${pdfDir}/pptr.dev-docs-${new Date().toISOString()}.pdf`
+  const fileNameWithDate = `${pdfDir}/playwright.dev-docs-${new Date().toISOString()}.pdf`
   await fs.writeFile(fileNameWithDate, pdfBytes);
   console.log(
     "All pdfs have been merged",
