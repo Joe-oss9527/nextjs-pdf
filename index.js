@@ -4,7 +4,7 @@ const async = require("async");
 const PDFLib = require("pdf-lib");
 const PDFDocument = PDFLib.PDFDocument;
 
-const rootURL = "https://pptr.dev/api/puppeteer.puppeteernode";
+const rootURL = "https://beej.us/guide/bgnet0/html/split/index.html";
 const pdfDir = "./pdfs";
 
 const MAX_CONCURRENCY = 15;
@@ -32,20 +32,12 @@ class Scraper {
   async scrapePage(url, index) {
     const page = await this.browser.newPage();
     await page.goto(url, { waitUntil: "networkidle0" });
-    await page.waitForSelector("article");
 
     await this.autoScroll(page);
 
-    await page.evaluate(() => {
-      const details = document.querySelectorAll("details");
-      details.forEach((detail) => {
-        detail.setAttribute("open", "true");
-      });
-    });
-
     console.log(`Scraping ${url}...`);
     const fileName = url
-      .split("/")
+      .split("#")
       .filter((s) => s)
       .pop();
     console.log(`saving pdf: ${fileName}`);
@@ -128,7 +120,7 @@ queue.drain(async function () {
       day: "2-digit",
     })
     .replace(/\//g, "-");
-  const fileNameWithDate = `${pdfDir}/pptr.dev-api-${currentDate}.pdf`;
+  const fileNameWithDate = `${pdfDir}/Beej\'s Guide to Network Concepts-${currentDate}.pdf`;
   await fs.writeFile(fileNameWithDate, pdfBytes);
   console.log("All pdfs have been merged", "the path is: ", fileNameWithDate);
 
@@ -158,49 +150,17 @@ async function scrapeNavLinks(url) {
   await page.goto(url, { waitUntil: "networkidle0" });
 
   const allDocLinks = await page.evaluate(async () => {
-    document
-      .querySelector("button[aria-label='Toggle navigation bar']")
-      .click();
-
-    // wait for 1 second
-    await delay(2000);
-
-    // theme-doc-sidebar-item-category
-    const categoryButtons = document.querySelectorAll(
-      ".theme-doc-sidebar-item-category"
-    );
 
     let allDocUrls = [];
-    categoryButtons.forEach(async (li) => {
-      const button = li.querySelector("button[aria-label^='Expand']");
-      if (button) {
-        button.click();
-        await delay(2000);
-        return;
-      }
-      // query the element of a tag which has href='#' and aria-expanded='false'
-      const a = li.querySelector("a[href='#'][aria-expanded='false']");
-      if (a) {
-        a.click();
-        await delay(2000);
-      }
-    });
-
-    await delay(2000);
 
     const docUrls = document.querySelectorAll(
-      ".theme-doc-sidebar-menu a[href]:not([href='#'])"
+      "nav a[href]:not([href='#'])"
     );
     docUrls.forEach((a) => {
       allDocUrls.push(a.href);
     });
     return allDocUrls;
-
-    function delay(time) {
-      return new Promise(function (resolve) {
-        setTimeout(resolve, time);
-      });
-    }
+    
   });
 
   console.log("====================================");
