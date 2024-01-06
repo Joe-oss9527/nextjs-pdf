@@ -4,7 +4,7 @@ const async = require("async");
 const PDFLib = require("pdf-lib");
 const PDFDocument = PDFLib.PDFDocument;
 
-const rootURL = "https://pptr.dev/";
+const rootURL = "https://pptr.dev/api/puppeteer.puppeteernode";
 const pdfDir = "./pdfs";
 
 const MAX_CONCURRENCY = 15;
@@ -121,18 +121,16 @@ queue.drain(async function () {
   }
 
   const pdfBytes = await pdfDoc.save();
-  const currentDate = new Date().toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).replace(/\//g, "-");
-  const fileNameWithDate = `${pdfDir}/pptr.dev-docs-${currentDate}.pdf`;
+  const currentDate = new Date()
+    .toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    })
+    .replace(/\//g, "-");
+  const fileNameWithDate = `${pdfDir}/pptr.dev-api-${currentDate}.pdf`;
   await fs.writeFile(fileNameWithDate, pdfBytes);
-  console.log(
-    "All pdfs have been merged",
-    "the path is: ",
-    fileNameWithDate
-  );
+  console.log("All pdfs have been merged", "the path is: ", fileNameWithDate);
 
   await scraper.close();
 });
@@ -160,22 +158,36 @@ async function scrapeNavLinks(url) {
   await page.goto(url, { waitUntil: "networkidle0" });
 
   const allDocLinks = await page.evaluate(async () => {
-    document.querySelector("button[aria-label='Toggle navigation bar']").click();
+    document
+      .querySelector("button[aria-label='Toggle navigation bar']")
+      .click();
 
     // wait for 1 second
     await delay(2000);
 
+    // theme-doc-sidebar-item-category
     const categoryButtons = document.querySelectorAll(
       ".theme-doc-sidebar-item-category"
     );
 
     let allDocUrls = [];
-    categoryButtons.forEach((li) => {
-      const button = li.querySelector("button");
+    categoryButtons.forEach(async (li) => {
+      const button = li.querySelector("button[aria-label^='Expand']");
       if (button) {
         button.click();
+        await delay(2000);
+        return;
+      }
+      // query the element of a tag which has href='#' and aria-expanded='false'
+      const a = li.querySelector("a[href='#'][aria-expanded='false']");
+      if (a) {
+        a.click();
+        await delay(2000);
       }
     });
+
+    await delay(2000);
+
     const docUrls = document.querySelectorAll(
       ".theme-doc-sidebar-menu a[href]:not([href='#'])"
     );
@@ -199,6 +211,8 @@ async function scrapeNavLinks(url) {
   for (let link of allDocLinks) {
     queue.push({ url: link, index: index++ });
   }
+
+  await page.close();
 }
 
 async function main() {
