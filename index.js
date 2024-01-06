@@ -121,7 +121,12 @@ queue.drain(async function () {
   }
 
   const pdfBytes = await pdfDoc.save();
-  const fileNameWithDate = `${pdfDir}/pptr.dev-docs-${new Date().toISOString()}.pdf`
+  const currentDate = new Date().toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const fileNameWithDate = `${pdfDir}/pptr.dev-docs-${currentDate}.pdf`;
   await fs.writeFile(fileNameWithDate, pdfBytes);
   console.log(
     "All pdfs have been merged",
