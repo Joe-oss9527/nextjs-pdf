@@ -7,10 +7,10 @@ const PDFDocument = PDFLib.PDFDocument;
 const userAgent =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
-const rootURL = "https://cn.vuejs.org/guide/introduction";
+const rootURL = "https://platform.openai.com/docs/introduction";
 const pdfDir = "./pdfs";
 
-const MAX_CONCURRENCY = 15;
+const MAX_CONCURRENCY = 1;
 
 const visitedLinks = new Set();
 const pdfDocs = [];
@@ -38,6 +38,7 @@ class Scraper {
     console.log("====================================");
     console.log("Start to scraping: ", "index: ", index, "url: ", url);
     console.log("====================================");
+    await scraper.initialize();
     const page = await this.browser.newPage();
     try {
       await page.setUserAgent(userAgent);
@@ -49,7 +50,8 @@ class Scraper {
 
       await page.evaluate(() => {
         // Select all the content outside the <article> tags and remove it.
-        document.body.innerHTML = document.querySelector("main").outerHTML;
+        document.body.innerHTML =
+          document.querySelector(".docs-body").outerHTML;
       });
 
       const fileName = url
@@ -83,6 +85,7 @@ class Scraper {
       console.log("====================================");
       console.log("Scraped page count: ", this.scrapedCount);
       console.log("====================================");
+      await scraper.close();
     }
   }
 
@@ -111,7 +114,7 @@ class Scraper {
 
 const scraper = new Scraper();
 
-const queue = async.queue(async function (task, callback = f => f) {
+const queue = async.queue(async function (task, callback = (f) => f) {
   const url = task.url;
   const index = task.index;
 
@@ -157,15 +160,24 @@ queue.drain(async function () {
   }
 
   const pdfBytes = await pdfDoc.save();
-  await fs.writeFile(`${pdfDir}/vue-docs.pdf`, pdfBytes);
-  console.log(
-    "All pdfs have been merged",
-    "the path is: ",
-    `${pdfDir}/vue-docs.pdf`
-  );
-
-  await scraper.close();
+  // pdf file name with year-month-day
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const pdfName = `${pdfDir}/openai-docs-${year}-${month}-${day}.pdf`;
+  await fs.writeFile(pdfName, pdfBytes);
+  console.log("All pdfs have been merged", "the path is: ", pdfName);
 });
+
+// wait for seconds
+function wait(seconds) {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve();
+    }, seconds * 1000);
+  });
+}
 
 async function createPdfsFolder() {
   try {
@@ -183,17 +195,21 @@ async function createPdfsFolder() {
   }
 }
 
-async function scrapeNavLinks(url) {
+async function scrapeMainNavLinks(url) {
   await scraper.initialize();
-
   const page = await scraper.browser.newPage();
+  await page.setViewport({
+    width: 1920,
+    height: 1080,
+    deviceScaleFactor: 1,
+  });
   await page.setUserAgent(userAgent);
   await page.goto(url, { waitUntil: "networkidle0" });
 
-  const allDocLinks = await page.evaluate(async () => {
+  const allMainDocLinks = await page.evaluate(async () => {
     // get all the links under the element which has the attr "aria-labelledby="radix-:ri:"
     let allDocLinks = document.querySelectorAll(
-      "aside a[href]:not([href='#'])"
+      ".side-nav a[href]:not([href='#'])"
     );
 
     let allDocUrls = new Set();
@@ -210,24 +226,108 @@ async function scrapeNavLinks(url) {
 
   console.log("====================================");
   console.log(
-    "All docs links: ",
+    "All docs of main links: ",
     "total pages: ",
-    allDocLinks.length,
+    allMainDocLinks.length,
     " ",
-    allDocLinks
+    allMainDocLinks
   );
   console.log("====================================");
-  let index = 0;
-  for (let link of allDocLinks) {
-    queue.push({ url: link, index: index++ });
-  }
+  // let index = 0;
+  // for (let link of allDocLinks) {
+  //   queue.push({ url: link, index: index++ });
+  // }
 
   await page.close();
+  await scraper.close();
+  return allMainDocLinks;
+}
+
+async function scrapeSubNavLinks(url) {
+  try {
+    await scraper.initialize();
+    console.log("====================================");
+    console.log("Start to scraping sub nav links: ", url);
+    const page = await scraper.browser.newPage();
+    await page.setViewport({
+      width: 1920,
+      height: 1080,
+      deviceScaleFactor: 1,
+    });
+    await page.setUserAgent(userAgent);
+    await page.goto(url);
+
+    await wait(2);
+    const allSubDocLinks = await page.evaluate(async () => {
+      // scroll-link side-nav-item active active-exact
+      let allDocLinks = document.querySelectorAll(
+        "a.side-nav-item.side-nav-child"
+      );
+
+      let allDocUrls = new Set();
+      allDocLinks.forEach((a) => {
+        const link = a.href;
+        if (link.includes("#")) {
+          return;
+        }
+        allDocUrls.add(link);
+      });
+
+      return [...allDocUrls];
+    });
+
+    console.log("====================================");
+    console.log(
+      "All docs of sub links: ",
+      "total pages: ",
+      allSubDocLinks.length,
+      " ",
+      allSubDocLinks,
+      "parent url: ",
+      url
+    );
+    console.log("====================================");
+    // let index = 0;
+    // for (let link of allDocLinks) {
+    //   queue.push({ url: link, index: index++ });
+    // }
+    await page.close();
+    await scraper.close();
+    return allSubDocLinks;
+  } catch (error) {
+    console.log("====================================");
+    console.log("Error while scraping sub nav links: ", url, error);
+    console.log("====================================");
+    await wait(3);
+    // retry
+    console.log("====================================");
+    console.log("Retry to scraping sub nav links: ", url);
+    return await scrapeSubNavLinks(url);
+  } finally {
+    console.log("====================================");
+    console.log("Close page: ", url);
+    await page.close();
+    await scraper.close();
+    console.log("====================================");
+  }
 }
 
 async function main() {
   await createPdfsFolder();
-  await scrapeNavLinks(rootURL);
+  const allDocLinks = [];
+  const mainLinks = await scrapeMainNavLinks(rootURL);
+  for (let link of mainLinks) {
+    const subLinks = await scrapeSubNavLinks(link);
+    allDocLinks.push(link);
+    allDocLinks.push(...subLinks);
+  }
+  let index = 0;
+  console.log("====================================");
+  console.log("All docs of all links: ", allDocLinks);
+
+  for (let link of allDocLinks) {
+    queue.push({ url: link, index: index++ });
+  }
 }
 
 main().catch(console.error);
