@@ -23,7 +23,8 @@ class Scraper {
 
   async initialize() {
     this.browser = await puppeteer.launch({
-      headless: "new", // Using the old headless mode.
+      // headless: "new", // Using the old headless mode.
+      headless: false
     });
     this.scrapedCount = 0;
   }
@@ -41,11 +42,11 @@ class Scraper {
     await scraper.initialize();
     const page = await this.browser.newPage();
     try {
-      await page.setViewport({
-        width: 1920,
-        height: 1080,
-        deviceScaleFactor: 1,
-      });
+      // await page.setViewport({
+      //   width: 1920,
+      //   height: 1080,
+      //   deviceScaleFactor: 1,
+      // });
       await page.setUserAgent(userAgent);
       // waitUntil: "networkidle0"; 可能会导致超时
       // await page.goto(url, { waitUntil: "networkidle0" });
@@ -53,8 +54,8 @@ class Scraper {
 
       await this.autoScroll(page);
       await wait(2);
-      await this.autoScroll(page);
-      await wait(2);
+      // await this.autoScroll(page);
+      // await wait(2);
       
       await page.evaluate(() => {
         // Select all the content outside the <article> tags and remove it.
@@ -84,9 +85,9 @@ class Scraper {
       console.log("====================================");
       console.log("Scraped page count: ", this.scrapedCount);
       console.log("====================================");
+      await wait(10);
       await page.close();
       await scraper.close();
-      await wait(1);
     } catch (error) {
       console.log("====================================");
       console.log("Error while scraping: ", url, error);
@@ -107,14 +108,16 @@ class Scraper {
     console.log("====================================");
     await page.evaluate(async () => {
       await new Promise((resolve) => {
-        const scrollHeight = document.body.scrollHeight;
+        // scroll .docs-body
+        const docsBody = document.querySelector(".docs-body");
+        const scrollHeight = docsBody.scrollHeight;
+
         const distance = 300;
         const interval = 300;
 
         const timer = setInterval(() => {
-          window.scrollBy(0, distance);
-
-          if (window.scrollY + window.innerHeight >= scrollHeight) {
+          docsBody.scrollBy(0, distance);
+          if (docsBody.scrollY + docsBody.innerHeight >= scrollHeight) {
             clearInterval(timer);
             resolve();
           }
@@ -321,6 +324,24 @@ async function scrapeSubNavLinks(url) {
   }
 }
 
+const testLinks = ['https://platform.openai.com/docs/introduction',
+  // 'https://platform.openai.com/docs/quickstart',
+  // 'https://platform.openai.com/docs/models',
+  // 'https://platform.openai.com/docs/models/overview',
+  // 'https://platform.openai.com/docs/models/continuous-model-upgrades',
+  // 'https://platform.openai.com/docs/models/gpt-4-and-gpt-4-turbo',
+  // 'https://platform.openai.com/docs/models/gpt-3-5',
+  // 'https://platform.openai.com/docs/models/dall-e',
+  // 'https://platform.openai.com/docs/models/tts',
+  // 'https://platform.openai.com/docs/models/whisper',
+  // 'https://platform.openai.com/docs/models/embeddings',
+  // 'https://platform.openai.com/docs/models/moderation',
+  // 'https://platform.openai.com/docs/models/how-we-use-your-data',
+  // 'https://platform.openai.com/docs/models/model-endpoint-compatibility',
+  // 'https://platform.openai.com/docs/tutorials',
+  // 'https://platform.openai.com/docs/changelog',
+]
+
 async function main() {
   await createPdfsFolder();
   const allDocLinks = [];
@@ -330,6 +351,8 @@ async function main() {
     allDocLinks.push(link);
     allDocLinks.push(...subLinks);
   }
+
+  // const allDocLinks = testLinks;
   let index = 0;
   console.log("====================================");
   console.log("All docs of all links: ", allDocLinks);
