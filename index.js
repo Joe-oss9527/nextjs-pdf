@@ -244,11 +244,11 @@ async function scrapeMainNavLinks(url) {
 }
 
 async function scrapeSubNavLinks(url) {
+  await scraper.initialize();
+  const page = await scraper.browser.newPage();
   try {
-    await scraper.initialize();
     console.log("====================================");
     console.log("Start to scraping sub nav links: ", url);
-    const page = await scraper.browser.newPage();
     await page.setViewport({
       width: 1920,
       height: 1080,
