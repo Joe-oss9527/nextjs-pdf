@@ -298,17 +298,14 @@ async function scrapeSubNavLinks(url) {
     console.log("====================================");
     console.log("Error while scraping sub nav links: ", url, error);
     console.log("====================================");
-    await wait(3);
+    await wait(1);
+    await page.close();
+    await scraper.close();
+    await wait(1);
     // retry
     console.log("====================================");
     console.log("Retry to scraping sub nav links: ", url);
     return await scrapeSubNavLinks(url);
-  } finally {
-    console.log("====================================");
-    console.log("Close page: ", url);
-    await page.close();
-    await scraper.close();
-    console.log("====================================");
   }
 }
 
