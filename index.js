@@ -41,13 +41,21 @@ class Scraper {
     await scraper.initialize();
     const page = await this.browser.newPage();
     try {
+      await page.setViewport({
+        width: 1920,
+        height: 1080,
+        deviceScaleFactor: 1,
+      });
       await page.setUserAgent(userAgent);
       // waitUntil: "networkidle0"; 可能会导致超时
       // await page.goto(url, { waitUntil: "networkidle0" });
       await page.goto(url);
 
       await this.autoScroll(page);
-
+      await wait(2);
+      await this.autoScroll(page);
+      await wait(2);
+      
       await page.evaluate(() => {
         // Select all the content outside the <article> tags and remove it.
         document.body.innerHTML =
@@ -72,20 +80,24 @@ class Scraper {
       console.log("End to scraping: ", "index: ", index, "url: ", url);
       console.log("====================================");
       console.log(`Scraped ${visitedLinks.size} / ${queue.length()} urls`);
-    } catch (error) {
-      console.log("====================================");
-      console.log("Error while scraping: ", url, error);
-      console.log("====================================");
-    } finally {
-      console.log("====================================");
-      console.log("Close page: ", page.url());
-      console.log("====================================");
-      await page.close();
       this.scrapedCount++;
       console.log("====================================");
       console.log("Scraped page count: ", this.scrapedCount);
       console.log("====================================");
+      await page.close();
       await scraper.close();
+      await wait(1);
+    } catch (error) {
+      console.log("====================================");
+      console.log("Error while scraping: ", url, error);
+      console.log("====================================");
+      await page.close();
+      await scraper.close();
+      await wait(1);
+      // retry
+      console.log("====================================");
+      console.log("Retry to scraping: ", url);
+      await this.scrapePage(url, index);
     }
   }
 
@@ -96,8 +108,8 @@ class Scraper {
     await page.evaluate(async () => {
       await new Promise((resolve) => {
         const scrollHeight = document.body.scrollHeight;
-        const distance = 100;
-        const interval = 100;
+        const distance = 300;
+        const interval = 300;
 
         const timer = setInterval(() => {
           window.scrollBy(0, distance);
