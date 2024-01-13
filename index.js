@@ -10,7 +10,7 @@ const userAgent =
 const rootURL = "https://platform.openai.com/docs/introduction";
 const pdfDir = "./pdfs";
 
-const MAX_CONCURRENCY = 3;
+const MAX_CONCURRENCY = 1;
 
 const visitedLinks = new Set();
 const pdfDocs = [];
@@ -43,16 +43,16 @@ class Scraper {
     try {
       await page.setUserAgent(userAgent);
       // waitUntil: "networkidle0"; 可能会导致超时
-      // await page.goto(url, { waitUntil: "networkidle0" });
-      await page.goto(url);
+      await page.goto(url, { waitUntil: "networkidle0" });
 
       await this.autoScroll(page);
       await wait(1);
-      
+
       await page.evaluate(() => {
         // Select all the content outside the <article> tags and remove it.
-        document.body.innerHTML =
-          document.querySelector(".docs-body .markdown-page").outerHTML;
+        document.body.innerHTML = document.querySelector(
+          ".docs-body .markdown-page"
+        ).outerHTML;
       });
 
       const fileName = url
@@ -78,15 +78,25 @@ class Scraper {
       console.log("Scraped page count: ", this.scrapedCount);
       console.log("====================================");
       await wait(10);
-      await page.close();
-      await scraper.close();
+      try {
+        await page.close();
+        await scraper.close();
+      } catch (error) {
+        console.log("====================================");
+        console.log("1Error while closing page: ", url, error);
+      }
     } catch (error) {
       console.log("====================================");
       console.log("Error while scraping: ", url, error);
       console.log("====================================");
-      await page.close();
-      await scraper.close();
-      await wait(1);
+      try {
+        await page.close();
+        await scraper.close();
+        await wait(5);
+      } catch (error) {
+        console.log("====================================");
+        console.log("2Error while closing page: ", url, error);
+      }
       // retry
       console.log("====================================");
       console.log("Retry to scraping: ", url);
@@ -99,9 +109,18 @@ class Scraper {
     console.log("Start to scroll page...", page.url());
     console.log("====================================");
     console.log("====================================");
-    console.log("page.scrollHeight: ",await page.$eval(".docs-body", (el) => el.scrollHeight));
-    console.log("page.innerHeight: ",await page.$eval(".docs-body", (el) => el.clientHeight));
-    console.log("page.scrollY: ",await page.$eval(".docs-body", (el) => el.scrollTop));
+    console.log(
+      "page.scrollHeight: ",
+      await page.$eval(".docs-body", (el) => el.scrollHeight)
+    );
+    console.log(
+      "page.innerHeight: ",
+      await page.$eval(".docs-body", (el) => el.clientHeight)
+    );
+    console.log(
+      "page.scrollY: ",
+      await page.$eval(".docs-body", (el) => el.scrollTop)
+    );
     const result = await page.evaluate(async () => {
       return await new Promise((resolve) => {
         // scroll .docs-body
@@ -259,73 +278,74 @@ async function scrapeMainNavLinks(url) {
   return allMainDocLinks;
 }
 
-async function scrapeSubNavLinks(url) {
-  await scraper.initialize();
-  const page = await scraper.browser.newPage();
-  try {
-    console.log("====================================");
-    console.log("Start to scraping sub nav links: ", url);
-    await page.setViewport({
-      width: 1920,
-      height: 1080,
-      deviceScaleFactor: 1,
-    });
-    await page.setUserAgent(userAgent);
-    await page.goto(url);
+// async function scrapeSubNavLinks(url) {
+//   await scraper.initialize();
+//   const page = await scraper.browser.newPage();
+//   try {
+//     console.log("====================================");
+//     console.log("Start to scraping sub nav links: ", url);
+//     await page.setViewport({
+//       width: 1920,
+//       height: 1080,
+//       deviceScaleFactor: 1,
+//     });
+//     await page.setUserAgent(userAgent);
+//     await page.goto(url);
 
-    await wait(2);
-    const allSubDocLinks = await page.evaluate(async () => {
-      // scroll-link side-nav-item active active-exact
-      let allDocLinks = document.querySelectorAll(
-        "a.side-nav-item.side-nav-child"
-      );
+//     await wait(2);
+//     const allSubDocLinks = await page.evaluate(async () => {
+//       // scroll-link side-nav-item active active-exact
+//       let allDocLinks = document.querySelectorAll(
+//         "a.side-nav-item.side-nav-child"
+//       );
 
-      let allDocUrls = new Set();
-      allDocLinks.forEach((a) => {
-        const link = a.href;
-        if (link.includes("#")) {
-          return;
-        }
-        allDocUrls.add(link);
-      });
+//       let allDocUrls = new Set();
+//       allDocLinks.forEach((a) => {
+//         const link = a.href;
+//         if (link.includes("#")) {
+//           return;
+//         }
+//         allDocUrls.add(link);
+//       });
 
-      return [...allDocUrls];
-    });
+//       return [...allDocUrls];
+//     });
 
-    console.log("====================================");
-    console.log(
-      "All docs of sub links: ",
-      "total pages: ",
-      allSubDocLinks.length,
-      " ",
-      allSubDocLinks,
-      "parent url: ",
-      url
-    );
-    console.log("====================================");
-    // let index = 0;
-    // for (let link of allDocLinks) {
-    //   queue.push({ url: link, index: index++ });
-    // }
-    await page.close();
-    await scraper.close();
-    return allSubDocLinks;
-  } catch (error) {
-    console.log("====================================");
-    console.log("Error while scraping sub nav links: ", url, error);
-    console.log("====================================");
-    await wait(1);
-    await page.close();
-    await scraper.close();
-    await wait(1);
-    // retry
-    console.log("====================================");
-    console.log("Retry to scraping sub nav links: ", url);
-    return await scrapeSubNavLinks(url);
-  }
-}
+//     console.log("====================================");
+//     console.log(
+//       "All docs of sub links: ",
+//       "total pages: ",
+//       allSubDocLinks.length,
+//       " ",
+//       allSubDocLinks,
+//       "parent url: ",
+//       url
+//     );
+//     console.log("====================================");
+//     // let index = 0;
+//     // for (let link of allDocLinks) {
+//     //   queue.push({ url: link, index: index++ });
+//     // }
+//     await page.close();
+//     await scraper.close();
+//     return allSubDocLinks;
+//   } catch (error) {
+//     console.log("====================================");
+//     console.log("Error while scraping sub nav links: ", url, error);
+//     console.log("====================================");
+//     await wait(1);
+//     await page.close();
+//     await scraper.close();
+//     await wait(1);
+//     // retry
+//     console.log("====================================");
+//     console.log("Retry to scraping sub nav links: ", url);
+//     return await scrapeSubNavLinks(url);
+//   }
+// }
 
-const testLinks = ['https://platform.openai.com/docs/introduction',
+const testLinks = [
+  "https://platform.openai.com/docs/introduction",
   // 'https://platform.openai.com/docs/quickstart',
   // 'https://platform.openai.com/docs/models',
   // 'https://platform.openai.com/docs/models/overview',
@@ -341,19 +361,19 @@ const testLinks = ['https://platform.openai.com/docs/introduction',
   // 'https://platform.openai.com/docs/models/model-endpoint-compatibility',
   // 'https://platform.openai.com/docs/tutorials',
   // 'https://platform.openai.com/docs/changelog',
-]
+];
 
 async function main() {
   await createPdfsFolder();
-  const allDocLinks = [];
+  // const allDocLinks = [];
   const mainLinks = await scrapeMainNavLinks(rootURL);
-  for (let link of mainLinks) {
-    const subLinks = await scrapeSubNavLinks(link);
-    allDocLinks.push(link);
-    allDocLinks.push(...subLinks);
-  }
+  // for (let link of mainLinks) {
+  //   const subLinks = await scrapeSubNavLinks(link);
+  //   allDocLinks.push(link);
+  //   allDocLinks.push(...subLinks);
+  // }
 
-  // const allDocLinks = testLinks;
+  const allDocLinks = mainLinks;
   let index = 0;
   console.log("====================================");
   console.log("All docs of all links: ", allDocLinks);
