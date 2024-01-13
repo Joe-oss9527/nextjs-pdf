@@ -232,7 +232,7 @@ async function scrapeMainNavLinks(url) {
     let allDocUrls = new Set();
     allDocLinks.forEach((a) => {
       const link = a.href;
-      if (link.includes("#")) {
+      if (link.includes("#") || link.includes("policies")) {
         return;
       }
       allDocUrls.add(link);
