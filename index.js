@@ -10,7 +10,7 @@ const userAgent =
 const rootURL = "https://platform.openai.com/docs/introduction";
 const pdfDir = "./pdfs";
 
-const MAX_CONCURRENCY = 1;
+const MAX_CONCURRENCY = 3;
 
 const visitedLinks = new Set();
 const pdfDocs = [];
@@ -42,25 +42,18 @@ class Scraper {
     await scraper.initialize();
     const page = await this.browser.newPage();
     try {
-      // await page.setViewport({
-      //   width: 1920,
-      //   height: 1080,
-      //   deviceScaleFactor: 1,
-      // });
       await page.setUserAgent(userAgent);
       // waitUntil: "networkidle0"; 可能会导致超时
       // await page.goto(url, { waitUntil: "networkidle0" });
       await page.goto(url);
 
       await this.autoScroll(page);
-      await wait(2);
-      // await this.autoScroll(page);
-      // await wait(2);
+      await wait(1);
       
       await page.evaluate(() => {
         // Select all the content outside the <article> tags and remove it.
         document.body.innerHTML =
-          document.querySelector(".docs-body").outerHTML;
+          document.querySelector(".docs-body .markdown-page").outerHTML;
       });
 
       const fileName = url
@@ -106,8 +99,12 @@ class Scraper {
     console.log("====================================");
     console.log("Start to scroll page...", page.url());
     console.log("====================================");
-    await page.evaluate(async () => {
-      await new Promise((resolve) => {
+    console.log("====================================");
+    console.log("page.scrollHeight: ",await page.$eval(".docs-body", (el) => el.scrollHeight));
+    console.log("page.innerHeight: ",await page.$eval(".docs-body", (el) => el.clientHeight));
+    console.log("page.scrollY: ",await page.$eval(".docs-body", (el) => el.scrollTop));
+    const result = await page.evaluate(async () => {
+      return await new Promise((resolve) => {
         // scroll .docs-body
         const docsBody = document.querySelector(".docs-body");
         const scrollHeight = docsBody.scrollHeight;
@@ -117,13 +114,18 @@ class Scraper {
 
         const timer = setInterval(() => {
           docsBody.scrollBy(0, distance);
-          if (docsBody.scrollY + docsBody.innerHeight >= scrollHeight) {
+          if (docsBody.scrollTop + docsBody.clientHeight >= scrollHeight) {
             clearInterval(timer);
             resolve();
           }
         }, interval);
       });
     });
+    console.log("====================================");
+    console.log("End to scroll page...", page.url());
+    console.log("====================================");
+    console.log("====================================");
+    console.log("scroll result: ", result);
   }
 }
 
