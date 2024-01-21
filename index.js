@@ -4,7 +4,7 @@ const async = require("async");
 const PDFLib = require("pdf-lib");
 const PDFDocument = PDFLib.PDFDocument;
 
-const rootURL = "https://playwright.dev/docs/intro";
+const rootURL = "https://docusaurus.io/docs";
 const pdfDir = "./pdfs";
 
 const MAX_CONCURRENCY = 15;
@@ -122,7 +122,7 @@ queue.drain(async function () {
 
   const pdfBytes = await pdfDoc.save();
   const currentDate = new Date().toISOString().split('T')[0];
-  const fileNameWithDate = `${pdfDir}/playwright.dev-docs-${currentDate}.pdf`;
+  const fileNameWithDate = `${pdfDir}/docusaurus-docs-${currentDate}.pdf`;
   await fs.writeFile(fileNameWithDate, pdfBytes);
   console.log(
     "All pdfs have been merged",
@@ -166,12 +166,11 @@ async function scrapeNavLinks(url) {
     );
 
     let allDocUrls = [];
-    categoryButtons.forEach((li) => {
-      const button = li.querySelector("button");
-      if (button) {
-        button.click();
-      }
-    });
+
+    for (const li of categoryButtons) {
+      await expandCategory(li);
+    }
+
     const docUrls = document.querySelectorAll(
       ".theme-doc-sidebar-menu a[href]:not([href='#'])"
     );
@@ -179,6 +178,20 @@ async function scrapeNavLinks(url) {
       allDocUrls.push(a.href);
     });
     return allDocUrls;
+
+    async function expandCategory(liCategory) {
+      const button = liCategory.querySelector("button[aria-label*='Expand']");
+      if (button) {
+        button.click();
+        await delay(200);
+      }
+
+      // sub categories of ul
+      const subCategories = liCategory.querySelectorAll("ul > li");
+      for (const li of subCategories) {
+        await expandCategory(li);
+      }
+    }
 
     function delay(time) {
       return new Promise(function (resolve) {
