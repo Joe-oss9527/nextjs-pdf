@@ -4,7 +4,7 @@ const async = require("async");
 const PDFLib = require("pdf-lib");
 const PDFDocument = PDFLib.PDFDocument;
 
-const rootURL = "https://nextjs.org/blog";
+const rootURL = "https://vercel.com/guides";
 const pdfDir = "./pdfs";
 
 const MAX_CONCURRENCY = 15;
@@ -19,7 +19,8 @@ class Scraper {
 
   async initialize() {
     this.browser = await puppeteer.launch({
-      headless: "new", // Using the old headless mode.
+      // headless: "new", // Using the old headless mode.
+      headless: false
     });
   }
 
@@ -33,32 +34,42 @@ class Scraper {
     try {
       const page = await this.browser.newPage();
       await page.goto(url, { waitUntil: "networkidle0" });
-      await page.waitForSelector("article");
 
       await this.autoScroll(page);
 
       await page.evaluate(() => {
-        // const details = document.querySelectorAll("details");
-        // details.forEach((detail) => {
-        //   detail.setAttribute("open", "true");
-        // });
-
-        // Select all the content outside the <article> tags and remove it.
-        const article = document.querySelector("article");
-        // remove all the next sibling elements of element of id "contributors" from article element
-        const contributors = document.getElementById("contributors");
-        if (contributors) {
-          let nextSibling = contributors.nextElementSibling;
-          while (nextSibling) {
-            nextSibling.remove();
-            nextSibling = contributors.nextElementSibling;
-          }
-
-          // remove contributors element
-          contributors.remove();
+       // hide the header which class name starts with "top-header"
+       // check if the element exists
+        const topHeader = document.querySelector("div[class^='top-header']");
+        if (topHeader) {
+          topHeader.style.display = "none";
         }
 
-        document.body.innerHTML = article.outerHTML;
+        // hide the header which class name starts with "guides_breadcrumb__"
+        // check if the element exists
+        const guidesBreadcrumb = document.querySelector(
+          "div[class^='guides_breadcrumb__']"
+        );
+        if (guidesBreadcrumb) {
+          guidesBreadcrumb.style.display = "none";
+        }
+
+        // hide the header which class name starts with "guides_contactWrapper__"
+        // check if the element exists
+        const guidesContactWrapper = document.querySelector(
+          "div[class^='guides_contactWrapper__']"
+        );
+        if (guidesContactWrapper) {
+          guidesContactWrapper.style.display = "none";
+        }
+
+        // hide the footer which class name starts with "footer"
+        // check if the element exists
+        const footer = document.querySelector("footer[class^='footer']");
+        if (footer) {
+          footer.style.display = "none";
+        }
+
       });
 
       console.log(`Scraping ${url}...`);
@@ -146,7 +157,7 @@ queue.drain(async function () {
   const pdfBytes = await pdfDoc.save();
   // add year month and day to the pdf name
   const yearMonthDay = new Date().toISOString().split("T")[0];
-  const pdfFileName = `${pdfDir}/${yearMonthDay}-nextjs-blog.pdf`;
+  const pdfFileName = `${pdfDir}/${yearMonthDay}-nextjs-guides.pdf`;
   await fs.writeFile(pdfFileName, pdfBytes);
   console.log("All pdfs have been merged", "the path is: ", pdfFileName);
 
@@ -175,18 +186,37 @@ async function scrapeNavLinks(url) {
   const page = await scraper.browser.newPage();
   await page.goto(url, { waitUntil: "networkidle0" });
 
+  await scraper.autoScroll(page);
+
   const allDocLinks = await page.evaluate(async () => {
-    // document.querySelector("button[class^='navbar__toggle']").click();
+    // guides_guideListWrapper__
+    // query the container element that class name starts with "guides_guideListWrapper__"
+    const guideListWrapper = document.querySelector(
+      "div[class*='guides_guideListWrapper__']"
+    );
+
+    if (!guideListWrapper) {
+      return [];
+    }
+
+    // click the button 10 times which has the text content "See more guides" to load recently blog posts
+    for (let i = 0; i < 10; i++) {
+      const seeMoreGuidesButton = guideListWrapper.querySelector(
+        "button[class*='guides_buttonRowContainer']"
+      );
+      if (seeMoreGuidesButton) {
+        seeMoreGuidesButton.click();
+      }
+      await delay(1000);
+    }
 
     // wait for 1 second
     await delay(2000);
 
-    // query the element that class name starts with "blog_posts__"
-    const blogPosts = document.querySelector("div[class^='blog_posts__']");
-
+   
     // query all the links inside the blogPosts element that class name starts with "blog_readMore"
-    const blogReadMoreLinks = blogPosts.querySelectorAll(
-      "a[class^='blog_readMore']"
+    const blogReadMoreLinks = guideListWrapper.querySelectorAll(
+      "a[href^='/guides/']"
     );
 
     const allDocLinks = blogReadMoreLinks;
@@ -194,9 +224,6 @@ async function scrapeNavLinks(url) {
     let allDocUrls = new Set();
 
     for (let a of allDocLinks) {
-      if (a.href.includes("next-12")) {
-        break;
-      }
       allDocUrls.add(a.href);
     }
 
