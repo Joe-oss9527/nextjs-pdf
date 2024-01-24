@@ -4,7 +4,7 @@ const async = require("async");
 const PDFLib = require("pdf-lib");
 const PDFDocument = PDFLib.PDFDocument;
 
-const rootURL = "https://nextjs.org/docs";
+const rootURL = "https://nextjs.org/blog";
 const pdfDir = "./pdfs";
 
 const MAX_CONCURRENCY = 15;
@@ -44,7 +44,21 @@ class Scraper {
         // });
 
         // Select all the content outside the <article> tags and remove it.
-        document.body.innerHTML = document.querySelector("article").outerHTML;
+        const article = document.querySelector("article");
+        // remove all the next sibling elements of element of id "contributors" from article element
+        const contributors = document.getElementById("contributors");
+        if (contributors) {
+          let nextSibling = contributors.nextElementSibling;
+          while (nextSibling) {
+            nextSibling.remove();
+            nextSibling = contributors.nextElementSibling;
+          }
+
+          // remove contributors element
+          contributors.remove();
+        }
+
+        document.body.innerHTML = article.outerHTML;
       });
 
       console.log(`Scraping ${url}...`);
@@ -130,14 +144,11 @@ queue.drain(async function () {
   }
 
   const pdfBytes = await pdfDoc.save();
-  // add month and year to the pdf name
-  const yearMonth = new Date().toISOString().slice(0, 7);
-  await fs.writeFile(`${pdfDir}/${yearMonth}-nextjs-docs.pdf`, pdfBytes);
-  console.log(
-    "All pdfs have been merged",
-    "the path is: ",
-    `${pdfDir}/${yearMonth}-nextjs-docs.pdf`
-  );
+  // add year month and day to the pdf name
+  const yearMonthDay = new Date().toISOString().split("T")[0];
+  const pdfFileName = `${pdfDir}/${yearMonthDay}-nextjs-blog.pdf`;
+  await fs.writeFile(pdfFileName, pdfBytes);
+  console.log("All pdfs have been merged", "the path is: ", pdfFileName);
 
   await scraper.close();
 });
@@ -170,14 +181,24 @@ async function scrapeNavLinks(url) {
     // wait for 1 second
     await delay(2000);
 
-    const allDocLinks = document.querySelectorAll(
-      "main nav.styled-scrollbar a[href]:not([href='#'])"
+    // query the element that class name starts with "blog_posts__"
+    const blogPosts = document.querySelector("div[class^='blog_posts__']");
+
+    // query all the links inside the blogPosts element that class name starts with "blog_readMore"
+    const blogReadMoreLinks = blogPosts.querySelectorAll(
+      "a[class^='blog_readMore']"
     );
 
+    const allDocLinks = blogReadMoreLinks;
+
     let allDocUrls = new Set();
-    allDocLinks.forEach((a) => {
+
+    for (let a of allDocLinks) {
+      if (a.href.includes("next-12")) {
+        break;
+      }
       allDocUrls.add(a.href);
-    });
+    }
 
     return [...allDocUrls];
 
