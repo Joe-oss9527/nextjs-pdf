@@ -19,8 +19,7 @@ class Scraper {
 
   async initialize() {
     this.browser = await puppeteer.launch({
-      // headless: "new", // Using the old headless mode.
-      headless: false
+      headless: "new", // Using the old headless mode.
     });
   }
 
