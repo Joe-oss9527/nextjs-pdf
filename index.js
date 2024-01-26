@@ -4,7 +4,7 @@ const async = require("async");
 const PDFLib = require("pdf-lib");
 const PDFDocument = PDFLib.PDFDocument;
 
-const rootURL = "https://nextjs.org/docs";
+const rootURL = "https://zed.dev/docs/getting-started";
 const pdfDir = "./pdfs";
 
 const MAX_CONCURRENCY = 15;
@@ -33,7 +33,7 @@ class Scraper {
     try {
       const page = await this.browser.newPage();
       await page.goto(url, { waitUntil: "networkidle0" });
-      await page.waitForSelector("article");
+      await page.waitForSelector("main");
 
       await this.autoScroll(page);
 
@@ -44,7 +44,7 @@ class Scraper {
         // });
 
         // Select all the content outside the <article> tags and remove it.
-        document.body.innerHTML = document.querySelector("article").outerHTML;
+        document.body.innerHTML = document.querySelector("main").outerHTML;
       });
 
       console.log(`Scraping ${url}...`);
@@ -67,7 +67,7 @@ class Scraper {
       await page.close();
     } catch (error) {
       console.log("====================================");
-      console.log("Error while scraping: ", url);
+      console.log("Error while scraping: ", url, error);
       console.log("====================================");
     }
   }
@@ -132,11 +132,11 @@ queue.drain(async function () {
   const pdfBytes = await pdfDoc.save();
   // add month and year to the pdf name
   const yearMonth = new Date().toISOString().slice(0, 7);
-  await fs.writeFile(`${pdfDir}/${yearMonth}-nextjs-docs.pdf`, pdfBytes);
+  await fs.writeFile(`${pdfDir}/${yearMonth}-zed-editor-docs.pdf`, pdfBytes);
   console.log(
     "All pdfs have been merged",
     "the path is: ",
-    `${pdfDir}/${yearMonth}-nextjs-docs.pdf`
+    `${pdfDir}/${yearMonth}-zed-editor-docs.pdf`
   );
 
   await scraper.close();
@@ -171,12 +171,14 @@ async function scrapeNavLinks(url) {
     await delay(2000);
 
     const allDocLinks = document.querySelectorAll(
-      "main nav.styled-scrollbar a[href]:not([href='#'])"
+      "nav[style*='padding-top:64px'] a"
     );
 
     let allDocUrls = new Set();
     allDocLinks.forEach((a) => {
-      allDocUrls.add(a.href);
+      if (a.href.includes("zed.dev/docs") && !a.href.includes("#")) {
+        allDocUrls.add(a.href);
+      }
     });
 
     return [...allDocUrls];
