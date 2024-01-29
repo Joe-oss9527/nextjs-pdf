@@ -2,12 +2,13 @@ const puppeteer = require("puppeteer");
 const fs = require("fs").promises;
 const async = require("async");
 const PDFLib = require("pdf-lib");
+const os = require("os");
 const PDFDocument = PDFLib.PDFDocument;
 
-const rootURL = "https://zed.dev/blog/tagged/zed-weekly";
+const rootURL = "https://zed.dev/blog/tagged/featured";
 const pdfDir = "./pdfs";
 
-const MAX_CONCURRENCY = 10;
+const MAX_CONCURRENCY = 1;
 
 const visitedLinks = new Set();
 const pdfDocs = [];
@@ -18,8 +19,25 @@ class Scraper {
   }
 
   async initialize() {
+    // get current user directory
+    const homeDir = os.homedir();
+    console.log("====================================");
+    console.log("homeDir: ", homeDir);
+    console.log("====================================");
+
+    // extension id
+    const extensionId = "bpoadfkcbjbfhfodiogcnhhhpibjhbnh";
+    const version = "1.1.8_1";
+    // get the path to the extension of windows
+    const pathToExtension = `${homeDir}/AppData/Local/Google/Chrome/User Data/Profile 3/Extensions/${extensionId}/${version}`;
+
     this.browser = await puppeteer.launch({
-      headless: "new", // Using the old headless mode.
+      // headless: "new", // Using the old headless mode.
+      headless: false,
+      args: [
+        `--disable-extensions-except=${pathToExtension}`,
+        `--load-extension=${pathToExtension}`,
+      ],
     });
   }
 
@@ -71,7 +89,6 @@ class Scraper {
       pdfDocs.push({ pdfPath, index });
 
       console.log(`Scraped ${visitedLinks.size} / ${queue.length()} urls`);
-
       await page.close();
     } catch (error) {
       console.log("====================================");
@@ -81,11 +98,56 @@ class Scraper {
   }
 
   async autoScroll(page) {
+    try {
+      await new Promise((resolve) => {
+        setTimeout(resolve, 3000);
+      });
+      // Step 1 & 2: Access the shadow root of the host element
+      const shadowHostSelector = "#immersive-translate-popup"; // Replace with your shadow host selector
+      const shadowRoot = await page.evaluateHandle(
+        (selector) => document.querySelector(selector).shadowRoot,
+        shadowHostSelector
+      );
+
+      if (shadowRoot) {
+        console.log("====================================");
+        console.log("shadowRoot: ", shadowRoot);
+        console.log("====================================");
+
+        // Step 3: Find the target element in the shadow DOM
+        const shadowElementSelector = ".immersive-translate-float-ball-btn"; // Replace with your selector inside shadow DOM
+        const elementHandle = await shadowRoot.$(shadowElementSelector);
+
+        if (elementHandle) {
+          console.log("====================================");
+          console.log("elementHandle: ", elementHandle);
+          console.log("====================================");
+
+          // Step 4: Click the element
+          await elementHandle.click();
+
+          await new Promise((resolve) => {
+            setTimeout(resolve, 3000);
+          });
+
+          // hide the translate popup
+          await page.evaluate(() => {
+            document.querySelector("#immersive-translate-popup").style.display =
+              "none";
+          });
+        }
+      }
+    } catch (error) {
+      console.log("====================================");
+      console.log("Error while opening translate popup: ", error);
+      console.log("====================================");
+    }
+
     await page.evaluate(async () => {
       await new Promise((resolve) => {
         const scrollHeight = document.body.scrollHeight;
         const distance = 100;
-        const interval = 100;
+        const interval = 300;
 
         const timer = setInterval(() => {
           window.scrollBy(0, distance);
@@ -140,11 +202,11 @@ queue.drain(async function () {
   const pdfBytes = await pdfDoc.save();
   // add month and year to the pdf name
   const yearMonth = new Date().toISOString().slice(0, 7);
-  await fs.writeFile(`${pdfDir}/${yearMonth}-zed-editor-zed-weekly.pdf`, pdfBytes);
+  await fs.writeFile(`${pdfDir}/${yearMonth}-zed-editor-blogs.pdf`, pdfBytes);
   console.log(
     "All pdfs have been merged",
     "the path is: ",
-    `${pdfDir}/${yearMonth}-zed-editor-blog.pdf`
+    `${pdfDir}/${yearMonth}-zed-editor-blogs.pdf`
   );
 
   await scraper.close();
