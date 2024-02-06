@@ -91,8 +91,8 @@ class Scraper {
           } else {
             console.log(`Directory ${appDir} already exists.`);
           }
-          fullFileName = `${appDir}/${fileName}.pdf`;
         } catch (err) {
+          fullFileName = `${appDir}/${fileName}.pdf`;
           console.error(`Error while creating ${appDir}.`, err);
         }
       } else {
@@ -116,8 +116,8 @@ class Scraper {
           } else {
             console.log(`Directory ${gettingStartedDir} already exists.`);
           }
-          fullFileName = `${gettingStartedDir}/${fileName}.pdf`;
         } catch (err) {
+          fullFileName = `${gettingStartedDir}/${fileName}.pdf`;
           console.error(`Error while creating ${gettingStartedDir}.`, err);
         }
       }
