@@ -12,6 +12,22 @@ const MAX_CONCURRENCY = 15;
 const visitedLinks = new Set();
 const pdfDocs = [];
 
+async function checkDirectoryExists(dirPath) {
+  try {
+    console.log(`Checking if ${dirPath} exists...`);
+    await fs.access(dirPath);
+    console.log(`${dirPath} exists.`);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+// // Usage
+// checkDirectoryExists('./pdfs')
+//   .then(exists => console.log(exists ? 'Directory exists' : 'Directory does not exist'))
+//   .catch(console.error);
+
 class Scraper {
   constructor() {
     this.browser = null;
@@ -54,7 +70,59 @@ class Scraper {
         .pop();
       console.log(`saving pdf: ${fileName}`);
 
-      const pdfPath = `${pdfDir}/${fileName}.pdf`;
+      let fullFileName = `${pdfDir}/${fileName}.pdf`;
+
+      if (url.includes("/app/") || url.includes("/pages/")) {
+        console.log("====================================");
+        console.log("App url: ", url);
+        console.log("====================================");
+        // create subfolder which is under the app or pages
+        const splitter = url.includes("/app/") ? "/app/" : "/pages/";
+        const subFolderName = url.split(splitter)[1].split("/")[0];
+        const prefix = url.includes("/app/") ? "app" : "pages";
+        const appDir = `${pdfDir}/${prefix}-${subFolderName}`;
+
+        try {
+          // check if the directory exists
+          const checkDir = await checkDirectoryExists(appDir);
+          if (!checkDir) {
+            console.log(`Creating ${appDir}...`);
+            await fs.mkdir(appDir);
+          } else {
+            console.log(`Directory ${appDir} already exists.`);
+          }
+          fullFileName = `${appDir}/${fileName}.pdf`;
+        } catch (err) {
+          console.error(`Error while creating ${appDir}.`, err);
+        }
+      } else {
+        console.log("====================================");
+        console.log("Getting started url: ", url);
+        console.log("====================================");
+        // create subfolder for getting started
+        // const gettingStartedDir = `${pdfDir}/getting-started`;
+        // create subfolder which is under the app
+        const subFolderName = url.split("/docs/")[1].split("/")[0];
+        const appDir = `${pdfDir}/${subFolderName}`;
+        const gettingStartedDir = appDir;
+
+
+        try {
+          // check if the directory exists
+          const checkDir = await checkDirectoryExists(gettingStartedDir);
+          if (!checkDir) {
+            console.log(`Creating ${gettingStartedDir}...`);
+            await fs.mkdir(gettingStartedDir);
+          } else {
+            console.log(`Directory ${gettingStartedDir} already exists.`);
+          }
+          fullFileName = `${gettingStartedDir}/${fileName}.pdf`;
+        } catch (err) {
+          console.error(`Error while creating ${gettingStartedDir}.`, err);
+        }
+      }
+
+      const pdfPath = fullFileName;
       await page.pdf({
         path: pdfPath,
         format: "A4",
@@ -113,10 +181,19 @@ const queue = async.queue(async function (task, callback = () => {}) {
 queue.drain(async function () {
   console.log("All items have been processed");
 
-  pdfDocs.sort((a, b) => a.index - b.index);
+  await generatePdfFromSubDir();
+
+  await scraper.close();
+});
+
+async function mergePdfs(subFolderName, finalPdfPath) {
+  const _pdfDocs = pdfDocs.filter((pdfDoc) =>
+    pdfDoc.pdfPath.includes(subFolderName)
+  );
+  _pdfDocs.sort((a, b) => a.index - b.index);
 
   const pdfDoc = await PDFDocument.create();
-  for (let _pdfDoc of pdfDocs) {
+  for (let _pdfDoc of _pdfDocs) {
     const { pdfPath } = _pdfDoc;
     const pdfBytes = await fs.readFile(pdfPath);
     const srcPdfDoc = await PDFDocument.load(pdfBytes);
@@ -130,18 +207,35 @@ queue.drain(async function () {
   }
 
   const pdfBytes = await pdfDoc.save();
-  // add month and year to the pdf name
-  const yearMonth = new Date().toISOString().slice(0, 7);
-  await fs.writeFile(`${pdfDir}/${yearMonth}-nextjs-docs.pdf`, pdfBytes);
+  
+  await fs.writeFile(finalPdfPath, pdfBytes);
   console.log(
     "All pdfs have been merged",
     "the path is: ",
-    `${pdfDir}/${yearMonth}-nextjs-docs.pdf`
+    finalPdfPath
   );
+}
 
-  await scraper.close();
-});
+async function generatePdfFromSubDir() {
+  // loop the subfolders and merge the pdfs
+  // get all the subfolders
+  const subFolders = await fs.readdir(pdfDir, { withFileTypes: true });
+  for (let subFolder of subFolders) {
+    if (subFolder.isDirectory()) {
+      const subFolderName = subFolder.name;
+      // const subFolderFiles = await fs.readdir(`${pdfDir}/${subFolderName}`);
+      // const subFolderPdfDocs = subFolderFiles.filter((file) =>
+      //   file.endsWith(".pdf")
+      // );
+      const yearMonthDay = new Date().toISOString().split("T")[0];
 
+      const finalPdfPath = `${pdfDir}/${yearMonthDay}-${subFolderName}-nextjs-docs.pdf`;
+
+      await mergePdfs(subFolderName, finalPdfPath);
+    }
+  }
+}
+      
 async function createPdfsFolder() {
   try {
     console.log(`Deleting ${pdfDir}...`);
@@ -199,8 +293,9 @@ async function scrapeNavLinks(url) {
 }
 
 async function main() {
-  await createPdfsFolder();
-  await scrapeNavLinks(rootURL);
+  // await createPdfsFolder();
+  // await scrapeNavLinks(rootURL);
+  await generatePdfFromSubDir();
 }
 
 main().catch(console.error);
