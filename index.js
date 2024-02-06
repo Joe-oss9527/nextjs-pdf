@@ -293,9 +293,8 @@ async function scrapeNavLinks(url) {
 }
 
 async function main() {
-  // await createPdfsFolder();
-  // await scrapeNavLinks(rootURL);
-  await generatePdfFromSubDir();
+  await createPdfsFolder();
+  await scrapeNavLinks(rootURL);
 }
 
 main().catch(console.error);
