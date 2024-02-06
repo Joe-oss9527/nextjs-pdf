@@ -129,11 +129,13 @@ queue.drain(async function () {
   }
 
   const pdfBytes = await pdfDoc.save();
-  await fs.writeFile(`${pdfDir}/nextjs-learn.pdf`, pdfBytes);
+  // add date `yyyy-MM-DD` to file name
+  const pdfPath = `${pdfDir}/nextjs-learn-${new Date().toISOString().split("T")[0]}.pdf`;
+  await fs.writeFile(pdfPath, pdfBytes);
   console.log(
     "All pdfs have been merged",
     "the path is: ",
-    `${pdfDir}/nextjs-learn.pdf`
+    pdfPath
   );
 
   await scraper.close();
@@ -185,7 +187,8 @@ async function scrapeNavLinks(url) {
 
     let allDocUrls = new Set();
     allDocLinks.forEach((a) => {
-      allDocUrls.add(a.href);
+      const textAndUrl = { text: a.textContent, url: a.href };
+      allDocUrls.add(`${textAndUrl.text}@@@${textAndUrl.url}`);
     });
 
     return [...allDocUrls];
@@ -200,9 +203,21 @@ async function scrapeNavLinks(url) {
   console.log("====================================");
   console.log("All docs links: ", allDocLinks);
   console.log("====================================");
+  // sort the links by the text
+  // the links are in the order of the chapters like "Introduction", "1Chapter 1Create a Next.js App", "2Chapter 2Navigate Between Pages", "10Chapter 10Additional Info", etc.
+  // the sorted result is like "Introduction", "1Chapter 1Create a Next.js App", "2Chapter 2Navigate Between Pages", "10Chapter 10Additional Info", etc.
+  allDocLinks.sort((a, b) => {
+    const aText = a.split("@@@")[0];
+    const bText = b.split("@@@")[0];
+    const aNum = parseInt(aText.match(/\d+/));
+    const bNum = parseInt(bText.match(/\d+/));
+    return aNum - bNum;
+  });
+  
   let index = 0;
   for (let link of allDocLinks) {
-    queue.push({ url: link, index: index++ });
+    const [text, url] = link.split("@@@");
+    queue.push({ url: url, index: index++ });
   }
 }
 
