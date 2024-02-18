@@ -4,7 +4,7 @@ const async = require("async");
 const PDFLib = require("pdf-lib");
 const PDFDocument = PDFLib.PDFDocument;
 
-const rootURL = "https://docusaurus.io/docs";
+const rootURL = "https://authjs.dev/getting-started/introduction";
 const pdfDir = "./pdfs";
 
 const MAX_CONCURRENCY = 15;
@@ -122,7 +122,7 @@ queue.drain(async function () {
 
   const pdfBytes = await pdfDoc.save();
   const currentDate = new Date().toISOString().split('T')[0];
-  const fileNameWithDate = `${pdfDir}/docusaurus-docs-${currentDate}.pdf`;
+  const fileNameWithDate = `${pdfDir}/authjs.dev-getting-started-${currentDate}.pdf`;
   await fs.writeFile(fileNameWithDate, pdfBytes);
   console.log(
     "All pdfs have been merged",
@@ -156,7 +156,7 @@ async function scrapeNavLinks(url) {
   await page.goto(url, { waitUntil: "networkidle0" });
 
   const allDocLinks = await page.evaluate(async () => {
-    document.querySelector("button[aria-label='Toggle navigation bar']").click();
+    document.querySelector("button[aria-label='Close navigation bar']").click();
 
     // wait for 1 second
     await delay(2000);
