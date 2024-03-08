@@ -37,9 +37,9 @@ class Scraper {
     this.concurrency = concurrency;
     this.browser = null;
     this.queue = asyncLib.queue(async (task, done = () => {}) => {
-      const { url } = task;
+      const { url, index } = task;
       try {
-        await this.scrapePage(url);
+        await this.scrapePage(url, index);
         done();
       } catch (error) {
         console.error(`Failed to process ${url}: ${error}`);
@@ -56,7 +56,7 @@ class Scraper {
     if (this.browser) await this.browser.close();
   }
 
-  async scrapePage(url) {
+  async scrapePage(url, index) {
     let page;
     try {
       page = await this.browser.newPage();
@@ -66,7 +66,7 @@ class Scraper {
       // 获取文件名，并创建子目录（如果需要）
       const urlParts = url.split("/");
       const fileName = urlParts[urlParts.length - 1] || "index";
-      let pdfPath = `${this.pdfDir}/${fileName}.pdf`;
+      let pdfPath = `${this.pdfDir}/${index}-${fileName}.pdf`;
 
       if (url.includes("/app/") || url.includes("/pages/")) {
         const splitter = url.includes("/app/") ? "/app/" : "/pages/";
@@ -74,7 +74,7 @@ class Scraper {
         const prefix = url.includes("/app/") ? "app" : "pages";
         const appDir = `${this.pdfDir}/${prefix}-${subFolderName}`;
         await ensureDirectoryExists(appDir);
-        pdfPath = `${appDir}/${fileName}.pdf`;
+        pdfPath = `${appDir}/${index}-${fileName}.pdf`;
       }
 
       await page.pdf({ path: pdfPath });
@@ -85,8 +85,8 @@ class Scraper {
   }
 
   addTasks(urls) {
-    urls.forEach((url) => {
-      this.queue.push({ url }, (err) => {
+    urls.forEach((url, index) => {
+      this.queue.push({ url, index }, (err) => {
         if (err) {
           console.error(`Error processing ${url}:`, err);
         }
