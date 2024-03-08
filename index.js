@@ -23,10 +23,6 @@ async function checkDirectoryExists(dirPath) {
   }
 }
 
-// // Usage
-// checkDirectoryExists('./pdfs')
-//   .then(exists => console.log(exists ? 'Directory exists' : 'Directory does not exist'))
-//   .catch(console.error);
 
 class Scraper {
   constructor() {
@@ -54,11 +50,6 @@ class Scraper {
       await this.autoScroll(page);
 
       await page.evaluate(() => {
-        // const details = document.querySelectorAll("details");
-        // details.forEach((detail) => {
-        //   detail.setAttribute("open", "true");
-        // });
-
         // Select all the content outside the <article> tags and remove it.
         document.body.innerHTML = document.querySelector("article").outerHTML;
       });
@@ -100,9 +91,6 @@ class Scraper {
         console.log("====================================");
         console.log("Getting started url: ", url);
         console.log("====================================");
-        // create subfolder for getting started
-        // const gettingStartedDir = `${pdfDir}/getting-started`;
-        // create subfolder which is under the app
         const subFolderName = url.split("/docs/")[1].split("/")[0];
         const appDir = `${pdfDir}/${subFolderName}`;
         const gettingStartedDir = appDir;
@@ -225,10 +213,6 @@ async function generatePdfFromSubDir() {
   for (let subFolder of subFolders) {
     if (subFolder.isDirectory()) {
       const subFolderName = subFolder.name;
-      // const subFolderFiles = await fs.readdir(`${pdfDir}/${subFolderName}`);
-      // const subFolderPdfDocs = subFolderFiles.filter((file) =>
-      //   file.endsWith(".pdf")
-      // );
       const yearMonthDay = new Date().toISOString().split("T")[0];
 
       const finalPdfPath = `${pdfDir}/${yearMonthDay}-${subFolderName}-nextjs-docs.pdf`;
@@ -261,7 +245,6 @@ async function scrapeNavLinks(url) {
   await page.goto(url, { waitUntil: "networkidle0" });
 
   const allDocLinks = await page.evaluate(async () => {
-    // document.querySelector("button[class^='navbar__toggle']").click();
 
     // wait for 1 second
     await delay(2000);
