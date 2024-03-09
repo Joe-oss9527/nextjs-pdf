@@ -5,7 +5,7 @@
   "main": "main.js",
   "scripts": {
     "start": "node main.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
@@ -14,5 +14,8 @@
     "async": "^3.2.5",
     "pdf-lib": "^1.17.1",
     "puppeteer": "^22.4.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
   }
 }
