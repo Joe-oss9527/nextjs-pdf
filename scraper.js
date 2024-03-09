@@ -2,33 +2,7 @@ const puppeteer = require("puppeteer");
 const asyncLib = require("async");
 const config = require("./config");
 const { mergePDFsForRootAndSubdirectories, getPdfPath } = require("./pdfUtils");
-
-// 自动滚动到页面底部以确保动态内容加载
-async function autoScroll(page) {
-  await page.evaluate(async () => {
-    await new Promise((resolve, reject) => {
-      var totalHeight = 0;
-      var distance = 100;
-      var timer = setInterval(() => {
-        var scrollHeight = document.body.scrollHeight;
-        window.scrollBy(0, distance);
-        totalHeight += distance;
-
-        if (totalHeight >= scrollHeight) {
-          clearInterval(timer);
-          resolve();
-        }
-      }, 100);
-    });
-  });
-}
-
-// delay函数
-function delay(time) {
-  return new Promise(function (resolve) {
-    setTimeout(resolve, time);
-  });
-}
+const { autoScroll, delay } = require("./utils");
 
 class Scraper {
   constructor(pdfDir, concurrency = config.concurrency) {
@@ -94,6 +68,12 @@ class Scraper {
       console.log("Finish to Scroll the page");
 
       await page.evaluate((selector) => {
+        // hide the div that class start with feedback
+        const feedbackDiv = document.querySelector("div[class^='feedback']");
+        if (feedbackDiv) {
+          feedbackDiv.style.display = "none";
+        }
+
         document.body.innerHTML = document.querySelector(selector).outerHTML;
       }, config.contentSelector);
 
