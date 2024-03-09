@@ -1,15 +1,7 @@
 const puppeteer = require("puppeteer");
 const asyncLib = require("async");
-const fs = require("fs");
-const path = require("path");
-const { mergePDFsForRootAndSubdirectories } = require("./pdfUtils");
-
-// 确保目录存在的辅助函数
-async function ensureDirectoryExists(dir) {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-}
+const config = require("./config");
+const { mergePDFsForRootAndSubdirectories, getPdfPath } = require("./pdfUtils");
 
 // 自动滚动到页面底部以确保动态内容加载
 async function autoScroll(page) {
@@ -32,7 +24,7 @@ async function autoScroll(page) {
 }
 
 class Scraper {
-  constructor(pdfDir, concurrency = 5) {
+  constructor(pdfDir, concurrency = config.concurrency) {
     this.pdfDir = pdfDir;
     this.concurrency = concurrency;
     this.browser = null;
@@ -63,20 +55,7 @@ class Scraper {
       await page.goto(url, { waitUntil: "networkidle0" });
       await autoScroll(page);
 
-      // 获取文件名，并创建子目录（如果需要）
-      const urlParts = url.split("/");
-      const fileName = urlParts[urlParts.length - 1] || "index";
-      let pdfPath = `${this.pdfDir}/${index}-${fileName}.pdf`;
-
-      if (url.includes("/app/") || url.includes("/pages/")) {
-        const splitter = url.includes("/app/") ? "/app/" : "/pages/";
-        const subFolderName = url.split(splitter)[1].split("/")[0];
-        const prefix = url.includes("/app/") ? "app" : "pages";
-        const appDir = `${this.pdfDir}/${prefix}-${subFolderName}`;
-        await ensureDirectoryExists(appDir);
-        pdfPath = `${appDir}/${index}-${fileName}.pdf`;
-      }
-
+      const pdfPath = await getPdfPath(url, index, config.pdfDir);
       await page.pdf({ path: pdfPath });
       console.log(`Saved PDF: ${pdfPath}`);
     } finally {
@@ -96,7 +75,7 @@ class Scraper {
 
   async process(baseUrl) {
     await this.initialize();
-    const urls = await this.scrapeNavLinks(baseUrl);
+    const urls = await this.scrapeNavLinks(baseUrl, config.navLinksSelector);
     this.addTasks(urls);
     await this.queue.drain();
 
@@ -106,20 +85,16 @@ class Scraper {
     await this.close();
   }
 
-  async scrapeNavLinks(baseUrl) {
+  async scrapeNavLinks(baseUrl, navLinksSelector) {
     let page;
     try {
       page = await this.browser.newPage();
       await page.goto(baseUrl, { waitUntil: "networkidle0" });
-      const urls = await page.evaluate(() => {
-        const links = Array.from(
-          document.querySelectorAll(
-            "main nav.styled-scrollbar a[href]:not([href='#'])"
-          )
-        );
-        return links.map((link) => link.href);
-      });
-      return urls;
+      const links = await page.evaluate((selector) => {
+        const elements = Array.from(document.querySelectorAll(selector));
+        return elements.map((element) => element.href);
+      }, navLinksSelector);
+      return links;
     } finally {
       if (page) await page.close();
     }

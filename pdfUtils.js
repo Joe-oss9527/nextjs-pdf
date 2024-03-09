@@ -1,6 +1,10 @@
 const fs = require("fs");
 const path = require("path");
 const { PDFDocument } = require("pdf-lib");
+const { ensureDirectoryExists } = require("./fileUtils");
+const config = require("./config"); // Assuming the config file is in the same directory
+const url = new URL(config.rootURL);
+const domain = url.hostname;
 
 async function mergePDFsInDirectory(directoryPath, outputFileName) {
   const files = fs
@@ -33,7 +37,7 @@ async function mergePDFsInDirectory(directoryPath, outputFileName) {
 async function mergePDFsForRootAndSubdirectories(pdfDir) {
   const currentDate = new Date().toISOString().slice(0, 10).replace(/-/g, "");
   // 合并根目录下的PDF文件
-  const rootOutputFileName = path.join(pdfDir, `nextjs-doc_${currentDate}.pdf`);
+  const rootOutputFileName = path.join(pdfDir, `${domain}_${currentDate}.pdf`);
   await mergePDFsInDirectory(pdfDir, rootOutputFileName);
 
   // 遍历并合并所有子目录下的PDF文件
@@ -49,4 +53,21 @@ async function mergePDFsForRootAndSubdirectories(pdfDir) {
   }
 }
 
-module.exports = { mergePDFsInDirectory, mergePDFsForRootAndSubdirectories };
+const extractSubfolder = (url) => {
+  return url.match(/\/app\/(.*?)\/|\/pages\/(.*?)\//)?.[1] || "";
+};
+
+const getPdfPath = async (url, index, pdfDir) => {
+  const urlParts = url.split("/");
+  const fileName = urlParts[urlParts.length - 1] || "index";
+  const subfolder = extractSubfolder(url);
+  const appDir = subfolder ? `${pdfDir}/${subfolder}` : pdfDir;
+  await ensureDirectoryExists(appDir);
+  return `${appDir}/${index}-${fileName}.pdf`;
+};
+
+module.exports = {
+  mergePDFsInDirectory,
+  mergePDFsForRootAndSubdirectories,
+  getPdfPath,
+};
