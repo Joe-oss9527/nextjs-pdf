@@ -23,19 +23,26 @@ async function autoScroll(page) {
   });
 }
 
+// delay函数
+function delay(time) {
+  return new Promise(function (resolve) {
+    setTimeout(resolve, time);
+  });
+}
+
 class Scraper {
   constructor(pdfDir, concurrency = config.concurrency) {
     this.pdfDir = pdfDir;
     this.concurrency = concurrency;
     this.browser = null;
-    this.queue = asyncLib.queue(async (task, done = () => {}) => {
+    this.queue = asyncLib.queue(async (task) => {
       const { url, index } = task;
       try {
         await this.scrapePage(url, index);
-        done();
+        // 任务完成后，调用回调函数
+        console.log(`Processed: ${url}`);
       } catch (error) {
         console.error(`Failed to process ${url}: ${error}`);
-        done(error);
       }
     }, this.concurrency);
   }
@@ -58,6 +65,8 @@ class Scraper {
       const pdfPath = await getPdfPath(url, index, config.pdfDir);
       await page.pdf({ path: pdfPath });
       console.log(`Saved PDF: ${pdfPath}`);
+      // 等待5秒以确保PDF文件已保存
+      await delay(5000);
     } finally {
       if (page) await page.close();
     }
@@ -65,11 +74,7 @@ class Scraper {
 
   addTasks(urls) {
     urls.forEach((url, index) => {
-      this.queue.push({ url, index }, (err) => {
-        if (err) {
-          console.error(`Error processing ${url}:`, err);
-        }
-      });
+      this.queue.push({ url, index });
     });
   }
 
@@ -77,7 +82,11 @@ class Scraper {
     await this.initialize();
     const urls = await this.scrapeNavLinks(baseUrl, config.navLinksSelector);
     this.addTasks(urls);
-    await this.queue.drain();
+
+    // 队列中的所有任务完成后，执行此函数
+    await this.queue.drain(function () {
+      console.log("所有任务已完成");
+    });
 
     // 在所有子目录中合并PDF
     await mergePDFsForRootAndSubdirectories(this.pdfDir);
