@@ -138,19 +138,18 @@ class Scraper {
     try {
       page = await this.browser.newPage();
       await page.goto(baseUrl, { waitUntil: "networkidle0" });
-      const links = await page.evaluate(
-        (selector, isIgnored) => {
-          const elements = Array.from(document.querySelectorAll(selector));
-          // filter out the links that are ignored
-          return elements
-            .map((element) => element.href)
-            .filter((href) => !isIgnored(href));
-        },
-        navLinksSelector,
-        isIgnored
-      );
-      // 对链接进行去重
-      return Array.from(new Set(links));
+
+      // 注意: 在实际使用中，由于page.evaluate内部代码是在浏览器环境中执行的，
+      // 而不是Node.js环境，所以不能直接从Node.js环境传递函数或复杂对象给它。
+      // 如果需要在page.evaluate中使用外部定义的函数，你可以考虑将函数体转换为字符串形式传递，
+      // 或者直接在evaluate中定义该函数，取决于你的具体需求和函数的复杂度。
+      const links = await page.evaluate((selector, isIgnored) => {
+        const elements = Array.from(document.querySelectorAll(selector));
+        return elements.map((element) => element.href);
+      }, navLinksSelector);
+      // filter out the links that are ignored
+      const filteredLinks = links.filter((link) => !isIgnored(link));
+      return Array.from(new Set(filteredLinks));
     } finally {
       if (page) await page.close();
     }
