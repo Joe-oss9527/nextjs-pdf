@@ -109,7 +109,11 @@ class Scraper {
       await delay(5000);
       // 完成百分比
       const completed = ((index + 1) / this.totalLinks) * 100;
-      console.log(`Completed: ${completed.toFixed(2)}%`);
+      console.log(
+        `Completed: ${completed.toFixed(2)}%, total: ${
+          this.totalLinks
+        }, current: ${index + 1}.`
+      );
     } catch (error) {
       console.log(`Failed to Scrap page: ${url}`);
     } finally {
