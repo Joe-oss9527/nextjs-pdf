@@ -138,13 +138,17 @@ class Scraper {
     try {
       page = await this.browser.newPage();
       await page.goto(baseUrl, { waitUntil: "networkidle0" });
-      const links = await page.evaluate((selector) => {
-        const elements = Array.from(document.querySelectorAll(selector));
-        // filter out the links that are ignored
-        return elements
-          .map((element) => element.href)
-          .filter((href) => !isIgnored(href));
-      }, navLinksSelector);
+      const links = await page.evaluate(
+        (selector, isIgnored) => {
+          const elements = Array.from(document.querySelectorAll(selector));
+          // filter out the links that are ignored
+          return elements
+            .map((element) => element.href)
+            .filter((href) => !isIgnored(href));
+        },
+        navLinksSelector,
+        isIgnored
+      );
       // 对链接进行去重
       return Array.from(new Set(links));
     } finally {
