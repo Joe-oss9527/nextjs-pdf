@@ -82,21 +82,28 @@ class Scraper {
   }
 
   async scrapePage(url, index) {
+    console.log(`Scraping page: ${url}`);
     let page;
     try {
       page = await this.browser.newPage();
       await page.goto(url, { waitUntil: "networkidle0" });
+      await page.waitForSelector(config.contentSelector);
+      console.log("Start to Scroll the page");
       await autoScroll(page);
+      console.log("Finish to Scroll the page");
 
       await page.evaluate((selector) => {
         document.body.innerHTML = document.querySelector(selector).outerHTML;
       }, config.contentSelector);
 
+      console.log("Get saving pdf path");
       const pdfPath = await getPdfPath(url, index, config.pdfDir);
       await page.pdf({ path: pdfPath });
       console.log(`Saved PDF: ${pdfPath}`);
       // 等待5秒以确保PDF文件已保存
       await delay(5000);
+    } catch (error) {
+      console.log(`Failed to Scrap page: ${url}`);
     } finally {
       if (page) await page.close();
     }
@@ -109,19 +116,28 @@ class Scraper {
   }
 
   async process(baseUrl) {
+    console.log("开始处理");
     await this.initialize();
+    console.log("初始化完成");
+    console.log("开始处理导航链接");
     const urls = await this.scrapeNavLinks(baseUrl, config.navLinksSelector);
+    console.log("导航链接处理完成", urls);
+    console.log("开始添加任务");
     this.addTasks(urls);
 
     // 队列中的所有任务完成后，执行此函数
-    await this.queue.drain(function () {
-      console.log("所有任务已完成");
+    return new Promise((resolve) => {
+      this.queue.drain(async () => {
+        console.log("所有任务已完成");
+        // 在所有子目录中合并PDF
+        console.log("开始合并Pdf文件");
+        await mergePDFsForRootAndSubdirectories(this.pdfDir);
+        console.log("合并完成");
+        console.log("关闭浏览器");
+        await this.close();
+        resolve();
+      });
     });
-
-    // 在所有子目录中合并PDF
-    await mergePDFsForRootAndSubdirectories(this.pdfDir);
-
-    await this.close();
   }
 
   async scrapeNavLinks(baseUrl, navLinksSelector) {
