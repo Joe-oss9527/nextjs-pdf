@@ -95,7 +95,8 @@ class Scraper {
         }, current: ${index + 1}.`
       );
     } catch (error) {
-      console.log(`Failed to Scrap page: ${url}`);
+      console.log(`Failed to Scrap page: ${url}, error: ${error}`);
+      throw error;
     } finally {
       if (page) await page.close();
     }
