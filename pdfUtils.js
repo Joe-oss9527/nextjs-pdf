@@ -50,7 +50,9 @@ async function mergePDFsForRootAndSubdirectories(pdfDir) {
   // 遍历并合并所有子目录下的PDF文件
   const directories = fs
     .readdirSync(pdfDir, { withFileTypes: true })
-    .filter((dirent) => dirent.isDirectory())
+    .filter(
+      (dirent) => dirent.isDirectory() && dirent.name !== finalPdfDirectory
+    )
     .map((dirent) => dirent.name);
 
   for (const directory of directories) {
