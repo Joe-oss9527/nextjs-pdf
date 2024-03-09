@@ -14,6 +14,7 @@ async function autoScroll(page) {
           clearInterval(timer);
           resolve();
         }
+        // 时间间隔不能太短，否则图片加载不出来
       }, 500);
     });
   });
