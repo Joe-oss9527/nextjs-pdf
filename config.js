@@ -4,5 +4,5 @@ module.exports = {
   concurrency: 5,
   navLinksSelector: "main nav.styled-scrollbar a[href]:not([href='#'])",
   contentSelector: "article",
-  ignoreURLs: ["docs/pages"]
+  ignoreURLs: ["docs/pages", "docs/app/api-reference"]
 };
