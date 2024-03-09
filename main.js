@@ -4,6 +4,8 @@ const config = require("./config");
 const { rootURL, pdfDir } = config;
 async function main() {
   try {
+    console.log("Scraping task started");
+    console.log();
     console.log("Cleaning and creating PDF directory")
     await cleanDirectory(pdfDir);
     console.log("Ensuring PDF directory exists")
