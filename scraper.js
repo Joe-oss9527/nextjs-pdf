@@ -38,7 +38,7 @@ class Scraper {
     this.queue = asyncLib.queue(async (task) => {
       const { url, index } = task;
       try {
-        await this.scrapePage(url, index);
+        await this.scrapePageWithRetry(url, index);
         // 任务完成后，调用回调函数
         console.log(`Processed: ${url}`);
       } catch (error) {
@@ -55,12 +55,42 @@ class Scraper {
     if (this.browser) await this.browser.close();
   }
 
+  async scrapePageWithRetry(url, index) {
+    const maxRetries = 5; // 最大重试次数
+    let retryCount = 0; // 当前重试次数
+    let baseDelay = 1000; // 基础等待时间（毫秒）
+
+    while (retryCount < maxRetries) {
+      try {
+        await this.scrapePage(url, index); // 尝试执行scrapePage函数
+        console.log("Page scraped successfully");
+        break; // 如果成功，跳出循环
+      } catch (error) {
+        console.error(`Attempt ${retryCount + 1} failed: ${error.message}`);
+        retryCount++; // 增加重试次数
+        if (retryCount < maxRetries) {
+          const waitTime = baseDelay * 2 ** (retryCount - 1); // 计算指数退避的等待时间
+          console.log(`Waiting ${waitTime / 1000} seconds before retrying...`);
+          await delay(waitTime); // 等待指定时间后重试
+        }
+      }
+    }
+
+    if (retryCount === maxRetries) {
+      console.error("All retries failed.");
+    }
+  }
+
   async scrapePage(url, index) {
     let page;
     try {
       page = await this.browser.newPage();
       await page.goto(url, { waitUntil: "networkidle0" });
       await autoScroll(page);
+
+      await page.evaluate((selector) => {
+        document.body.innerHTML = document.querySelector(selector).outerHTML;
+      }, config.contentSelector);
 
       const pdfPath = await getPdfPath(url, index, config.pdfDir);
       await page.pdf({ path: pdfPath });
