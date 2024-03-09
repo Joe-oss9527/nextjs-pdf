@@ -35,6 +35,7 @@ class Scraper {
     this.pdfDir = pdfDir;
     this.concurrency = concurrency;
     this.browser = null;
+    this.totalLinks = 0;
     this.queue = asyncLib.queue(async (task) => {
       const { url, index } = task;
       try {
@@ -98,10 +99,17 @@ class Scraper {
 
       console.log("Get saving pdf path");
       const pdfPath = await getPdfPath(url, index, config.pdfDir);
-      await page.pdf({ path: pdfPath });
+      await page.pdf({
+        path: pdfPath,
+        format: "A4",
+        margin: { top: "1cm", right: "1cm", bottom: "1cm", left: "1cm" },
+      });
       console.log(`Saved PDF: ${pdfPath}`);
       // 等待5秒以确保PDF文件已保存
       await delay(5000);
+      // 完成百分比
+      const completed = ((index + 1) / this.totalLinks) * 100;
+      console.log(`Completed: ${completed.toFixed(2)}%`);
     } catch (error) {
       console.log(`Failed to Scrap page: ${url}`);
     } finally {
@@ -121,6 +129,7 @@ class Scraper {
     console.log("初始化完成");
     console.log("开始处理导航链接");
     const urls = await this.scrapeNavLinks(baseUrl, config.navLinksSelector);
+    this.totalLinks = urls.length;
     console.log("导航链接处理完成", urls);
     console.log("开始添加任务");
     this.addTasks(urls);
@@ -149,7 +158,8 @@ class Scraper {
         const elements = Array.from(document.querySelectorAll(selector));
         return elements.map((element) => element.href);
       }, navLinksSelector);
-      return links;
+      // 对链接进行去重
+      return Array.from(new Set(links));
     } finally {
       if (page) await page.close();
     }

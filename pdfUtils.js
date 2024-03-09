@@ -36,8 +36,15 @@ async function mergePDFsInDirectory(directoryPath, outputFileName) {
 
 async function mergePDFsForRootAndSubdirectories(pdfDir) {
   const currentDate = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  // 把所有合并的pdf文件保存到finalPdf目录下
+  const finalPdfDirectory = "finalPdf";
+  await ensureDirectoryExists(path.join(pdfDir, finalPdfDirectory));
   // 合并根目录下的PDF文件
-  const rootOutputFileName = path.join(pdfDir, `${domain}_${currentDate}.pdf`);
+  const rootOutputFileName = path.join(
+    pdfDir,
+    finalPdfDirectory,
+    `${domain}_${currentDate}.pdf`
+  );
   await mergePDFsInDirectory(pdfDir, rootOutputFileName);
 
   // 遍历并合并所有子目录下的PDF文件
@@ -48,7 +55,11 @@ async function mergePDFsForRootAndSubdirectories(pdfDir) {
 
   for (const directory of directories) {
     const directoryPath = path.join(pdfDir, directory);
-    const outputFileName = path.join(pdfDir, `${directory}_${currentDate}.pdf`);
+    const outputFileName = path.join(
+      pdfDir,
+      finalPdfDirectory,
+      `${directory}_${currentDate}.pdf`
+    );
     await mergePDFsInDirectory(directoryPath, outputFileName);
   }
 }
@@ -87,7 +98,7 @@ function determineDirectory(url, pdfDir) {
   } else {
     // If no pattern matches, return the default pdfDir
     console.warn("URL does not match any known patterns.");
-    return pdfDir;
+    return `${pdfDir}/docs`;
   }
 }
 
@@ -103,7 +114,17 @@ async function getPdfPath(url, index, pdfDir) {
   // Full file name for saving
   const fullFileName = `${appDir}/${index}-${fileName}.pdf`;
 
+  // log url and pdf file name to log file
+  logFileName(pdfDir, url, fullFileName);
+
   return fullFileName;
+}
+
+function logFileName(pdfDir, url, fullFileName) {
+  // 将 URL 和 PDF 文件名以分隔的形式写入日志文件
+  const logFileName = `${pdfDir}/log.txt`;
+  const logContent = `----------\n${new Date().toISOString()} - URL: ${url}\nFilename: ${fullFileName}\n----------\n`;
+  fs.appendFileSync(logFileName, logContent);
 }
 
 module.exports = {
