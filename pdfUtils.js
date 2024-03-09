@@ -99,7 +99,7 @@ function determineDirectory(url, pdfDir) {
   } else {
     // If no pattern matches, return the default pdfDir
     console.warn("URL does not match any known patterns.");
-    return `${pdfDir}/docs`;
+    return `${pdfDir}/${domain}-docs`;
   }
 }
 
