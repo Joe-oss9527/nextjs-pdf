@@ -28,6 +28,7 @@ The project configuration is located in the `config.js` file. Here are the avail
 - `concurrency`: The maximum number of concurrent scraping tasks
 - `navLinksSelector`: The CSS selector for navigation links
 - `contentSelector`: The CSS selector for the main content area
+- `ignoreURLs`: An array of URL patterns to ignore when scraping
 
 ## Project Structure
 
