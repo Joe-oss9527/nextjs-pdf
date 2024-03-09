@@ -66,10 +66,9 @@ async function mergePDFsForRootAndSubdirectories(pdfDir) {
   }
 }
 
-// 处理app, pages
 const extractSubfolder = (url) => {
-  // 尝试匹配 /app/, /pages/中的任意一个，然后提取其后的第一个路径段
-  const match = url.match(/\/(app|pages)\/(.*?)\//);
+  // 尝试匹配 /app/, /pages/中的任意一个，然后提取其后的第一个路径段，考虑到路径可能是URL的最后一部分
+  const match = url.match(/\/(app|pages)\/(.*?)(\/|$)/);
   return match ? { type: match[1], name: match[2] } : null;
 };
 
