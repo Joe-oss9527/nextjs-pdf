@@ -28,6 +28,7 @@
 - `concurrency`: 最大并发抓取任务数
 - `navLinksSelector`: 导航链接的CSS选择器
 - `contentSelector`: 主内容区域的CSS选择器  
+- `ignoreURLs`: 抓取时需要忽略的URL模式数组
 
 ## 项目结构
 
