@@ -85,8 +85,8 @@ class Scraper {
         margin: { top: "1cm", right: "1cm", bottom: "1cm", left: "1cm" },
       });
       console.log(`Saved PDF: ${pdfPath}`);
-      // 等待5秒以确保PDF文件已保存
-      await delay(5000);
+      // 等待数秒以确保PDF文件已保存
+      await delay(2000);
       // 完成百分比
       const completed = ((index + 1) / this.totalLinks) * 100;
       console.log(

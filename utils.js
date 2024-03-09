@@ -4,7 +4,7 @@ async function autoScroll(page) {
   await page.evaluate(async () => {
     await new Promise((resolve, reject) => {
       let totalHeight = 0;
-      const distance = 150;
+      const distance = 300;
       const timer = setInterval(() => {
         const scrollHeight = document.body.scrollHeight;
         window.scrollBy(0, distance);
@@ -14,7 +14,7 @@ async function autoScroll(page) {
           clearInterval(timer);
           resolve();
         }
-      }, 300);
+      }, 500);
     });
   });
 }
