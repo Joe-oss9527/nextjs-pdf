@@ -3,5 +3,6 @@ module.exports = {
   pdfDir: "./pdfs",
   concurrency: 5,
   navLinksSelector: "main nav.styled-scrollbar a[href]:not([href='#'])",
-  contentSelector: "article"
+  contentSelector: "article",
+  ignoreURLs: ["docs/pages"]
 };

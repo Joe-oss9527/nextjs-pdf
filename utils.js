@@ -1,3 +1,4 @@
+const config = require("./config");
 // 自动滚动到页面底部以确保动态内容加载
 async function autoScroll(page) {
   await page.evaluate(async () => {
@@ -25,4 +26,12 @@ function delay(time) {
   });
 }
 
-module.exports = { autoScroll, delay };
+// check if the url is ignored
+function isIgnored(url) {
+  if (config.ignoreURLs.some((substring) => url.includes(substring))) {
+    return true;
+  }
+  return false;
+}
+
+module.exports = { autoScroll, delay, isIgnored };

@@ -2,7 +2,7 @@ const puppeteer = require("puppeteer");
 const asyncLib = require("async");
 const config = require("./config");
 const { mergePDFsForRootAndSubdirectories, getPdfPath } = require("./pdfUtils");
-const { autoScroll, delay } = require("./utils");
+const { autoScroll, delay, isIgnored } = require("./utils");
 
 class Scraper {
   constructor(pdfDir, concurrency = config.concurrency) {
@@ -140,7 +140,10 @@ class Scraper {
       await page.goto(baseUrl, { waitUntil: "networkidle0" });
       const links = await page.evaluate((selector) => {
         const elements = Array.from(document.querySelectorAll(selector));
-        return elements.map((element) => element.href);
+        // filter out the links that are ignored
+        return elements
+          .map((element) => element.href)
+          .filter((href) => !isIgnored(href));
       }, navLinksSelector);
       // 对链接进行去重
       return Array.from(new Set(links));
