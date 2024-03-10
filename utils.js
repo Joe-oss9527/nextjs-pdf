@@ -2,20 +2,19 @@ const config = require("./config");
 // 自动滚动到页面底部以确保动态内容加载
 async function autoScroll(page) {
   await page.evaluate(async () => {
-    await new Promise((resolve, reject) => {
-      let totalHeight = 0;
+    await new Promise((resolve) => {
+      const scrollHeight = document.body.scrollHeight;
       const distance = 300;
-      const timer = setInterval(() => {
-        const scrollHeight = document.body.scrollHeight;
-        window.scrollBy(0, distance);
-        totalHeight += distance;
+      const interval = 500;
 
-        if (totalHeight >= scrollHeight) {
+      const timer = setInterval(() => {
+        window.scrollBy(0, distance);
+
+        if (window.scrollY + window.innerHeight >= scrollHeight) {
           clearInterval(timer);
           resolve();
         }
-        // 时间间隔不能太短，否则图片加载不出来
-      }, 500);
+      }, interval);
     });
   });
 }
