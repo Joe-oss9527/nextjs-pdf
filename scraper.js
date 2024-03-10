@@ -61,6 +61,22 @@ class Scraper {
     let page;
     try {
       page = await this.browser.newPage();
+
+      // 注意，由于这段代码是在浏览器环境中执行的（通过Puppeteer或Playwright的page.evaluate方法），
+      // 所以console.log打印的内容将出现在浏览器的控制台中，而不是Node.js的控制台。
+      // 如果你想在Node.js控制台中看到这些信息，
+      // 需要使用Puppeteer或Playwright的相关API来捕获页面的console事件。
+
+      // 只处理包含特定前缀的 console 信息
+      page.on("console", (msg) => {
+        const text = msg.text();
+        // 检查消息是否以我们的特定前缀开始
+        if (text.startsWith("[NodeConsole]")) {
+          // 从消息中移除前缀后输出
+          console.log(text.replace("[NodeConsole] ", ""));
+        }
+      });
+
       await page.goto(url, { waitUntil: "networkidle0" });
       await page.waitForSelector(config.contentSelector);
       console.log("Start to Scroll the page");
