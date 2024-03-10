@@ -2,7 +2,8 @@ const puppeteer = require("puppeteer");
 const asyncLib = require("async");
 const config = require("./config");
 const { mergePDFsForRootAndSubdirectories, getPdfPath } = require("./pdfUtils");
-const { autoScroll, delay, isIgnored } = require("./utils");
+const { delay, isIgnored } = require("./utils");
+const { loadAllLazyImages } = require("./LazyLoadingImageHelper");
 
 class Scraper {
   constructor(pdfDir, concurrency = config.concurrency) {
@@ -80,7 +81,7 @@ class Scraper {
       await page.goto(url, { waitUntil: "networkidle0" });
       await page.waitForSelector(config.contentSelector);
       console.log("Start to Scroll the page");
-      await autoScroll(page);
+      await loadAllLazyImages(page);
       console.log("Finish to Scroll the page");
 
       await page.evaluate((selector) => {
