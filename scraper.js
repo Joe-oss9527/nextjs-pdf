@@ -101,7 +101,7 @@ class Scraper {
       await delay(1000);
 
       console.log("Start to Scroll the page");
-      await loadAllLazyImages(page);
+      await loadAllLazyImages(page, index);
       console.log("Finish to Scroll the page");
 
       console.log("Get saving pdf path");
