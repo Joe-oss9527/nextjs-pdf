@@ -16,7 +16,7 @@ async function autoScroll(page) {
           // 在控制台打印已滚动的距离和总高度
           // 使用特定前缀标记重要的 console.log 调用
           console.log(
-            `[NodeConsole] 当前URL: ${currentPageUrl}, 已滚动的距离: ${scrolledDistance}, 总高度: ${scrollHeightAfter}`
+            `[NodeConsole] 已滚动的距离: ${scrolledDistance}, 总高度: ${scrollHeightAfter} 当前URL: ${currentPageUrl}`
           );
 
           // 加入1像素的容差值处理滚动完成的判断
