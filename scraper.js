@@ -1,6 +1,7 @@
 const puppeteer = require("puppeteer");
 const asyncLib = require("async");
 const config = require("./config");
+const { readFailedLinks } = require("./fileUtils");
 const { mergePDFsForRootAndSubdirectories, getPdfPath } = require("./pdfUtils");
 const { delay, isIgnored } = require("./utils");
 const { loadAllLazyImages } = require("./LazyLoadingImageHelper");
@@ -12,9 +13,9 @@ class Scraper {
     this.browser = null;
     this.totalLinks = 0;
     this.queue = asyncLib.queue(async (task) => {
-      const { url, index } = task;
+      const { url, index, logFailed } = task;
       try {
-        await this.scrapePageWithRetry(url, index);
+        await this.scrapePageWithRetry(url, index, logFailed);
         // 任务完成后，调用回调函数
         console.log(`Processed: ${url}`);
       } catch (error) {
@@ -25,12 +26,7 @@ class Scraper {
 
   async initialize() {
     this.browser = await puppeteer.launch({
-      headless: "new",
-      defaultViewport: {
-        width: 0,
-        height: 0,
-      },
-      args: ["--start-maximized"],
+      headless: false
     });
   }
 
@@ -38,14 +34,14 @@ class Scraper {
     if (this.browser) await this.browser.close();
   }
 
-  async scrapePageWithRetry(url, index) {
+  async scrapePageWithRetry(url, index, logFailed = true) {
     const maxRetries = 5; // 最大重试次数
     let retryCount = 0; // 当前重试次数
     let baseDelay = 1000; // 基础等待时间（毫秒）
 
     while (retryCount < maxRetries) {
       try {
-        await this.scrapePage(url, index); // 尝试执行scrapePage函数
+        await this.scrapePage(url, index, logFailed); // 尝试执行scrapePage函数
         console.log("Page scraped successfully");
         break; // 如果成功，跳出循环
       } catch (error) {
@@ -64,7 +60,7 @@ class Scraper {
     }
   }
 
-  async scrapePage(url, index) {
+  async scrapePage(url, index, logFailed = true) {
     console.log(`Scraping page: ${url}`);
     let page;
     try {
@@ -101,7 +97,7 @@ class Scraper {
       await delay(1000);
 
       console.log("Start to Scroll the page");
-      await loadAllLazyImages(page);
+      await loadAllLazyImages(page, index, logFailed);
       console.log("Finish to Scroll the page");
 
       console.log("Get saving pdf path");
@@ -121,6 +117,7 @@ class Scraper {
           this.totalLinks
         }, current: ${index + 1}.`
       );
+      await delay(100000);
     } catch (error) {
       console.log(`Failed to Scrap page: ${url}, error: ${error}`);
       throw error;
@@ -135,29 +132,57 @@ class Scraper {
     });
   }
 
+  addTasksForFailedLinks(failedLinks) {
+    for (const link of failedLinks) {
+      this.queue.push({ url: link.url, index: link.index, logFailed: false });
+    }
+  }
+
   async process(baseUrl) {
     console.log("开始处理");
     await this.initialize();
     console.log("初始化完成");
     console.log("开始处理导航链接");
-    const urls = await this.scrapeNavLinks(baseUrl, config.navLinksSelector);
-    this.totalLinks = urls.length;
-    console.log("导航链接处理完成", urls);
-    console.log("开始添加任务");
-    this.addTasks(urls);
+    // const urls = await this.scrapeNavLinks(baseUrl, config.navLinksSelector);
+    // this.totalLinks = urls.length;
+    // console.log("导航链接处理完成", urls);
+    // console.log("开始添加任务");
+    // this.addTasks(urls);
 
+    const allDone = await this.fetchFailedLinksWithRetry();
     // 队列中的所有任务完成后，执行此函数
     return new Promise((resolve) => {
       this.queue.drain(async () => {
-        console.log("所有任务已完成");
-        // 在所有子目录中合并PDF
-        console.log("开始合并Pdf文件");
-        await mergePDFsForRootAndSubdirectories(this.pdfDir);
-        console.log("合并完成");
-        console.log("关闭浏览器");
-        await this.close();
-        resolve();
+        const allDone = await this.fetchFailedLinksWithRetry();
+
+        if (allDone) {
+          console.log("所有任务已完成");
+          // 在所有子目录中合并PDF
+          console.log("开始合并Pdf文件");
+          await mergePDFsForRootAndSubdirectories(this.pdfDir);
+          console.log("合并完成");
+          console.log("关闭浏览器");
+          await this.close();
+          resolve();
+        }
       });
+    });
+  }
+
+  async fetchFailedLinksWithRetry() {
+    return new Promise(async (resolve) => {
+      console.log("尝试重新抓取失败链接");
+      // 从failed.json中读取链接并尝试重新抓取
+      const failedLinks = await readFailedLinks(this.pdfDir);
+      console.log(`读取到 ${failedLinks.length} 个失败链接`, failedLinks);
+      if (failedLinks.length > 0) {
+        console.log(`尝试重新抓取 ${failedLinks.length} 个失败链接`);
+        this.addTasksForFailedLinks(failedLinks);
+        resolve(false);
+      } else {
+        console.log("没有失败链接需要重新抓取");
+        resolve(true);
+      }
     });
   }
 

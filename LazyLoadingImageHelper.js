@@ -1,5 +1,5 @@
 const { delay } = require("./utils");
-const { logFailedLink } = require("./fileUtils");
+const { logFailedLink, removeFromFailedLinks } = require("./fileUtils");
 const config = require("./config");
 async function autoScroll(page) {
   await page.evaluate(async () => {
@@ -34,33 +34,6 @@ async function autoScroll(page) {
   });
 }
 
-async function ensureImagesLoaded(page, timeout = 2000) {
-  const result = await page.evaluate(async (timeout) => {
-    const selectors = document.querySelectorAll('img[loading="lazy"]');
-    const loadedOrTimedOut = await Promise.race([
-      Promise.all(
-        Array.from(selectors).map((img) =>
-          img.complete
-            ? Promise.resolve()
-            : new Promise((resolve) => {
-                img.addEventListener("load", resolve, { once: true });
-                img.addEventListener("error", resolve, { once: true });
-              })
-        )
-      ),
-      new Promise((resolve) => setTimeout(() => resolve("timeout"), timeout)),
-    ]);
-    return loadedOrTimedOut === "timeout" ? "timeout" : "complete";
-  }, timeout);
-
-  if (result === "timeout") {
-    const url = page.url();
-    console.warn("Waiting for images timed out: ", url);
-    // log this link to a list of failed file to retry later
-    logFailedLink(config.pdfDir, url);
-  }
-}
-
 async function triggerLazyImages(page) {
   const lazyImages = await page.$$eval('img[loading="lazy"]', (imgs) =>
     imgs
@@ -77,7 +50,41 @@ async function triggerLazyImages(page) {
   }
 }
 
-async function loadAllLazyImages(page) {
+async function checkAllImagesLoadedAndLog(page, fetchIndex, logFailed) {
+  const allImagesLoaded = await page.evaluate(() => {
+    return Array.from(document.querySelectorAll('img[loading="lazy"]')).every(
+      (img) => img.complete
+    );
+  });
+
+  const url = page.url();
+  if (!allImagesLoaded) {
+    console.warn("Not all images loaded after scrolling", url);
+    // log this link to a list of failed file to retry later
+    if (logFailed) {
+      logFailedLink(config.pdfDir, url, fetchIndex);
+      await scrollAgain(page, fetchIndex);
+    }
+  } else {
+    console.log("All images loaded successfully");
+    // remove the link from the list of failed file if it was there
+    removeFromFailedLinks(config.pdfDir, url);
+  }
+  return allImagesLoaded;
+}
+
+async function scrollAgain(page, fetchIndex) {
+  await delay(1000);
+  console.log("Scrolling to page top...");
+  // scroll to page top
+  await page.evaluate(() => {
+    window.scrollTo(0, 0);
+  });
+  console.log("ReScrolling to trigger lazy image load...");
+  await loadAllLazyImages(page, fetchIndex, false);
+}
+
+async function loadAllLazyImages(page, fetchIndex, logFailed) {
   console.log("开始滚动页面...");
   await autoScroll(page);
   console.log("页面滚动完成，触发懒加载图片加载。");
@@ -86,9 +93,9 @@ async function loadAllLazyImages(page) {
   console.log("检查页面中的懒加载图片...");
   await triggerLazyImages(page);
 
-  console.log("等待所有懒加载图片加载...");
-  await ensureImagesLoaded(page);
-  console.log("所有懒加载图片应该已经加载。");
+  // Check if all images are loaded after triggering lazy load
+  console.log("检查所有图片是否加载完成...");
+  await checkAllImagesLoadedAndLog(page, fetchIndex, logFailed);
 }
 
 module.exports = { loadAllLazyImages };
