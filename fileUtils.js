@@ -18,4 +18,11 @@ async function cleanDirectory(dirPath) {
     }
 }
 
-module.exports = { ensureDirectoryExists, cleanDirectory };
+function logFailedLink(pdfDir, url) {
+  // 将 URL 和 PDF 文件名以分隔的形式写入日志文件
+  const logFileName = `${pdfDir}/failed.txt`;
+  const logContent = `${url}\n`;
+  fs.appendFile(logFileName, logContent);
+}
+
+module.exports = { ensureDirectoryExists, cleanDirectory, logFailedLink };
