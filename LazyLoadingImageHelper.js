@@ -1,4 +1,6 @@
 const { delay } = require("./utils");
+const { logFailedLink } = require("./fileUtils");
+const config = require("./config");
 async function autoScroll(page) {
   await page.evaluate(async () => {
     await new Promise((resolve) => {
@@ -52,7 +54,10 @@ async function ensureImagesLoaded(page, timeout = 2000) {
   }, timeout);
 
   if (result === "timeout") {
-    console.warn("Waiting for images timed out: ", page.url());
+    const url = page.url();
+    console.warn("Waiting for images timed out: ", url);
+    // log this link to a list of failed file to retry later
+    logFailedLink(config.pdfDir, url);
   }
 }
 

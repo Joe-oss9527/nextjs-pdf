@@ -24,7 +24,14 @@ class Scraper {
   }
 
   async initialize() {
-    this.browser = await puppeteer.launch({ headless: "new" });
+    this.browser = await puppeteer.launch({
+      headless: "new",
+      defaultViewport: {
+        width: 0,
+        height: 0,
+      },
+      args: ["--start-maximized"],
+    });
   }
 
   async close() {
@@ -80,9 +87,6 @@ class Scraper {
 
       await page.goto(url, { waitUntil: "networkidle0" });
       await page.waitForSelector(config.contentSelector);
-      console.log("Start to Scroll the page");
-      await loadAllLazyImages(page);
-      console.log("Finish to Scroll the page");
 
       await page.evaluate((selector) => {
         // hide the div that class start with feedback
@@ -93,6 +97,12 @@ class Scraper {
 
         document.body.innerHTML = document.querySelector(selector).outerHTML;
       }, config.contentSelector);
+
+      await delay(1000);
+
+      console.log("Start to Scroll the page");
+      await loadAllLazyImages(page);
+      console.log("Finish to Scroll the page");
 
       console.log("Get saving pdf path");
       const pdfPath = await getPdfPath(url, index, config.pdfDir);
