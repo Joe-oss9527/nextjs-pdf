@@ -1,7 +1,8 @@
 const puppeteer = require("puppeteer");
 const asyncLib = require("async");
 const config = require("./config");
-const { mergePDFsForRootAndSubdirectories, getPdfPath } = require("./pdfUtils");
+const { mergePDFsForRootAndSubdirectories } = require("./pdfUtils");
+const { getPdfPath } = require("./fileUtils");
 const { delay, isIgnored } = require("./utils");
 const { loadAllLazyImages } = require("./LazyLoadingImageHelper");
 
