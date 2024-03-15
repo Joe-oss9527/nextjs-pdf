@@ -19,6 +19,14 @@
 3. 通过修改 `config.js` 文件配置项目
 4. 运行抓取器: `node main.js`
 
+## 合并PDF文件
+合并PDF文件及生成标签目录的代码在`mergePdf.py`中。
+首先，确保你已经安装了`pymupdf`库。如果没有安装，可以通过运行`pip install pymupdf`来安装它。
+```
+pip install pymupdf
+python mergePdf.py
+```
+
 ## 配置
 
 项目配置位于 `config.js` 文件中,可用选项如下:
