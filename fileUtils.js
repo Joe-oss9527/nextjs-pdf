@@ -142,8 +142,37 @@ function logFileName(pdfDir, url, fullFileName) {
   });
 }
 
+const articleTitles = {};
+async function saveArtileTitle(index, title) {
+  const articleTitleFilePath = path.join(config.pdfDir, "articleTitles.json");
+  try {
+    const data = await fs.readFile(articleTitleFilePath, "utf-8");
+    const _articleTitles = JSON.parse(data);
+    Object.assign(articleTitles, _articleTitles);
+  } catch (err) {
+    if (err.code === "ENOENT") {
+      console.log("articleTitles.json file not found");
+    } else {
+      console.error("Error reading article titles file:", err);
+    }
+  }
+  
+  try {
+    const updatingArticleTitles = { ...articleTitles, [index]: title };
+    articleTitles[index] = title;
+    await fs.writeFile(
+      articleTitleFilePath,
+      JSON.stringify(updatingArticleTitles, null, 2)
+    );
+  } catch (err) {
+    console.error("Error writing article titles file:", err);
+  }
+
+}
+
 module.exports = {
   ensureDirectoryExists,
+  saveArtileTitle,
   cleanDirectory,
   logFailedLink,
   readFailedLinks,
