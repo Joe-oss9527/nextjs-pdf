@@ -1,7 +1,7 @@
 const puppeteer = require("puppeteer");
 const asyncLib = require("async");
 const config = require("./config");
-const { getPdfPath } = require("./fileUtils");
+const { getPdfPath, saveArtileTitle } = require("./fileUtils");
 const { delay, isIgnored } = require("./utils");
 const { loadAllLazyImages } = require("./LazyLoadingImageHelper");
 
@@ -88,7 +88,7 @@ class Scraper {
       await page.goto(url, { waitUntil: "networkidle0" });
       await page.waitForSelector(config.contentSelector);
 
-      await page.evaluate((selector) => {
+      const h1Text = await page.evaluate((selector) => {
         // hide the div that class start with feedback
         const feedbackDiv = document.querySelector("div[class^='feedback']");
         if (feedbackDiv) {
@@ -96,7 +96,11 @@ class Scraper {
         }
 
         document.body.innerHTML = document.querySelector(selector).outerHTML;
+        const h1 = document.querySelector("h1");
+        return h1 ? h1.innerText : "";
       }, config.contentSelector);
+
+      await saveArtileTitle(index, h1Text);
 
       await delay(1000);
 
