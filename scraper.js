@@ -1,7 +1,6 @@
 const puppeteer = require("puppeteer");
 const asyncLib = require("async");
 const config = require("./config");
-const { mergePDFsForRootAndSubdirectories } = require("./pdfUtils");
 const { getPdfPath } = require("./fileUtils");
 const { delay, isIgnored } = require("./utils");
 const { loadAllLazyImages } = require("./LazyLoadingImageHelper");
@@ -151,10 +150,6 @@ class Scraper {
     return new Promise((resolve) => {
       this.queue.drain(async () => {
         console.log("所有任务已完成");
-        // 在所有子目录中合并PDF
-        console.log("开始合并Pdf文件");
-        await mergePDFsForRootAndSubdirectories(this.pdfDir);
-        console.log("合并完成");
         console.log("关闭浏览器");
         await this.close();
         resolve();
