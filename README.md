@@ -19,6 +19,19 @@ This project is a web scraper that fetches the Next.js documentation pages and c
 3. Configure the project by modifying the `config.js` file
 4. Run the scraper: `node main.js`
 
+## Merge PDF Files
+
+Merge PDF files and generate a table of contents with labels.
+Ensure the `pymupdf` library is installed. If not, install it by running `pip install pymupdf`.
+
+```bash
+pip install pymupdf
+python mergePdf.py
+```
+
+> Note: Node.js lacks robust support for generating tables of contents. Therefore, the PDF merging script is developed in Python and necessitates a Python environment.
+
+
 ## Configuration
 
 The project configuration is located in the `config.js` file. Here are the available options:
