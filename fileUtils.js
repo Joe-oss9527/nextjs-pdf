@@ -1,5 +1,8 @@
 const fs = require("fs").promises;
 const path = require("path");
+const config = require("./config");
+const url = new URL(config.rootURL);
+const domain = url.hostname;
 
 async function ensureDirectoryExists(dirPath) {
   try {
@@ -132,7 +135,11 @@ function logFileName(pdfDir, url, fullFileName) {
   // 将 URL 和 PDF 文件名以分隔的形式写入日志文件
   const logFileName = `${pdfDir}/log.txt`;
   const logContent = `----------\n${new Date().toISOString()} - URL: ${url}\nFilename: ${fullFileName}\n----------\n`;
-  fs.appendFileSync(logFileName, logContent);
+  fs.appendFile(logFileName, logContent, (err) => {
+    if (err) {
+      console.error("Error appending to log file:", err);
+    }
+  });
 }
 
 module.exports = {
