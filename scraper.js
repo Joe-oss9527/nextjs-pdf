@@ -88,16 +88,36 @@ class Scraper {
       await page.goto(url, { waitUntil: "networkidle0" });
       await page.waitForSelector(config.contentSelector);
 
-      const h1Text = await page.evaluate((selector) => {
-        // hide the div that class start with feedback
-        const feedbackDiv = document.querySelector("div[class^='feedback']");
-        if (feedbackDiv) {
-          feedbackDiv.style.display = "none";
-        }
+      const h1Text = await page.evaluate(async (selector) => {
+        const details = document.querySelectorAll("details");
+        details.forEach((detail) => {
+          detail.setAttribute("open", "true");
+        });
+
+        await delay(1000);
+
+        // find all button elements which has the class "sandpack-expand"
+        const sandpackExpandButtons = document.querySelectorAll(
+          "button.sandpack-expand",
+        );
+
+        // click all the buttons
+        sandpackExpandButtons.forEach(async (button) => {
+          // scroll to the button
+          button.scrollIntoView();
+          button.click();
+          await delay(1000);
+        });
 
         document.body.innerHTML = document.querySelector(selector).outerHTML;
         const h1 = document.querySelector("h1");
         return h1 ? h1.innerText : "";
+
+        function delay(time) {
+          return new Promise(function (resolve) {
+            setTimeout(resolve, time);
+          });
+        }
       }, config.contentSelector);
 
       await saveArtileTitle(index, h1Text);
@@ -123,7 +143,7 @@ class Scraper {
       console.log(
         `Completed: ${completed.toFixed(2)}%, total: ${
           this.totalLinks
-        }, current: ${index + 1}.`
+        }, current: ${index + 1}.`,
       );
     } catch (error) {
       console.log(`Failed to Scrap page: ${url}, error: ${error}`);

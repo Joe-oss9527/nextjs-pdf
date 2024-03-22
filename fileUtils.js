@@ -67,7 +67,7 @@ async function removeFromFailedLinks(pdfDir, url) {
     const updatedFailedLinks = failedLinks.filter((link) => link.url !== url);
     await fs.writeFile(
       failedLinksFilePath,
-      JSON.stringify(updatedFailedLinks, null, 2)
+      JSON.stringify(updatedFailedLinks, null, 2),
     );
   } catch (err) {
     if (err.code !== "ENOENT") {
@@ -78,7 +78,7 @@ async function removeFromFailedLinks(pdfDir, url) {
 
 const extractSubfolder = (url) => {
   // 尝试匹配 /app/, /pages/中的任意一个，然后提取其后的第一个路径段，考虑到路径可能是URL的最后一部分
-  const match = url.match(/\/(app|pages)\/(.*?)(\/|$)/);
+  const match = url.match(/\/(learn|reference)\/(.*?)(\/|$)/);
   return match ? { type: match[1], name: match[2] } : null;
 };
 
@@ -156,18 +156,17 @@ async function saveArtileTitle(index, title) {
       console.error("Error reading article titles file:", err);
     }
   }
-  
+
   try {
     const updatingArticleTitles = { ...articleTitles, [index]: title };
     articleTitles[index] = title;
     await fs.writeFile(
       articleTitleFilePath,
-      JSON.stringify(updatingArticleTitles, null, 2)
+      JSON.stringify(updatingArticleTitles, null, 2),
     );
   } catch (err) {
     console.error("Error writing article titles file:", err);
   }
-
 }
 
 module.exports = {
@@ -177,5 +176,5 @@ module.exports = {
   logFailedLink,
   readFailedLinks,
   removeFromFailedLinks,
-  getPdfPath
+  getPdfPath,
 };
