@@ -117,11 +117,11 @@ function determineDirectoryByGroupTitle(groupTitle, pdfDir) {
   // const match = extractSubfolder(url);
   if (groupTitle) {
     // 根据匹配的类型构造前缀
-    // const prefix = `${match.type}-`;
+    const prefix = url.split("/").pop();
     // Log the URL type based on the pattern
     // logUrlType(url, match.type.charAt(0).toUpperCase() + match.type.slice(1));
     // Return the determined directory path
-    return `${pdfDir}/${groupTitle}`;
+    return `${pdfDir}/${prefix}-${groupTitle}`;
   } else {
     // If no pattern matches, return the default pdfDir
     console.warn("URL does not match any known patterns.");
