@@ -156,14 +156,10 @@ class Scraper {
   addTasks(groupUrls) {
     let index = 0;
     for (let [groupTitle, groupLinks] of groupUrls) {
-      // this.queue.push({ url: group.})
       for (let url of groupLinks) {
         this.queue.push({ url, index: index++, groupTitle })
       }
     }
-    // urls.forEach((url, index) => {
-    //   this.queue.push({ url, index });
-    // });
   }
 
   async process(baseUrl) {
@@ -171,7 +167,7 @@ class Scraper {
     await this.initialize();
     console.log("初始化完成");
     console.log("开始处理导航链接");
-    const groupUrls = await this.scrapeNavLinks(baseUrl, config.navLinksSelector);
+    const groupUrls = await this.scrapeNavLinks(baseUrl, config.navigationSelector);
     this.totalLinks = Object.values(groupUrls).flat().length;
     console.log("导航链接处理完成", groupUrls);
     console.log("开始添加任务");
@@ -188,8 +184,8 @@ class Scraper {
     });
   }
 
-  async scrapeNavLinks(baseUrl, navLinksSelector) {
-    navLinksSelector = "aside > nav > ul > li";
+  async scrapeNavLinks(baseUrl, navigationSelector) {
+    navigationSelector = "aside > nav > ul > li";
     let page;
     try {
       page = await this.browser.newPage();
@@ -199,9 +195,7 @@ class Scraper {
       // 而不是Node.js环境，所以不能直接从Node.js环境传递函数或复杂对象给它。
       // 如果需要在page.evaluate中使用外部定义的函数，你可以考虑将函数体转换为字符串形式传递，
       // 或者直接在evaluate中定义该函数，取决于你的具体需求和函数的复杂度。
-      const groupLinks = await page.evaluate((selector, isIgnored) => {
-        // const elements = Array.from(document.querySelectorAll(selector));
-        // return elements.map((element) => element.href);
+      const groupLinks = await page.evaluate((selector) => {
         const lis = Array.from(document.querySelectorAll(selector));
         const groupLinkMap = {} ;
         for (let li of lis) {
@@ -218,12 +212,9 @@ class Scraper {
         }
         return groupLinkMap
 
-      }, navLinksSelector);
+      }, navigationSelector);
       console.log(groupLinks)
       return Object.entries(groupLinks);
-      // filter out the links that are ignored
-      // const filteredLinks = links.filter((link) => !isIgnored(link));
-      // return Array.from(new Set(filteredLinks));
     } finally {
       if (page) await page.close();
     }
