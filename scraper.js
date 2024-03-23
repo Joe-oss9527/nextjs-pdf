@@ -12,9 +12,9 @@ class Scraper {
     this.browser = null;
     this.totalLinks = 0;
     this.queue = asyncLib.queue(async (task) => {
-      const { url, index } = task;
+      const { url, groupTitle, index } = task;
       try {
-        await this.scrapePageWithRetry(url, index);
+        await this.scrapePageWithRetry(url, index, groupTitle);
         // 任务完成后，调用回调函数
         console.log(`Processed: ${url}`);
       } catch (error) {
@@ -38,14 +38,14 @@ class Scraper {
     if (this.browser) await this.browser.close();
   }
 
-  async scrapePageWithRetry(url, index) {
+  async scrapePageWithRetry(url, index, groupTitle) {
     const maxRetries = 5; // 最大重试次数
     let retryCount = 0; // 当前重试次数
     let baseDelay = 1000; // 基础等待时间（毫秒）
 
     while (retryCount < maxRetries) {
       try {
-        await this.scrapePage(url, index); // 尝试执行scrapePage函数
+        await this.scrapePage(url, index, groupTitle); // 尝试执行scrapePage函数
         console.log("Page scraped successfully");
         break; // 如果成功，跳出循环
       } catch (error) {
@@ -64,7 +64,7 @@ class Scraper {
     }
   }
 
-  async scrapePage(url, index) {
+  async scrapePage(url, index, groupTitle) {
     console.log(`Scraping page: ${url}`);
     let page;
     try {
@@ -129,7 +129,7 @@ class Scraper {
       console.log("Finish to Scroll the page");
 
       console.log("Get saving pdf path");
-      const pdfPath = await getPdfPath(url, index, config.pdfDir);
+      const pdfPath = await getPdfPath(url, index, config.pdfDir, groupTitle);
       await page.pdf({
         path: pdfPath,
         format: "A4",
@@ -153,10 +153,13 @@ class Scraper {
     }
   }
 
-  addTasks(urls) {
-    urls.forEach((url, index) => {
-      this.queue.push({ url, index });
-    });
+  addTasks(groupUrls) {
+    let index = 0;
+    for (let [groupTitle, groupLinks] of groupUrls) {
+      for (let url of groupLinks) {
+        this.queue.push({ url, index: index++, groupTitle })
+      }
+    }
   }
 
   async process(baseUrl) {
@@ -164,11 +167,11 @@ class Scraper {
     await this.initialize();
     console.log("初始化完成");
     console.log("开始处理导航链接");
-    const urls = await this.scrapeNavLinks(baseUrl, config.navLinksSelector);
-    this.totalLinks = urls.length;
-    console.log("导航链接处理完成", urls);
+    const groupUrls = await this.scrapeNavLinks(baseUrl, config.navigationSelector);
+    this.totalLinks = Object.values(groupUrls).flat().length;
+    console.log("导航链接处理完成", groupUrls);
     console.log("开始添加任务");
-    this.addTasks(urls);
+    this.addTasks(groupUrls);
 
     // 队列中的所有任务完成后，执行此函数
     return new Promise((resolve) => {
@@ -181,7 +184,8 @@ class Scraper {
     });
   }
 
-  async scrapeNavLinks(baseUrl, navLinksSelector) {
+  async scrapeNavLinks(baseUrl, navigationSelector) {
+    navigationSelector = "aside > nav > ul > li";
     let page;
     try {
       page = await this.browser.newPage();
@@ -191,13 +195,26 @@ class Scraper {
       // 而不是Node.js环境，所以不能直接从Node.js环境传递函数或复杂对象给它。
       // 如果需要在page.evaluate中使用外部定义的函数，你可以考虑将函数体转换为字符串形式传递，
       // 或者直接在evaluate中定义该函数，取决于你的具体需求和函数的复杂度。
-      const links = await page.evaluate((selector, isIgnored) => {
-        const elements = Array.from(document.querySelectorAll(selector));
-        return elements.map((element) => element.href);
-      }, navLinksSelector);
-      // filter out the links that are ignored
-      const filteredLinks = links.filter((link) => !isIgnored(link));
-      return Array.from(new Set(filteredLinks));
+      const groupLinks = await page.evaluate((selector) => {
+        const lis = Array.from(document.querySelectorAll(selector));
+        const groupLinkMap = {} ;
+        for (let li of lis) {
+          const groupUrls = li.querySelectorAll("a[href]:not([href='#'])");
+          if (groupUrls.length > 0) {
+            const groupTitle = groupUrls[0].title;
+            groupLinkMap[groupTitle] = []
+            for (let i = 0; i < groupUrls.length; i++) {
+              let link = groupUrls[i];
+              groupLinkMap[groupTitle].push(link.href);
+            }
+          }
+          
+        }
+        return groupLinkMap
+
+      }, navigationSelector);
+      console.log(groupLinks)
+      return Object.entries(groupLinks);
     } finally {
       if (page) await page.close();
     }
