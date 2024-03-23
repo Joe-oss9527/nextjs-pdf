@@ -168,8 +168,9 @@ class Scraper {
     console.log("初始化完成");
     console.log("开始处理导航链接");
     const groupUrls = await this.scrapeNavLinks(baseUrl, config.navigationSelector);
-    this.totalLinks = Object.values(groupUrls).flat().length;
+    this.totalLinks = Object.values(groupUrls).flat(Infinity).length;
     console.log("导航链接处理完成", groupUrls);
+    console.log("链接总数:", this.totalLinks);
     console.log("开始添加任务");
     this.addTasks(groupUrls);
 

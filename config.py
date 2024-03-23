@@ -1,3 +1,3 @@
 # config.py
-rootURL = "https://react.dev/learn"
+rootURL = "https://react.dev/reference"
 pdfDir = "./pdfs"
