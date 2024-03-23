@@ -1,5 +1,5 @@
 module.exports = {
-  rootURL: "https://react.dev/learn",
+  rootURL: "https://react.dev/reference",
   pdfDir: "./pdfs",
   concurrency: 5,
   navigationSelector: "aside nav",
