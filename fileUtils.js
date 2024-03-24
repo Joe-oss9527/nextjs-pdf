@@ -98,19 +98,19 @@ function logUrlType(url, type) {
 
 // Function to determine the directory based on URL
 function determineDirectory(url, pdfDir) {
-  const match = extractSubfolder(url);
-  if (match) {
+  // const match = extractSubfolder(url);
+  // if (match) {
     // 根据匹配的类型构造前缀
     // const prefix = `${match.type}-`;
     // Log the URL type based on the pattern
     // logUrlType(url, match.type.charAt(0).toUpperCase() + match.type.slice(1));
     // Return the determined directory path
-    return `${pdfDir}/${match.name}`;
-  } else {
-    // If no pattern matches, return the default pdfDir
-    console.warn("URL does not match any known patterns.");
-    return `${pdfDir}/${domain}-docs`;
-  }
+    return `${pdfDir}/prompt-library`;
+  // } else {
+  //   // If no pattern matches, return the default pdfDir
+  //   console.warn("URL does not match any known patterns.");
+  //   return `${pdfDir}/${domain}-docs`;
+  // }
 }
 
 async function getPdfPath(url, index, pdfDir) {

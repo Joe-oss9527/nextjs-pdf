@@ -1,3 +1,3 @@
 # config.py
-rootURL = "https://docs.anthropic.com/claude/docs"
+rootURL = "https://docs.anthropic.com/claude/prompt-library"
 pdfDir = "./pdfs"

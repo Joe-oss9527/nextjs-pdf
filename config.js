@@ -1,8 +1,8 @@
 module.exports = {
-  rootURL: "https://docs.anthropic.com/claude/docs",
+  rootURL: "https://docs.anthropic.com/claude/prompt-library",
   pdfDir: "./pdfs",
   concurrency: 10,
-  navLinksSelector: "main nav a[href]:not([href='#'])",
-  contentSelector: "article",
+  navLinksSelector: ".examples-grid a[href]:not([href='#'])",
+  contentSelector: "#content",
   ignoreURLs: ["docs/pages", "docs/app/api-reference", "#"]
 };
