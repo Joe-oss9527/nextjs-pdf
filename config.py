@@ -1,3 +1,3 @@
 # config.py
-rootURL = "https://nextjs.org/docs"
+rootURL = "https://docs.anthropic.com/claude/docs"
 pdfDir = "./pdfs"

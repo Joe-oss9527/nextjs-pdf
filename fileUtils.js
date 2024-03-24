@@ -78,8 +78,8 @@ async function removeFromFailedLinks(pdfDir, url) {
 
 const extractSubfolder = (url) => {
   // 尝试匹配 /app/, /pages/中的任意一个，然后提取其后的第一个路径段，考虑到路径可能是URL的最后一部分
-  const match = url.match(/\/(app|pages)\/(.*?)(\/|$)/);
-  return match ? { type: match[1], name: match[2] } : null;
+  const match = url.match(/\/(claude\/prompt-library|claude\/docs|claude\/reference)(.*?)(\/|$)/);
+  return match ? { name: match[1].replace(/\//g, "-") } : null;
 };
 
 // Utility function to extract the last part of the URL as file name
@@ -101,11 +101,11 @@ function determineDirectory(url, pdfDir) {
   const match = extractSubfolder(url);
   if (match) {
     // 根据匹配的类型构造前缀
-    const prefix = `${match.type}-`;
+    // const prefix = `${match.type}-`;
     // Log the URL type based on the pattern
-    logUrlType(url, match.type.charAt(0).toUpperCase() + match.type.slice(1));
+    // logUrlType(url, match.type.charAt(0).toUpperCase() + match.type.slice(1));
     // Return the determined directory path
-    return `${pdfDir}/${prefix}${match.name}`;
+    return `${pdfDir}/${match.name}`;
   } else {
     // If no pattern matches, return the default pdfDir
     console.warn("URL does not match any known patterns.");
