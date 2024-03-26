@@ -123,7 +123,7 @@ class Scraper {
       console.log(
         `Completed: ${completed.toFixed(2)}%, total: ${
           this.totalLinks
-        }, current: ${index + 1}.`
+        }, current: ${index + 1}.`,
       );
     } catch (error) {
       console.log(`Failed to Scrap page: ${url}, error: ${error}`);
@@ -171,9 +171,34 @@ class Scraper {
       // 而不是Node.js环境，所以不能直接从Node.js环境传递函数或复杂对象给它。
       // 如果需要在page.evaluate中使用外部定义的函数，你可以考虑将函数体转换为字符串形式传递，
       // 或者直接在evaluate中定义该函数，取决于你的具体需求和函数的复杂度。
-      const links = await page.evaluate((selector, isIgnored) => {
-        const elements = Array.from(document.querySelectorAll(selector));
-        return elements.map((element) => element.href);
+      const links = await page.evaluate((selector) => {
+        // div.examples-grid > div:nth-child(1)
+        const exampleGridElement = document.querySelector(selector);
+        // get all buttons in the example grid
+        // the button is the child of the div with class example-grid
+        // and the button has a role="button"
+        const elements = Array.from(
+          exampleGridElement.querySelectorAll("div[role='button']"),
+        );
+
+        // loop through the elements and click each one
+        // this will trigger to show a modal with the example code
+        // and the url will change to the example's url
+        // the example content is in the modal which has the selector `#example-modal .modal-dialog`
+        // after close the modal, the url will change back to the original url
+        // so we can get all the example content by clicking each button
+        // to close the modal, we can click outside the modal
+        elements.forEach(async (element) => {
+          element.click();
+          await delay(2000);
+
+          // click outside the modal
+          document.body.click();
+        });
+
+        function delay(ms) {
+          return new Promise((resolve) => setTimeout(resolve, ms));
+        }
       }, navLinksSelector);
       // filter out the links that are ignored
       const filteredLinks = links.filter((link) => !isIgnored(link));

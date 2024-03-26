@@ -1,8 +1,8 @@
 module.exports = {
-  rootURL: "https://docs.anthropic.com/claude/prompt-library",
+  rootURL: "https://platform.openai.com/examples",
   pdfDir: "./pdfs",
   concurrency: 10,
-  navLinksSelector: ".examples-grid a[href]:not([href='#'])",
-  contentSelector: "#content",
-  ignoreURLs: ["docs/pages", "docs/app/api-reference", "#"]
+  navLinksSelector: ".examples-grid",
+  contentSelector: "#example-modal .modal-dialog",
+  ignoreURLs: ["docs/pages", "docs/app/api-reference", "#"],
 };

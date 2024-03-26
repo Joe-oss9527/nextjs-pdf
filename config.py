@@ -1,3 +1,3 @@
 # config.py
-rootURL = "https://docs.anthropic.com/claude/prompt-library"
+rootURL = "https://platform.openai.com/examples"
 pdfDir = "./pdfs"
