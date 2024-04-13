@@ -1,5 +1,9 @@
 # Next.js Docs PDF Scraper
 
+## Requirements
+
+- Node.js >= 20.0.0
+
 This project is a web scraper that fetches the Next.js documentation pages and converts them into PDF files. It utilizes the Puppeteer library to automate the web browsing process and generate PDF files from the rendered web pages.
 
 ## Features

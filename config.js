@@ -1,8 +1,8 @@
 module.exports = {
-  rootURL: "https://nextjs.org/docs",
+  rootURL: "https://quarto.org/docs/guide",
   pdfDir: "./pdfs",
   concurrency: 10,
-  navLinksSelector: "main nav.styled-scrollbar a[href]:not([href='#'])",
-  contentSelector: "article",
+  navLinksSelector: "nav.sidebar a[href]:not([href='#'])",
+  contentSelector: "main",
   ignoreURLs: ["docs/pages", "docs/app/api-reference"]
 };
