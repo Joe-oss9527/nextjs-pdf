@@ -110,10 +110,14 @@ class Scraper {
 
       console.log("Get saving pdf path");
       const pdfPath = await getPdfPath(url, index, config.pdfDir);
+      console.log("Start to save pdf");
       await page.pdf({
         path: pdfPath,
         format: "A4",
         margin: { top: "1cm", right: "1cm", bottom: "1cm", left: "1cm" },
+      }).catch((error) => {
+        console.error(`Failed to save PDF: ${error}`);
+        throw error;
       });
       console.log(`Saved PDF: ${pdfPath}`);
       // 等待数秒以确保PDF文件已保存
@@ -176,7 +180,8 @@ class Scraper {
         return elements.map((element) => element.href);
       }, navLinksSelector);
       // filter out the links that are ignored
-      const filteredLinks = links.filter((link) => !isIgnored(link));
+      const filteredLinks = links.filter((link) => !isIgnored(link))
+      .map((link) => link.replace(".html", ""));
       return Array.from(new Set(filteredLinks));
     } finally {
       if (page) await page.close();

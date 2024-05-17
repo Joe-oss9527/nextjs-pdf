@@ -1,3 +1,3 @@
 # config.py
-rootURL = "https://nextjs.org/docs"
+rootURL = "https://zed.dev/docs"
 pdfDir = "./pdfs"
