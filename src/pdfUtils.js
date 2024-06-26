@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const { PDFDocument } = require("pdf-lib");
 const { ensureDirectoryExists } = require("./fileUtils");
-const config = require("./config"); // Assuming the config file is in the same directory
+const config = require("./configLoader"); // Assuming the config file is in the same directory
 const url = new URL(config.rootURL);
 const domain = url.hostname;
 

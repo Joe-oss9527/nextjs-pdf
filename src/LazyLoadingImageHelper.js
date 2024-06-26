@@ -1,6 +1,6 @@
 const { delay } = require("./utils");
 const { logFailedLink, removeFromFailedLinks } = require("./fileUtils");
-const config = require("./config");
+const config = require("./configLoader");
 async function autoScroll(page, distance = 300, interval = 500) {
   await page.evaluate(
     async (distance, interval) => {
