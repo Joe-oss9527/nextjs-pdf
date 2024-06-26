@@ -1,0 +1,12 @@
+{
+  "rootURL": "https://rc.nextjs.org/docs",
+  "pdfDir": "pdfs",
+  "concurrency": 5,
+  "navLinksSelector": "main nav.styled-scrollbar a[href]:not([href='#'])",
+  "contentSelector": "article",
+  "ignoreURLs": ["docs/pages", "docs/app/api-reference"],
+  "maxRetries": 3,
+  "retryDelay": 1000,
+  "pageTimeout": 30000,
+  "imageTimeout": 10000
+}
