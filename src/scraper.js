@@ -16,6 +16,10 @@ class Scraper {
   async initialize(headless = 'new') {
     this.browser = await puppeteer.launch({
       headless: headless,
+      defaultViewport: {
+        width: 0,
+        height: 0,
+      },
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--start-maximized']
     });
   }

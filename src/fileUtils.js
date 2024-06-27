@@ -14,17 +14,10 @@ const extractSubfolder = (url) => {
   return match ? { type: match[1], name: match[2] } : null;
 };
 
-const logUrlType = (url, type) => {
-  console.log("====================================");
-  console.log(`${type} url: `, url);
-  console.log("====================================");
-};
-
 const determineDirectory = (url, pdfDir) => {
   const match = extractSubfolder(url);
   if (match) {
     const prefix = `${match.type}-`;
-    logUrlType(url, match.type.charAt(0).toUpperCase() + match.type.slice(1));
     return `${pdfDir}/${prefix}${match.name}`;
   } else {
     console.warn("URL does not match any known patterns.");
@@ -104,7 +97,7 @@ const logImageLoadFailure = async (pdfDir, url, index) => {
   if (existingFailure) {
     return;
   }
-  
+
   failures.push({ index, url });
   await fs.writeFile(failuresFilePath, JSON.stringify(failures, null, 2));
 };
