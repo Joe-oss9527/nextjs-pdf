@@ -9,10 +9,38 @@ const ensureDirectoryExists = async (dirPath) => {
   }
 };
 
+const extractSubfolder = (url) => {
+  const match = url.match(/\/(app|pages)\/(.*?)(\/|$)/);
+  return match ? { type: match[1], name: match[2] } : null;
+};
+
+const logUrlType = (url, type) => {
+  console.log("====================================");
+  console.log(`${type} url: `, url);
+  console.log("====================================");
+};
+
+const determineDirectory = (url, pdfDir) => {
+  const match = extractSubfolder(url);
+  if (match) {
+    const prefix = `${match.type}-`;
+    logUrlType(url, match.type.charAt(0).toUpperCase() + match.type.slice(1));
+    return `${pdfDir}/${prefix}${match.name}`;
+  } else {
+    console.warn("URL does not match any known patterns.");
+    return `${pdfDir}/${new URL(url).hostname}-docs`;
+  }
+};
+
 const getPdfPath = async (url, index, pdfDir) => {
   const fileName = url.split('/').filter(s => s).pop();
-  const fullFileName = `${pdfDir}/${index}-${fileName}.pdf`;
-  await ensureDirectoryExists(path.dirname(fullFileName));
+  // Determine the directory based on URL
+  const appDir = determineDirectory(url, pdfDir);
+
+  // Ensure the directory exists
+  await ensureDirectoryExists(appDir);
+  
+  const fullFileName = `${appDir}/${index}-${fileName}.pdf`;
   return fullFileName;
 };
 
