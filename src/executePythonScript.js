@@ -1,11 +1,8 @@
 const { spawn } = require('child_process');
 
-const config = require('./configLoader');
-
 function executePythonScript(scriptPath, args = []) {
-  const configArg = JSON.stringify(config);
   return new Promise((resolve, reject) => {
-    const pythonProcess = spawn('python', [scriptPath, configArg, ...args]);
+    const pythonProcess = spawn('python', [scriptPath, ...args]);
 
     let scriptOutput = '';
     let scriptError = '';
