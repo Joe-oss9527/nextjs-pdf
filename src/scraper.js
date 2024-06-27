@@ -13,9 +13,9 @@ class Scraper {
     this.imageLoadFailures = new Set();
   }
 
-  async initialize() {
+  async initialize(headless = 'new') {
     this.browser = await puppeteer.launch({
-      headless: 'new',
+      headless: headless,
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--start-maximized']
     });
   }
@@ -92,7 +92,10 @@ class Scraper {
     }
   }
 
-  async processTask(task) {
+  async processTask(task, headless = 'new') {
+    if (!this.browser || this.browser.isConnected() === false) {
+      await this.initialize(headless);
+    }
     const { url, index } = task;
     let retries = 0;
     while (retries < config.maxRetries) {
@@ -117,8 +120,15 @@ class Scraper {
   async retryImageLoadFailures() {
     console.log("Retrying pages with image load failures...");
     const failures = await getImageLoadFailures(config.pdfDir);
+    
+    // Close the current browser instance
+    await this.close();
+    
+    // Initialize a new browser instance with headless set to false
+    await this.initialize(false);
+    
     for (const failure of failures) {
-      await this.processTask(failure);
+      await this.processTask(failure, false);
     }
     console.log("Retry of image load failures completed.");
   }
