@@ -25,8 +25,8 @@ Merge PDF files and generate a table of contents with labels.
 Ensure the `pymupdf` library is installed. If not, install it by running `pip install pymupdf`.
 
 ```bash
-pip install pymupdf
-python mergePdf.py
+pip install -r requirements.txt
+python scripts/mergePdf.py
 ```
 
 > Note: Node.js lacks robust support for generating tables of contents. Therefore, the PDF merging script is developed in Python and necessitates a Python environment.

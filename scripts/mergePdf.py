@@ -56,7 +56,7 @@ def merge_pdfs_in_directory(directory_path, output_file_name):
         if article_title:
             bookmark_title = article_title
         start_page = len(merged_pdf) - pdf.page_count
-        toc.append([1, bookmark_title, start_page + 1])
+        toc.append([1, bookmark_title, start_page + 1, {"kind": 1, "page": start_page + 1}])
         pdf.close()
 
     merged_pdf.set_toc(toc)
