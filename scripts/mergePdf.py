@@ -68,17 +68,17 @@ def merge_pdfs_for_root_and_subdirectories():
     url = urlparse(rootURL)
     domain = url.hostname.replace('.', '_')
     current_date = datetime.now().strftime('%Y%m%d')
-    final_pdf_directory = "finalPdf"
-    ensure_directory_exists(os.path.join(pdfDir, final_pdf_directory))
+    final_pdf_directory = os.path.join(pdfDir, "finalPdf")
+    ensure_directory_exists(final_pdf_directory)
 
-    root_output_file_name = os.path.join(pdfDir, final_pdf_directory, f"{domain}_{current_date}.pdf")
+    root_output_file_name = os.path.join(final_pdf_directory, f"{domain}_{current_date}.pdf")
     merge_pdfs_in_directory(pdfDir, root_output_file_name)
 
-    directories = [d for d in os.listdir(pdfDir) if os.path.isdir(os.path.join(pdfDir, d)) and d != final_pdf_directory]
+    directories = [d for d in os.listdir(pdfDir) if os.path.isdir(os.path.join(pdfDir, d)) and d != "finalPdf"]
 
     for directory in directories:
         directory_path = os.path.join(pdfDir, directory)
-        output_file_name = os.path.join(pdfDir, final_pdf_directory, f"{directory}_{current_date}.pdf")
+        output_file_name = os.path.join(final_pdf_directory, f"{directory}_{current_date}.pdf")
         merge_pdfs_in_directory(directory_path, output_file_name)
 
 if __name__ == '__main__':
