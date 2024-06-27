@@ -100,7 +100,11 @@ const logImageLoadFailure = async (pdfDir, url, index) => {
       console.error("Error reading image load failures file:", err);
     }
   }
-
+  const existingFailure = failures.find(f => f.url === url && f.index === index);
+  if (existingFailure) {
+    return;
+  }
+  
   failures.push({ index, url });
   await fs.writeFile(failuresFilePath, JSON.stringify(failures, null, 2));
 };
