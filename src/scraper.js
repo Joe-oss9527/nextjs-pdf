@@ -59,6 +59,9 @@ class Scraper {
       await saveArticleTitle(config.pdfDir, index, title);
 
       await setupImageLoadingObserver(page);
+
+      // delay before taking the screenshot
+      await delay(config.screenshotDelay);
       
       await page.evaluate((selector) => {
         const element = document.querySelector(selector);
