@@ -1,10 +1,10 @@
 {
-  "rootURL": "https://rc.nextjs.org/docs",
+  "rootURL": "https://eslint.org/docs/latest",
   "pdfDir": "pdfs",
   "concurrency": 5,
   "screenshotDelay": 500,
-  "navLinksSelector": "main nav.styled-scrollbar a[href]:not([href='#'])",
-  "contentSelector": "article",
+  "navLinksSelector": "nav.docs-index.index-js a[href]:not([href='#'])",
+  "contentSelector": "main",
   "ignoreURLs": ["docs/pages", "docs/app/api-reference"],
   "maxRetries": 3,
   "retryDelay": 1000,
