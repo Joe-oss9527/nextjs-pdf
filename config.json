@@ -1,9 +1,9 @@
 {
-  "rootURL": "https://eslint.org/docs/latest",
+  "rootURL": "https://web.dev/learn/forms/form?hl=zh-cn",
   "pdfDir": "pdfs",
   "concurrency": 5,
   "screenshotDelay": 500,
-  "navLinksSelector": "nav.docs-index.index-js a[href]:not([href='#'])",
+  "navLinksSelector": "devsite-book-nav .devsite-mobile-nav-bottom .devsite-nav-list a[href]:not([href='#'])",
   "contentSelector": "main",
   "ignoreURLs": ["docs/pages", "docs/app/api-reference"],
   "maxRetries": 3,
