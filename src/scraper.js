@@ -330,6 +330,239 @@ class Scraper {
                 line-height: 1.4;
               }
             }
+
+            /* Go 代码块特定样式 */
+            .language-go {
+              background: #f8f9fa !important;
+              color: #24292e !important;
+            }
+
+            /* Go 语法高亮 */
+            .language-go .kd, /* 关键字 declare */
+            .language-go .kn, /* 关键字 namespace */
+            .language-go .k   /* 普通关键字 */ {
+              color: #0550ae !important;
+              font-weight: 600;
+            }
+
+            .language-go .nx /* 标识符 */ { 
+              color: #24292e !important;
+            }
+
+            .language-go .s,  /* 字符串 */
+            .language-go .s1, 
+            .language-go .s2 {
+              color: #0a3069 !important;
+            }
+
+            .language-go .o  /* 运算符 */ { 
+              color: #24292e !important;
+            }
+
+            .language-go .p  /* 标点符号 */ { 
+              color: #24292e !important;
+            }
+
+            .language-go .c1 /* 注释 */ { 
+              color: #6a737d !important;
+              font-style: italic;
+            }
+
+            .language-go .mi /* 数字 */ { 
+              color: #0550ae !important;
+            }
+
+            /* 代码块容器样式 */
+            .highlight {
+              position: relative;
+              margin: 1em 0;
+              border-radius: 6px;
+              background: #f8f9fa;
+            }
+
+            /* 代码块主体 */
+            .highlight pre {
+              margin: 0;
+              padding: 1em;
+              overflow-x: auto;
+              font-family: 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+              font-size: 0.9em;
+              line-height: 1.5;
+              tab-size: 4;
+              background: transparent !important;
+            }
+
+            /* 行号和行内容布局 */
+            .highlight .line {
+              display: table-row;
+              width: 100%;
+            }
+
+            .highlight .cl {
+              display: table-cell;
+              padding: 0 0.5em;
+              min-height: 1.5em;
+              line-height: 1.5;
+            }
+
+            /* 语言标识 */
+            .highlight code[data-lang]::before {
+              content: attr(data-lang);
+              position: absolute;
+              top: 0;
+              right: 0;
+              padding: 0.2em 0.5em;
+              font-size: 0.8em;
+              color: #57606a;
+              background: #f0f1f2;
+              border-bottom-left-radius: 4px;
+              border-top-right-radius: 6px;
+            }
+
+            /* 打印优化 */
+            @media print {
+              .highlight {
+                break-inside: avoid;
+                border: 1px solid #e1e4e8;
+                background: #ffffff !important;
+              }
+
+              .highlight pre {
+                white-space: pre-wrap;
+                word-break: break-word;
+                font-size: 9pt;
+              }
+
+              .language-go .kd,
+              .language-go .kn,
+              .language-go .k {
+                font-weight: 700;
+              }
+
+              /* 确保代码在打印时清晰可见 */
+              .language-go {
+                color: #000000 !important;
+              }
+
+              .highlight code[data-lang]::before {
+                display: none;
+              }
+
+              /* 保持语法高亮在打印时的颜色 */
+              .language-go .s,
+              .language-go .s1,
+              .language-go .s2 {
+                color: #0a3069 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+            }
+
+            /* YAML 代码块特定样式 */
+            .language-yaml {
+              background: #f8f9fa !important;
+              color: #24292e !important;
+            }
+
+            /* YAML 语法高亮 */
+            .language-yaml .nt { /* 键名 */
+              color: #0550ae !important;
+              font-weight: 500;
+            }
+
+            .language-yaml .p { /* 冒号等标点 */
+              color: #24292e !important;
+            }
+
+            .language-yaml .w { /* 空白 */
+              color: #24292e !important;
+            }
+
+            .language-yaml .l { /* 字面量 */
+              color: #1a7f37 !important;
+            }
+
+            .language-yaml .s,
+            .language-yaml .s2 { /* 字符串 */
+              color: #0a3069 !important;
+            }
+
+            .language-yaml .m { /* 数字 */
+              color: #0550ae !important;
+            }
+
+            .language-yaml .kc { /* 关键字 */
+              color: #cf222e !important;
+              font-weight: 600;
+            }
+
+            /* YAML 缩进和格式 */
+            .language-yaml .line {
+              display: table-row;
+              width: 100%;
+            }
+
+            .language-yaml .cl {
+              display: table-cell;
+              white-space: pre;
+              padding: 0 0.5em;
+              line-height: 1.6;
+            }
+
+            /* YAML 代码块容��� */
+            .language-yaml.chroma {
+              border: 1px solid #e1e4e8;
+              border-radius: 6px;
+              padding: 1em;
+              margin: 1em 0;
+            }
+
+            /* 保持缩进结构 */
+            .language-yaml .w + .nt {
+              padding-left: 0;
+            }
+
+            /* 环境变量高亮 */
+            .language-yaml .l[data-content*="\${"] {
+              color: #953800 !important;
+              font-style: italic;
+            }
+
+            /* 打印优化 */
+            @media print {
+              .language-yaml {
+                break-inside: avoid;
+                background: #ffffff !important;
+                border: 1px solid #e1e4e8;
+              }
+
+              .language-yaml .nt {
+                font-weight: 600;
+              }
+
+              .language-yaml .l,
+              .language-yaml .s,
+              .language-yaml .s2 {
+                color: #1a7f37 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+
+              /* 确保环境变量在打印时清晰可见 */
+              .language-yaml .l[data-content*="\${"] {
+                color: #953800 !important;
+                font-weight: 500;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+
+              /* 保持缩进在打印时清晰可见 */
+              .language-yaml .cl {
+                white-space: pre-wrap;
+                font-size: 9pt;
+                line-height: 1.4;
+              }
+            }
           `;
           document.head.appendChild(printStyle);
         }
