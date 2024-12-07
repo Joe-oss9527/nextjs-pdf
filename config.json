@@ -1,13 +1,22 @@
 {
-  "rootURL": "https://1000h.yvan.one/intro.html",
+  "rootURL": "https://docs.docker.com/guides/golang",
   "pdfDir": "pdfs",
   "concurrency": 5,
-  "screenshotDelay": 500,
-  "navLinksSelector": "aside nav a[href]:not([href='#'])",
-  "contentSelector": ".VPContent",
-  "ignoreURLs": [],
+  "screenshotDelay": 1000,
+  "navLinksSelector": "article ol li a[href*='/guides/golang']",
+  "contentSelector": "article",
+  "ignoreURLs": [
+    "/search",
+    "/feedback",
+    "/settings",
+    "?",
+    "#",
+    "/v",
+    "mailto:",
+    "javascript:"
+  ],
   "maxRetries": 3,
   "retryDelay": 1000,
-  "pageTimeout": 30000,
-  "imageTimeout": 10000
+  "pageTimeout": 60000,
+  "imageTimeout": 20000
 }
