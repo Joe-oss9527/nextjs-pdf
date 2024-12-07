@@ -126,85 +126,208 @@ class Scraper {
               margin-bottom: 0.8em;
             }
 
-            /* 通用代码块样式 */
+            /* 代码块容器 */
+            .highlight {
+              background: transparent !important;
+              margin: 1.5em 0;
+            }
+
+            /* 代码块基础样式 */
             pre {
               background: #f8f9fa !important;
               border: 1px solid #e9ecef;
               border-radius: 6px;
-              padding: 1em;
-              margin: 1.2em 0;
+              padding: 1.2em;
+              margin: 0;
               overflow-x: auto;
               page-break-inside: avoid;
-              position: relative;
             }
 
-            /* 行内代码样式 */
-            code {
-              font-family: 'SF Mono', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
-              font-size: 0.9em;
-              background: #f1f3f5 !important;
-              padding: 0.2em 0.4em;
-              border-radius: 3px;
-              color: #24292e !important;
-              -webkit-font-smoothing: antialiased;
-            }
-
-            /* pre 中的 code 样式 */
-            pre code {
+            /* Chroma 语法高亮 */
+            .chroma {
               background: none !important;
-              padding: 0;
-              font-size: 0.95em;
-              line-height: 1.5;
               color: #24292e !important;
-              border-radius: 0;
-              white-space: pre;
-              word-break: normal;
-              word-spacing: normal;
             }
 
-            /* 代码块标题/语言标识 */
-            pre[data-lang]::before {
-              content: attr(data-lang);
-              position: absolute;
-              top: 0;
-              right: 0;
-              padding: 0.2em 0.5em;
-              font-size: 0.8em;
-              color: #666;
-              background: #f1f3f5;
-              border-bottom-left-radius: 4px;
+            /* 行内代码 */
+            code {
+              font-family: 'SF Mono', Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+              font-size: 0.9em;
+              line-height: 1.6;
+              tab-size: 4;
             }
 
-            /* 代码高亮样式 */
-            .line { display: block; }
-            .cl { display: inline; }
-            .highlight {
-              background: transparent !important;
+            /* Docker 特定语法高亮 */
+            .k { /* 关键字 */
+              color: #0550ae !important;
+              font-weight: 600;
             }
-            .kn, .kd { color: #d73a49 !important; }  /* 关键字 */
-            .s, .s1, .s2 { color: #032f62 !important; }  /* 字符串 */
-            .nx { color: #24292e !important; }  /* 标识符 */
-            .p { color: #24292e !important; }   /* 标点符号 */
-            .c1 { color: #6a737d !important; }  /* 注释 */
-            .o { color: #d73a49 !important; }   /* 运算符 */
-            .kt { color: #d73a49 !important; }  /* 类型 */
+            
+            .nv { /* 环境变量 */
+              color: #24292e !important;
+              font-weight: normal;
+            }
+            
+            .o { /* 运算符 */
+              color: #24292e !important;
+            }
+            
+            .m { /* 数字 */
+              color: #005cc5 !important;
+            }
+
+            /* Docker 文档特有的链接样式 */
+            pre a {
+              color: inherit !important;
+              text-decoration: none !important;
+              border-bottom: 1px dashed #0366d6;
+            }
+
+            pre a:hover {
+              border-bottom-style: solid;
+            }
+
+            /* 行号和行内容 */
+            .line {
+              display: block;
+              line-height: 1.6;
+            }
+            
+            .cl {
+              display: inline-block;
+              padding: 0 4px;
+              width: 100%;
+            }
+
+            /* 特殊标记 */
+            .underline {
+              text-decoration: none !important;
+              border-bottom: 1px dashed currentColor;
+            }
+
+            .underline-offset-4 {
+              border-bottom-width: 1px;
+            }
 
             /* 打印优化 */
             @media print {
-              pre, code {
-                border-color: #e0e0e0 !important;
-                background-color: #f8f9fa !important;
+              .highlight pre {
+                border: 1px solid #e1e4e8 !important;
+                background: #f6f8fa !important;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
               }
-              
-              pre[data-lang]::before {
-                display: none;  /* 打印时隐藏语言标识 */
+
+              pre a {
+                border-bottom: none !important;
               }
 
-              .highlight {
-                border: none !important;
-                background: none !important;
+              .k, .nv, .m, .o {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+
+              /* 确保代码块内的文本清晰可见 */
+              code, pre code {
+                font-weight: 500 !important;
+                color: #000000 !important;
+              }
+
+              /* 环境变量和参数保持清晰 */
+              .nv, .o, .m {
+                color: #1a1a1a !important;
+              }
+            }
+
+            /* 控制台输出特定样式 */
+            .language-console .go {
+              color: #24292e !important;
+              font-family: 'SF Mono', Monaco, Consolas, 'Courier New', monospace;
+              font-size: 0.9em;
+              line-height: 1.45;
+            }
+
+            /* 控制台输出中的特殊字符 */
+            .language-console .go {
+              white-space: pre;
+              word-spacing: normal;
+              word-break: normal;
+            }
+
+            /* 控制台箭头和状态信息 */
+            .language-console .go:has-text("=>"),
+            .language-console .go:has-text("[+]") {
+              color: #1a7f37 !important;
+              font-weight: 500;
+            }
+
+            /* 控制台时间和进度信息 */
+            .language-console .go:contains("FINISHED"),
+            .language-console .go:contains("CACHED") {
+              color: #0550ae !important;
+            }
+
+            /* 控制台错误信息 */
+            .language-console .go:contains("ERROR"),
+            .language-console .go:contains("FAILED") {
+              color: #cf222e !important;
+            }
+
+            /* 控制台输出容器样式 */
+            .language-console {
+              background: #f6f8fa !important;
+              padding: 16px !important;
+              border-radius: 6px;
+              border: 1px solid #d0d7de;
+            }
+
+            /* 控制台每行的样式 */
+            .language-console .line {
+              min-height: 1.45em;
+              padding-left: 0.5em;
+            }
+
+            /* 控制台输出的交替行背景 */
+            .language-console .line:nth-child(even) {
+              background: rgba(175, 184, 193, 0.05);
+            }
+
+            /* SHA 和版本号的样式 */
+            .language-console .go:matches(
+              /sha256:[a-f0-9]+/,
+              /@sha256:[a-f0-9]+/
+            ) {
+              color: #0550ae !important;
+              font-family: monospace;
+            }
+
+            /* 打印优化 */
+            @media print {
+              .language-console {
+                border: 1px solid #e1e4e8 !important;
+                background: #f8f9fa !important;
+                break-inside: avoid;
+              }
+
+              .language-console .go {
+                color: #000000 !important;
+              }
+
+              .language-console .go:has-text("=>"),
+              .language-console .go:has-text("[+]") {
+                color: #1a7f37 !important;
+                font-weight: 600;
+              }
+
+              .language-console .line:nth-child(even) {
+                background: rgba(0, 0, 0, 0.02) !important;
+              }
+
+              /* 确保控制台输出在打印时清晰可见 */
+              .language-console .go {
+                font-weight: 500;
+                font-size: 9pt;
+                line-height: 1.4;
               }
             }
           `;
