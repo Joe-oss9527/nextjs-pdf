@@ -85,6 +85,16 @@ async function triggerLazyImages(page) {
 }
 
 async function loadAllLazyImages(page, fetchIndex) {
+  // 等待主内容区域加载完成
+  await page.waitForSelector('main', {
+    timeout: 10000
+  });
+  
+  // 展开所有折叠的代码块
+  await page.evaluate(() => {
+    document.querySelectorAll('.vp-code-group button').forEach(btn => btn.click());
+  });
+
   console.log("开始滚动页面...");
   await autoScroll(page);
   console.log("页面滚动完成，触发懒加载图片加载。");

@@ -11,6 +11,7 @@ class Scraper {
     this.totalLinks = 0;
     this.queue = asyncLib.queue(this.processTask.bind(this), config.concurrency);
     this.imageLoadFailures = new Set();
+    this.processedUrls = new Set();
   }
 
   async initialize(headless = 'new') {
@@ -38,7 +39,8 @@ class Scraper {
           .filter(href => href && !href.startsWith('#'));
       }, config.navLinksSelector);
 
-      return links.filter(link => !isIgnored(link, config.ignoreURLs));
+      const uniqueLinks = [...new Set(links)].filter(link => !isIgnored(link, config.ignoreURLs));
+      return uniqueLinks;
     } finally {
       await page.close();
     }
@@ -48,8 +50,23 @@ class Scraper {
     const page = await this.browser.newPage();
     try {
       console.log(`Scraping page: ${url}`);
-      await page.goto(url, { waitUntil: 'networkidle0', timeout: config.pageTimeout });
-      await page.waitForSelector(config.contentSelector, { timeout: config.pageTimeout });
+      await page.setViewport({
+        width: 1280,
+        height: 800
+      });
+
+      await page.goto(url, { 
+        waitUntil: ['networkidle0', 'domcontentloaded'],
+        timeout: config.pageTimeout 
+      });
+
+      await page.waitForSelector('main', {
+        timeout: config.pageTimeout
+      });
+
+      await page.evaluate(() => {
+        document.querySelectorAll('.vp-code-group button').forEach(btn => btn.click());
+      });
 
       const title = await page.evaluate((selector) => {
         const element = document.querySelector(selector);
@@ -100,28 +117,37 @@ class Scraper {
   }
 
   async processTask(task, headless = 'new') {
+    const { url, index } = task;
+    
+    if (this.processedUrls.has(url)) {
+      console.log(`Skipping duplicate URL: ${url}`);
+      return;
+    }
+    
+    this.processedUrls.add(url);
+
     if (!this.browser || this.browser.isConnected() === false) {
       await this.initialize(headless);
     }
-    const { url, index } = task;
+
     let retries = 0;
     while (retries < config.maxRetries) {
       try {
         await this.scrapePage(url, index);
-        break;  // Success, exit the retry loop
+        break;
       } catch (error) {
         retries++;
         console.warn(`Attempt ${retries} failed for ${url}:`, error.message);
         if (retries < config.maxRetries) {
-          await delay(config.retryDelay * retries);  // Exponential backoff
+          await delay(config.retryDelay * retries);
         } else {
           await logFailedLink(config.pdfDir, url, index, error);
         }
       }
     }
-    // Log progress
-    const completed = ((index + 1) / this.totalLinks) * 100;
-    console.log(`Completed: ${completed.toFixed(2)}%, total: ${this.totalLinks}, current: ${index + 1}.`);
+    
+    const completed = (this.processedUrls.size / this.totalLinks) * 100;
+    console.log(`Completed: ${completed.toFixed(2)}%, total: ${this.totalLinks}, current: ${this.processedUrls.size}`);
   }
 
   async retryImageLoadFailures() {

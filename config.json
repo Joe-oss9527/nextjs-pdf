@@ -1,13 +1,19 @@
 {
-  "rootURL": "https://rc.nextjs.org/docs",
+  "rootURL": "https://vuejs.org/guide",
   "pdfDir": "pdfs",
-  "concurrency": 5,
-  "screenshotDelay": 500,
-  "navLinksSelector": "main nav.styled-scrollbar a[href]:not([href='#'])",
-  "contentSelector": "article",
-  "ignoreURLs": ["docs/pages", "docs/app/api-reference"],
+  "concurrency": 3,
+  "screenshotDelay": 1000,
+  "navLinksSelector": "aside a[href]:not([href='#'])",
+  "contentSelector": "main",
+  "ignoreURLs": [
+    "/examples/",
+    "/ecosystem/",
+    "/about/", 
+    "/sponsor/",
+    "/partners/"
+  ],
   "maxRetries": 3,
-  "retryDelay": 1000,
+  "retryDelay": 2000,
   "pageTimeout": 30000,
-  "imageTimeout": 10000
+  "imageTimeout": 15000
 }
