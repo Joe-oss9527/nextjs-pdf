@@ -14,6 +14,15 @@ class Scraper {
     this.processedUrls = new Set();
   }
 
+  normalizeUrl(url) {
+    try {
+      return url.split('#')[0];
+    } catch (e) {
+      console.warn(`Invalid URL: ${url}`);
+      return url;
+    }
+  }
+
   async initialize(headless = 'new') {
     this.browser = await puppeteer.launch({
       headless: headless,
@@ -39,7 +48,8 @@ class Scraper {
           .filter(href => href && !href.startsWith('#'));
       }, config.navLinksSelector);
 
-      const uniqueLinks = [...new Set(links)].filter(link => !isIgnored(link, config.ignoreURLs));
+      const uniqueLinks = [...new Set(links.map(link => this.normalizeUrl(link)))]
+        .filter(link => !isIgnored(link, config.ignoreURLs));
       return uniqueLinks;
     } finally {
       await page.close();
@@ -118,13 +128,14 @@ class Scraper {
 
   async processTask(task, headless = 'new') {
     const { url, index } = task;
+    const normalizedUrl = this.normalizeUrl(url);
     
-    if (this.processedUrls.has(url)) {
+    if (this.processedUrls.has(normalizedUrl)) {
       console.log(`Skipping duplicate URL: ${url}`);
       return;
     }
     
-    this.processedUrls.add(url);
+    this.processedUrls.add(normalizedUrl);
 
     if (!this.browser || this.browser.isConnected() === false) {
       await this.initialize(headless);
