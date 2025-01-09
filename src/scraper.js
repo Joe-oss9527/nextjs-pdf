@@ -70,6 +70,50 @@ class Scraper {
         timeout: config.pageTimeout 
       });
 
+      await page.evaluate(() => {
+        const htmlElement = document.documentElement;
+        if (htmlElement.classList.contains('dark')) {
+          htmlElement.classList.remove('dark');
+        }
+        const vpSwitch = document.querySelector('.VPSwitch');
+        if (vpSwitch) {
+          const input = vpSwitch.querySelector('input[type="checkbox"]');
+          if (input && input.checked) {
+            input.click();
+          }
+        }
+        document.querySelectorAll('.shiki.github-dark, .shiki.vitesse-dark, pre.shiki').forEach(block => {
+          block.classList.remove('github-dark', 'vitesse-dark', 'vp-code-dark');
+          block.classList.add('github-light', 'vp-code-light');
+          
+          block.style.backgroundColor = '#ffffff';
+          block.style.color = '#1f2328';
+
+          const codeParent = block.closest('.vp-code');
+          if (codeParent) {
+            codeParent.style.backgroundColor = '#ffffff';
+          }
+          
+          block.querySelectorAll('span[style*="color:#"]').forEach(span => {
+            const color = span.style.color.toUpperCase();
+            switch (color) {
+              case '#E1E4E8': 
+              case '#A6ACCD': span.style.color = '#1F2328'; break;
+              case '#F97583':
+              case '#89DDFF': span.style.color = '#CF222E'; break;
+              case '#B392F0':
+              case '#82AAFF': span.style.color = '#8250DF'; break;
+              case '#9ECBFF':
+              case '#89DDFF': span.style.color = '#0550AE'; break;
+              case '#79B8FF':
+              case '#89DDFF': span.style.color = '#0550AE'; break;
+              case '#FFAB70': span.style.color = '#953800'; break;
+              default: span.style.color = '#1F2328'; break;
+            }
+          });
+        });
+      });
+
       await page.waitForSelector('main', {
         timeout: config.pageTimeout
       });
