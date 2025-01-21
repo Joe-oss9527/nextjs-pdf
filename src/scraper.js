@@ -32,11 +32,25 @@ class Scraper {
     const page = await this.browser.newPage();
     try {
       await page.goto(config.rootURL, { waitUntil: 'networkidle0', timeout: config.pageTimeout });
-      const links = await page.evaluate((selector) => {
-        return Array.from(document.querySelectorAll(selector))
-          .map(el => el.href)
-          .filter(href => href && !href.startsWith('#'));
-      }, config.navLinksSelector);
+      
+      // 等待导航菜单加载完成
+      await page.waitForSelector('.sidebar-pane', { timeout: config.pageTimeout });
+      
+      // 获取所有导航链接
+      const links = await page.evaluate((baseURL) => {
+        const allLinks = [];
+        // 获取所有 tab 面板中的链接
+        const panels = document.querySelectorAll('.panels [role="tabpanel"]');
+        panels.forEach(panel => {
+          const links = panel.querySelectorAll('a[href]:not([href="#"])');
+          links.forEach(link => {
+            if(link.href && !link.href.startsWith('#') && link.href.startsWith(baseURL)) {
+              allLinks.push(link.href);
+            }
+          });
+        });
+        return Array.from(new Set(allLinks)); // 去重
+      }, config.baseURL);
 
       return links.filter(link => !isIgnored(link, config.ignoreURLs));
     } finally {

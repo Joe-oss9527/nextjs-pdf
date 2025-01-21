@@ -2,7 +2,7 @@ const { spawn } = require('child_process');
 
 function executePythonScript(scriptPath, args = []) {
   return new Promise((resolve, reject) => {
-    const pythonProcess = spawn('python', [scriptPath, ...args]);
+    const pythonProcess = spawn('python3', [scriptPath, ...args]);
 
     let scriptOutput = '';
     let scriptError = '';
