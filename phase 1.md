@@ -100,9 +100,8 @@ npm start -- --clean --no-merge
 2. **LazyLoadingImageHelper.js** - 懒加载图片处理
 3. **executePythonScript.js** - Python脚本执行安全性
 4. **mergePdf.py** - PDF合并内存优化
-5. **单元测试** - 添加测试覆盖
-6. **日志系统** - 集成专业日志库
-7. **监控和指标** - 添加性能监控
+5. **日志系统** - 集成专业日志库
+6. **监控和指标** - 添加性能监控
 
 ## 配置示例
 
