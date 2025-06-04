@@ -4,3 +4,333 @@
 {"level":"info","message":"Python环境验证成功: 3.11.2 (v3.11.2:878ead1ac1, Feb  7 2023, 10:02:41) [Clang 13.0.0 (clang-1300.0.29.30)]","service":"pdf-scraper","timestamp":"2025-06-04 18:22:59"}
 {"level":"info","message":"PyMuPDF依赖验证成功","service":"pdf-scraper","timestamp":"2025-06-04 18:22:59"}
 {"level":"info","message":"Python合并服务初始化完成","service":"pdf-scraper","timestamp":"2025-06-04 18:22:59"}
+{"level":"info","message":"Disposing container resources...","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"🎯 Starting Stage 8 Integration Tests...","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"Disposing container resources...","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"Loading configuration from: ./config.json","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"Container disposed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":null,"service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"🧪 Testing Container Basics...","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"✅ PASS: Container should return registered value","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"✅ PASS: Container should execute factory function","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"✅ PASS: Container should instantiate class","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"✅ PASS: Container should track registered services","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"✅ PASS: Container should track created services","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"✅ PASS: Container should report healthy status","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"✅ Container basics test completed","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"🔗 Testing Dependency Resolution...","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"✅ PASS: Service should be created","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"✅ PASS: Service should receive dependency","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"✅ Dependency resolution test completed","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"⚙️ Testing Configuration System...","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"Container disposed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"Configuration loaded and validated successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"✅ PASS: Config should be loaded","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"✅ PASS: Config should have rootURL","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"✅ PASS: Config should have pdfDir","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"✅ PASS: Config should pass validation","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"✅ Configuration system test completed","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"🏗️ Testing Full Container Setup...","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"Configuration validation passed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"Configuration validation passed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"All dependencies validated successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"Setting up dependency injection container...","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"Loading configuration from: /Users/yvan/Documents/Developer/nextjs-pdf/config.json","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"Pre-loading critical services...","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"Configuration loaded and validated successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"Configuration loaded and validated","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"✅ PASS: Config service should be available","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"Disposing container resources...","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"Container setup completed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"created":4,"instances":4,"level":"info","message":"Container statistics:","service":"pdf-scraper","singletons":12,"timestamp":"2025-06-04 19:02:27","total":12}
+{"level":"info","message":"✅ PASS: Logger service should be available","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"✅ PASS: FileService should be available","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"✅ PASS: Container should be healthy","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"✅ PASS: Container should have registered services","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"✅ Full container setup test completed","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"🐍 Testing Python Runner...","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"Container disposed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"Configuration validation passed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"Configuration validation passed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"warn","message":"⚠️ Python not available, skipping script execution tests","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"warn","message":"Python error:","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"Shutting down container...","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"duration":0,"error":"Script validation failed: ENOENT: no such file or directory, access '-c'","level":"error","message":"Python script execution failed","processId":"python_1749034947396_alky33rf5","service":"pdf-scraper","stack":"Error: Script validation failed: ENOENT: no such file or directory, access '-c'\n    at PythonRunner.validateScript (file:///Users/yvan/Documents/Developer/nextjs-pdf/src/core/pythonRunner.js:234:19)\n    at async PythonRunner.runScript (file:///Users/yvan/Documents/Developer/nextjs-pdf/src/core/pythonRunner.js:44:13)\n    at async PythonRunner.checkPythonEnvironment (file:///Users/yvan/Documents/Developer/nextjs-pdf/src/core/pythonRunner.js:306:28)\n    at async testPythonRunner (file:///Users/yvan/Documents/Developer/nextjs-pdf/test-stage8-integration.js:221:22)\n    at async runIntegrationTests (file:///Users/yvan/Documents/Developer/nextjs-pdf/test-stage8-integration.js:387:5)","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"Container shutdown completed","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"error","message":"Python environment check failed: Script validation failed: ENOENT: no such file or directory, access '-c'","service":"pdf-scraper","stack":"Error: Script validation failed: ENOENT: no such file or directory, access '-c'\n    at PythonRunner.checkPythonEnvironment (file:///Users/yvan/Documents/Developer/nextjs-pdf/src/core/pythonRunner.js:321:23)\n    at async testPythonRunner (file:///Users/yvan/Documents/Developer/nextjs-pdf/test-stage8-integration.js:221:22)\n    at async runIntegrationTests (file:///Users/yvan/Documents/Developer/nextjs-pdf/test-stage8-integration.js:387:5)","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"Disposing Python runner...","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"Terminating 0 running Python processes","service":"pdf-scraper","timestamp":"2025-06-04 19:02:27"}
+{"level":"info","message":"All Python processes terminated","service":"pdf-scraper","timestamp":"2025-06-04 19:02:33"}
+{"level":"info","message":"✅ Python runner test completed","service":"pdf-scraper","timestamp":"2025-06-04 19:02:33"}
+{"level":"info","message":"Python runner disposed","service":"pdf-scraper","timestamp":"2025-06-04 19:02:33"}
+{"level":"info","message":"🚀 Testing Application Lifecycle...","service":"pdf-scraper","timestamp":"2025-06-04 19:02:33"}
+{"level":"info","message":"🚀 Starting PDF Scraper Application...","service":"pdf-scraper","timestamp":"2025-06-04 19:02:33"}
+{"level":"info","message":"All dependencies validated successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:02:33"}
+{"level":"info","message":"Setting up dependency injection container...","service":"pdf-scraper","timestamp":"2025-06-04 19:02:33"}
+{"level":"info","message":"Loading configuration from: /Users/yvan/Documents/Developer/nextjs-pdf/config.json","service":"pdf-scraper","timestamp":"2025-06-04 19:02:33"}
+{"level":"info","message":"📦 Setting up dependency injection container...","service":"pdf-scraper","timestamp":"2025-06-04 19:02:33"}
+{"level":"info","message":"Pre-loading critical services...","service":"pdf-scraper","timestamp":"2025-06-04 19:02:33"}
+{"level":"info","message":"Configuration loaded and validated successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:02:33"}
+{"level":"info","message":"Configuration loaded and validated","service":"pdf-scraper","timestamp":"2025-06-04 19:02:33"}
+{"level":"info","message":"🐍 Checking Python environment...","service":"pdf-scraper","timestamp":"2025-06-04 19:02:33"}
+{"level":"info","message":"Container setup completed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:02:33"}
+{"created":4,"instances":4,"level":"info","message":"Container statistics:","service":"pdf-scraper","singletons":12,"timestamp":"2025-06-04 19:02:33","total":12}
+{"level":"error","message":"❌ Failed to initialize application: Python environment not available: Script validation failed: ENOENT: no such file or directory, access '-c'","service":"pdf-scraper","stack":"Error: Python environment not available: Script validation failed: ENOENT: no such file or directory, access '-c'\n    at Application.initialize (file:///Users/yvan/Documents/Developer/nextjs-pdf/src/app.js:74:23)\n    at async testApplicationLifecycle (file:///Users/yvan/Documents/Developer/nextjs-pdf/test-stage8-integration.js:258:5)\n    at async runIntegrationTests (file:///Users/yvan/Documents/Developer/nextjs-pdf/test-stage8-integration.js:388:5)","timestamp":"2025-06-04 19:02:33"}
+{"level":"info","message":"Configuration validation passed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:02:33"}
+{"level":"info","message":"Configuration validation passed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:02:33"}
+{"duration":0,"error":"Script validation failed: ENOENT: no such file or directory, access '-c'","level":"error","message":"Python script execution failed","processId":"python_1749034953405_bm9sk6xkc","service":"pdf-scraper","stack":"Error: Script validation failed: ENOENT: no such file or directory, access '-c'\n    at PythonRunner.validateScript (file:///Users/yvan/Documents/Developer/nextjs-pdf/src/core/pythonRunner.js:234:19)\n    at async PythonRunner.runScript (file:///Users/yvan/Documents/Developer/nextjs-pdf/src/core/pythonRunner.js:44:13)\n    at async PythonRunner.checkPythonEnvironment (file:///Users/yvan/Documents/Developer/nextjs-pdf/src/core/pythonRunner.js:306:28)\n    at async Application.initialize (file:///Users/yvan/Documents/Developer/nextjs-pdf/src/app.js:72:33)\n    at async testApplicationLifecycle (file:///Users/yvan/Documents/Developer/nextjs-pdf/test-stage8-integration.js:258:5)\n    at async runIntegrationTests (file:///Users/yvan/Documents/Developer/nextjs-pdf/test-stage8-integration.js:388:5)","timestamp":"2025-06-04 19:02:33"}
+{"level":"info","message":"🧹 Starting application cleanup...","service":"pdf-scraper","timestamp":"2025-06-04 19:02:33"}
+{"level":"error","message":"Python environment check failed: Script validation failed: ENOENT: no such file or directory, access '-c'","service":"pdf-scraper","stack":"Error: Script validation failed: ENOENT: no such file or directory, access '-c'\n    at PythonRunner.checkPythonEnvironment (file:///Users/yvan/Documents/Developer/nextjs-pdf/src/core/pythonRunner.js:321:23)\n    at async Application.initialize (file:///Users/yvan/Documents/Developer/nextjs-pdf/src/app.js:72:33)\n    at async testApplicationLifecycle (file:///Users/yvan/Documents/Developer/nextjs-pdf/test-stage8-integration.js:258:5)\n    at async runIntegrationTests (file:///Users/yvan/Documents/Developer/nextjs-pdf/test-stage8-integration.js:388:5)","timestamp":"2025-06-04 19:02:33"}
+{"level":"info","message":"Disposing Python runner...","service":"pdf-scraper","timestamp":"2025-06-04 19:02:33"}
+{"level":"info","message":"Terminating 0 running Python processes","service":"pdf-scraper","timestamp":"2025-06-04 19:02:33"}
+{"level":"info","message":"All Python processes terminated","service":"pdf-scraper","timestamp":"2025-06-04 19:02:39"}
+{"level":"info","message":"Disposing container resources...","service":"pdf-scraper","timestamp":"2025-06-04 19:02:39"}
+{"level":"info","message":"✅ Application cleanup completed","service":"pdf-scraper","timestamp":"2025-06-04 19:02:39"}
+{"level":"error","message":"❌ Application lifecycle test failed: Python environment not available: Script validation failed: ENOENT: no such file or directory, access '-c'","service":"pdf-scraper","stack":"Error: Python environment not available: Script validation failed: ENOENT: no such file or directory, access '-c'\n    at Application.initialize (file:///Users/yvan/Documents/Developer/nextjs-pdf/src/app.js:74:23)\n    at async testApplicationLifecycle (file:///Users/yvan/Documents/Developer/nextjs-pdf/test-stage8-integration.js:258:5)\n    at async runIntegrationTests (file:///Users/yvan/Documents/Developer/nextjs-pdf/test-stage8-integration.js:388:5)","timestamp":"2025-06-04 19:02:39"}
+{"level":"info","message":"Disposing container resources...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"🎯 Starting Stage 8 Integration Tests...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"Disposing container resources...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"Loading configuration from: ./config.json","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"Container disposed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":null,"service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"🧪 Testing Container Basics...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"✅ PASS: Container should return registered value","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"✅ PASS: Container should execute factory function","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"✅ PASS: Container should instantiate class","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"✅ PASS: Container should track registered services","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"✅ PASS: Container should track created services","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"✅ PASS: Container should report healthy status","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"✅ Container basics test completed","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"🔗 Testing Dependency Resolution...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"✅ PASS: Service should be created","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"✅ PASS: Service should receive dependency","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"✅ Dependency resolution test completed","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"⚙️ Testing Configuration System...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"Container disposed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"Configuration loaded and validated successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"✅ PASS: Config should be loaded","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"✅ PASS: Config should have rootURL","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"✅ PASS: Config should have pdfDir","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"✅ PASS: Config should pass validation","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"✅ Configuration system test completed","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"🏗️ Testing Full Container Setup...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"Configuration validation passed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"Configuration validation passed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"All dependencies validated successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"Setting up dependency injection container...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"Loading configuration from: /Users/yvan/Documents/Developer/nextjs-pdf/config.json","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"Pre-loading critical services...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"Configuration loaded and validated successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"Configuration loaded and validated","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"✅ PASS: Config service should be available","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"Disposing container resources...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"Container setup completed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"created":4,"instances":4,"level":"info","message":"Container statistics:","service":"pdf-scraper","singletons":12,"timestamp":"2025-06-04 19:03:22","total":12}
+{"level":"info","message":"✅ PASS: Logger service should be available","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"✅ PASS: FileService should be available","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"✅ PASS: Container should be healthy","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"✅ PASS: Container should have registered services","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"✅ Full container setup test completed","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"🐍 Testing Python Runner...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"Container disposed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"Configuration validation passed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"Configuration validation passed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"Shutting down container...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"args":["import sys; print(sys.version)"],"level":"info","message":"Starting Python script execution","processId":"python_1749035002554_vn36z91qg","scriptPath":"-c","service":"pdf-scraper","timeout":10000,"timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"Container shutdown completed","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"duration":40,"exitCode":0,"level":"info","message":"Python script execution completed successfully","processId":"python_1749035002554_vn36z91qg","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"✅ Python environment available:","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"Python environment check passed","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22","version":"3.11.2 (v3.11.2:878ead1ac1, Feb  7 2023, 10:02:41) [Clang 13.0.0 (clang-1300.0.29.30)]"}
+{"args":["print(\"Hello from Python\")"],"level":"info","message":"Starting Python script execution","processId":"python_1749035002594_koiyw1tfd","scriptPath":"-c","service":"pdf-scraper","timeout":5000,"timestamp":"2025-06-04 19:03:22"}
+{"duration":14,"exitCode":0,"level":"info","message":"Python script execution completed successfully","processId":"python_1749035002594_koiyw1tfd","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"✅ PASS: Python script should execute successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"Disposing Python runner...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"Terminating 0 running Python processes","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"✅ PASS: Python script should produce expected output","service":"pdf-scraper","timestamp":"2025-06-04 19:03:22"}
+{"level":"info","message":"All Python processes terminated","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28"}
+{"level":"info","message":"✅ Python runner test completed","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28"}
+{"level":"info","message":"Python runner disposed","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28"}
+{"level":"info","message":"🚀 Testing Application Lifecycle...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28"}
+{"level":"info","message":"🚀 Starting PDF Scraper Application...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28"}
+{"level":"info","message":"All dependencies validated successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28"}
+{"level":"info","message":"Setting up dependency injection container...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28"}
+{"level":"info","message":"Loading configuration from: /Users/yvan/Documents/Developer/nextjs-pdf/config.json","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28"}
+{"level":"info","message":"📦 Setting up dependency injection container...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28"}
+{"level":"info","message":"Pre-loading critical services...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28"}
+{"level":"info","message":"Configuration loaded and validated successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28"}
+{"level":"info","message":"Configuration loaded and validated","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28"}
+{"level":"info","message":"🐍 Checking Python environment...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28"}
+{"level":"info","message":"Container setup completed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28"}
+{"created":4,"instances":4,"level":"info","message":"Container statistics:","service":"pdf-scraper","singletons":12,"timestamp":"2025-06-04 19:03:28","total":12}
+{"level":"info","message":"Configuration validation passed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28"}
+{"level":"info","message":"Configuration validation passed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28"}
+{"args":["import sys; print(sys.version)"],"level":"info","message":"Starting Python script execution","processId":"python_1749035008616_7tbfnwx1a","scriptPath":"-c","service":"pdf-scraper","timeout":10000,"timestamp":"2025-06-04 19:03:28"}
+{"duration":21,"exitCode":0,"level":"info","message":"Python script execution completed successfully","processId":"python_1749035008616_7tbfnwx1a","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28"}
+{"level":"info","message":"✅ Python environment ready:","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28"}
+{"level":"info","message":"✅ Application initialized successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28"}
+{"level":"info","message":"Python environment check passed","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28","version":"3.11.2 (v3.11.2:878ead1ac1, Feb  7 2023, 10:02:41) [Clang 13.0.0 (clang-1300.0.29.30)]"}
+{"args":["import sys; print(sys.version)"],"level":"info","message":"Starting Python script execution","processId":"python_1749035008638_izltvhifi","scriptPath":"-c","service":"pdf-scraper","timeout":10000,"timestamp":"2025-06-04 19:03:28"}
+{"level":"info","message":"🏥 Container health check:","service":"pdf-scraper","services":[{"hasInstance":true,"name":"config","status":"created"},{"hasInstance":true,"name":"logger","status":"created"},{"hasInstance":true,"name":"fileService","status":"created"},{"hasInstance":true,"name":"pathService","status":"created"},{"hasInstance":false,"name":"stateManager","status":"registered"},{"hasInstance":false,"name":"progressTracker","status":"registered"},{"hasInstance":false,"name":"queueManager","status":"registered"},{"hasInstance":false,"name":"browserPool","status":"registered"},{"hasInstance":false,"name":"pageManager","status":"registered"},{"hasInstance":false,"name":"imageService","status":"registered"},{"hasInstance":false,"name":"scraper","status":"registered"},{"hasInstance":false,"name":"pythonMergeService","status":"registered"}],"stats":{"created":4,"instances":4,"singletons":12,"total":12},"status":"healthy","timestamp":"2025-06-04 19:03:28"}
+{"level":"info","message":"✅ Application initialized successfully in 26ms","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28"}
+{"level":"info","message":"✅ PASS: Application should be in running state","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28"}
+{"level":"info","message":"✅ PASS: Application should track uptime","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28"}
+{"level":"info","message":"✅ PASS: Application should track memory usage","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28"}
+{"duration":18,"exitCode":0,"level":"info","message":"Python script execution completed successfully","processId":"python_1749035008638_izltvhifi","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28"}
+{"level":"info","message":"✅ PASS: Application should be healthy","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28"}
+{"level":"info","message":"🛑 Initiating graceful shutdown...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28"}
+{"level":"info","message":"Python environment check passed","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28","version":"3.11.2 (v3.11.2:878ead1ac1, Feb  7 2023, 10:02:41) [Clang 13.0.0 (clang-1300.0.29.30)]"}
+{"level":"info","message":"Disposing Python runner...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28"}
+{"level":"info","message":"Terminating 0 running Python processes","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28"}
+{"level":"info","message":"✅ PASS: Application should have container health info","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28"}
+{"level":"info","message":"🧹 Starting application cleanup...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:28"}
+{"level":"info","message":"All Python processes terminated","service":"pdf-scraper","timestamp":"2025-06-04 19:03:34"}
+{"level":"info","message":"Disposing container resources...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:34"}
+{"level":"info","message":"✅ Application cleanup completed","service":"pdf-scraper","timestamp":"2025-06-04 19:03:34"}
+{"level":"info","message":"✅ Application lifecycle test completed","service":"pdf-scraper","timestamp":"2025-06-04 19:03:34"}
+{"level":"info","message":"🎯 Starting Stage 8 Integration Tests...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"Disposing container resources...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"Disposing container resources...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"Loading configuration from: ./config.json","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":null,"service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"🧪 Testing Container Basics...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"✅ PASS: Container should return registered value","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"✅ PASS: Container should execute factory function","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"✅ PASS: Container should instantiate class","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"✅ PASS: Container should track registered services","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"✅ PASS: Container should track created services","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"✅ PASS: Container should report healthy status","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"✅ Container basics test completed","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"🔗 Testing Dependency Resolution...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"✅ PASS: Service should be created","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"✅ PASS: Service should receive dependency","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"✅ Dependency resolution test completed","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"⚙️ Testing Configuration System...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"Container disposed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"Container disposed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"Configuration loaded and validated successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"✅ PASS: Config should be loaded","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"✅ PASS: Config should have rootURL","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"✅ PASS: Config should have pdfDir","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"✅ PASS: Config should pass validation","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"✅ Configuration system test completed","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"🏗️ Testing Full Container Setup...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"Configuration validation passed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"Configuration validation passed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"All dependencies validated successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"Setting up dependency injection container...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"Loading configuration from: /Users/yvan/Documents/Developer/nextjs-pdf/config.json","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"Pre-loading critical services...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"Configuration loaded and validated successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"Configuration loaded and validated","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"✅ PASS: Config service should be available","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"Disposing container resources...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"Container setup completed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"created":4,"instances":4,"level":"info","message":"Container statistics:","service":"pdf-scraper","singletons":12,"timestamp":"2025-06-04 19:03:57","total":12}
+{"level":"info","message":"✅ PASS: Logger service should be available","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"✅ PASS: FileService should be available","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"✅ PASS: Container should be healthy","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"✅ PASS: Container should have registered services","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"✅ Full container setup test completed","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"🐍 Testing Python Runner...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"Container disposed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"Configuration validation passed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"Configuration validation passed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"Shutting down container...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"args":["import sys; print(sys.version)"],"level":"info","message":"Starting Python script execution","processId":"python_1749035037313_2g8d0frly","scriptPath":"-c","service":"pdf-scraper","timeout":10000,"timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"Container shutdown completed","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"duration":31,"exitCode":0,"level":"info","message":"Python script execution completed successfully","processId":"python_1749035037313_2g8d0frly","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"✅ Python environment available:","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"Python environment check passed","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57","version":"3.11.2 (v3.11.2:878ead1ac1, Feb  7 2023, 10:02:41) [Clang 13.0.0 (clang-1300.0.29.30)]"}
+{"args":["print(\"Hello from Python\")"],"level":"info","message":"Starting Python script execution","processId":"python_1749035037344_smoakvbb7","scriptPath":"-c","service":"pdf-scraper","timeout":5000,"timestamp":"2025-06-04 19:03:57"}
+{"duration":14,"exitCode":0,"level":"info","message":"Python script execution completed successfully","processId":"python_1749035037344_smoakvbb7","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"✅ PASS: Python script should execute successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"Disposing Python runner...","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"Terminating 0 running Python processes","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"✅ PASS: Python script should produce expected output","service":"pdf-scraper","timestamp":"2025-06-04 19:03:57"}
+{"level":"info","message":"All Python processes terminated","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03"}
+{"level":"info","message":"✅ Python runner test completed","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03"}
+{"level":"info","message":"Python runner disposed","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03"}
+{"level":"info","message":"🚀 Testing Application Lifecycle...","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03"}
+{"level":"info","message":"🚀 Starting PDF Scraper Application...","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03"}
+{"level":"info","message":"All dependencies validated successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03"}
+{"level":"info","message":"Setting up dependency injection container...","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03"}
+{"level":"info","message":"Loading configuration from: /Users/yvan/Documents/Developer/nextjs-pdf/config.json","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03"}
+{"level":"info","message":"📦 Setting up dependency injection container...","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03"}
+{"level":"info","message":"Pre-loading critical services...","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03"}
+{"level":"info","message":"Configuration loaded and validated successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03"}
+{"level":"info","message":"Configuration loaded and validated","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03"}
+{"level":"info","message":"🐍 Checking Python environment...","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03"}
+{"level":"info","message":"Container setup completed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03"}
+{"created":4,"instances":4,"level":"info","message":"Container statistics:","service":"pdf-scraper","singletons":12,"timestamp":"2025-06-04 19:04:03","total":12}
+{"level":"info","message":"Configuration validation passed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03"}
+{"level":"info","message":"Configuration validation passed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03"}
+{"args":["import sys; print(sys.version)"],"level":"info","message":"Starting Python script execution","processId":"python_1749035043365_spghni3c2","scriptPath":"-c","service":"pdf-scraper","timeout":10000,"timestamp":"2025-06-04 19:04:03"}
+{"duration":27,"exitCode":0,"level":"info","message":"Python script execution completed successfully","processId":"python_1749035043365_spghni3c2","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03"}
+{"level":"info","message":"✅ Python environment ready:","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03"}
+{"level":"info","message":"✅ Application initialized successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03"}
+{"level":"info","message":"Python environment check passed","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03","version":"3.11.2 (v3.11.2:878ead1ac1, Feb  7 2023, 10:02:41) [Clang 13.0.0 (clang-1300.0.29.30)]"}
+{"args":["import sys; print(sys.version)"],"level":"info","message":"Starting Python script execution","processId":"python_1749035043394_zao1rp6ka","scriptPath":"-c","service":"pdf-scraper","timeout":10000,"timestamp":"2025-06-04 19:04:03"}
+{"level":"info","message":"🏥 Container health check:","service":"pdf-scraper","services":[{"hasInstance":true,"name":"config","status":"created"},{"hasInstance":true,"name":"logger","status":"created"},{"hasInstance":true,"name":"fileService","status":"created"},{"hasInstance":true,"name":"pathService","status":"created"},{"hasInstance":false,"name":"stateManager","status":"registered"},{"hasInstance":false,"name":"progressTracker","status":"registered"},{"hasInstance":false,"name":"queueManager","status":"registered"},{"hasInstance":false,"name":"browserPool","status":"registered"},{"hasInstance":false,"name":"pageManager","status":"registered"},{"hasInstance":false,"name":"imageService","status":"registered"},{"hasInstance":false,"name":"scraper","status":"registered"},{"hasInstance":false,"name":"pythonMergeService","status":"registered"}],"stats":{"created":4,"instances":4,"singletons":12,"total":12},"status":"healthy","timestamp":"2025-06-04 19:04:03"}
+{"level":"info","message":"✅ Application initialized successfully in 32ms","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03"}
+{"level":"info","message":"✅ PASS: Application should be in running state","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03"}
+{"level":"info","message":"✅ PASS: Application should track uptime","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03"}
+{"level":"info","message":"✅ PASS: Application should track memory usage","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03"}
+{"duration":16,"exitCode":0,"level":"info","message":"Python script execution completed successfully","processId":"python_1749035043394_zao1rp6ka","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03"}
+{"level":"info","message":"✅ PASS: Application should be healthy","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03"}
+{"level":"info","message":"🛑 Initiating graceful shutdown...","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03"}
+{"level":"info","message":"Python environment check passed","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03","version":"3.11.2 (v3.11.2:878ead1ac1, Feb  7 2023, 10:02:41) [Clang 13.0.0 (clang-1300.0.29.30)]"}
+{"level":"info","message":"Disposing Python runner...","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03"}
+{"level":"info","message":"Terminating 0 running Python processes","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03"}
+{"level":"info","message":"✅ PASS: Application should have container health info","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03"}
+{"level":"info","message":"🧹 Starting application cleanup...","service":"pdf-scraper","timestamp":"2025-06-04 19:04:03"}
+{"level":"info","message":"All Python processes terminated","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"Disposing container resources...","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"✅ Application cleanup completed","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"✅ Application lifecycle test completed","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"Python runner disposed","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"✅ Graceful shutdown completed in 6004ms","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"Container disposed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"⚠️ Testing Error Handling...","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"✅ PASS: Should catch service creation error","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"✅ PASS: Should handle cleanup gracefully even without initialization","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"✅ Error handling test completed","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"⚡ Running Performance Test...","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"📊 Performance Results: avg=0.40ms, max=1ms","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"✅ PASS: Average container lifecycle should be under 100ms","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"✅ PASS: Maximum container lifecycle should be under 500ms","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"✅ Performance test completed","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":null,"service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"🎉 Integration Tests Completed Successfully!","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":null,"service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"📊 Tests Run: 28","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"✅ Tests Passed: 28","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"❌ Tests Failed: 0","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"⏱️ Total Time: 12130ms","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"📈 Success Rate: 100.0%","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":null,"service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"Shutting down container...","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"Disposing container resources...","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"🧹 Starting application cleanup...","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"Disposing container resources...","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"Disposing container resources...","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"Disposing container resources...","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"Disposing container resources...","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"Disposing container resources...","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"Disposing container resources...","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"Disposing container resources...","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"Disposing container resources...","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"Disposing container resources...","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"Disposing container resources...","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"Container shutdown completed","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"Container disposed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"Container disposed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"Container disposed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"Container disposed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"Container disposed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"Container disposed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"Container disposed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"Container disposed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"✅ Application cleanup completed","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"Container disposed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"Container disposed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
+{"level":"info","message":"Container disposed successfully","service":"pdf-scraper","timestamp":"2025-06-04 19:04:09"}
