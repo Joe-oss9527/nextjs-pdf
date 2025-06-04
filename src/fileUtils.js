@@ -1,127 +1,91 @@
-const fs = require('fs').promises;
-const path = require('path');
+// src/fileUtils.js - 临时兼容层
+import { FileService } from './services/fileService.js';
+import { PathService } from './services/pathService.js';
+import { MetadataService } from './services/metadataService.js';
+import { createLogger, consoleLogger } from './utils/logger.js';
+import { loadConfig } from './config/loader.js';
+import path from 'path';
 
-const ensureDirectoryExists = async (dirPath) => {
-  try {
-    await fs.access(dirPath);
-  } catch (error) {
-    await fs.mkdir(dirPath, { recursive: true });
+// 创建单例实例
+let fileService = null;
+let pathService = null;
+let metadataService = null;
+let config = null;
+
+// 初始化服务
+const initServices = async () => {
+  if (!config) {
+    config = await loadConfig();
+    const logger = consoleLogger; // 使用简单日志器避免循环依赖
+    fileService = new FileService(logger);
+    pathService = new PathService(config);
+    metadataService = new MetadataService(fileService, pathService, logger);
   }
 };
 
-const extractSubfolder = (url) => {
+// 确保服务已初始化的装饰器
+const ensureInit = (fn) => async (...args) => {
+  await initServices();
+  return fn(...args);
+};
+
+// 导出兼容的函数
+export const ensureDirectoryExists = ensureInit(async (dirPath) => {
+  await fileService.ensureDirectory(dirPath);
+});
+
+export const extractSubfolder = (url) => {
   const match = url.match(/\/(app|pages)\/(.*?)(\/|$)/);
   return match ? { type: match[1], name: match[2] } : null;
 };
 
-const determineDirectory = (url, pdfDir) => {
-  const match = extractSubfolder(url);
-  if (match) {
-    const prefix = `${match.type}-`;
-    return `${pdfDir}/${prefix}${match.name}`;
-  } else {
-    console.warn("URL does not match any known patterns.");
-    return `${pdfDir}/${new URL(url).hostname}-docs`;
-  }
-};
+export const determineDirectory = ensureInit((url, pdfDir) => {
+  // 注意：这里忽略传入的pdfDir参数，使用配置中的值
+  return pathService.determineDirectory(url);
+});
 
-const getPdfPath = async (url, index, pdfDir) => {
-  const fileName = url.split('/').filter(s => s).pop();
-  // Determine the directory based on URL
-  const appDir = determineDirectory(url, pdfDir);
+export const getPdfPath = ensureInit(async (url, index, pdfDir) => {
+  // 转换为新的参数格式
+  return pathService.getPdfPath(url, { useHash: false, index });
+});
 
-  // Ensure the directory exists
-  await ensureDirectoryExists(appDir);
-  
-  const fullFileName = `${appDir}/${index}-${fileName}.pdf`;
-  return fullFileName;
-};
+export const logFailedLink = ensureInit(async (pdfDir, url, index, error) => {
+  await metadataService.logFailedLink(url, index, error);
+});
 
-const logFailedLink = async (pdfDir, url, index, error) => {
-  const failedLinksFilePath = path.join(pdfDir, "failed.json");
-  let failedLinks = [];
+export const cleanDirectory = ensureInit(async (dirPath) => {
+  await fileService.cleanDirectory(dirPath);
+});
 
-  try {
-    const data = await fs.readFile(failedLinksFilePath, 'utf-8');
-    failedLinks = JSON.parse(data);
-  } catch (err) {
-    if (err.code !== 'ENOENT') {
-      console.error("Error reading failed links file:", err);
-    }
-  }
+export const saveArticleTitle = ensureInit(async (pdfDir, index, title) => {
+  await metadataService.saveArticleTitle(index, title);
+});
 
-  failedLinks.push({ index, url, error: error.message });
-  await fs.writeFile(failedLinksFilePath, JSON.stringify(failedLinks, null, 2));
-};
+export const logImageLoadFailure = ensureInit(async (pdfDir, url, index) => {
+  await metadataService.logImageLoadFailure(url, index);
+});
 
-const cleanDirectory = async (dirPath) => {
-  try {
-    await fs.rm(dirPath, { recursive: true, force: true });
-    await fs.mkdir(dirPath, { recursive: true });
-  } catch (error) {
-    console.error(`Error cleaning directory ${dirPath}:`, error);
-    throw error;
-  }
-};
+export const getImageLoadFailures = ensureInit(async (pdfDir) => {
+  return await metadataService.getImageLoadFailures();
+});
 
-const saveArticleTitle = async (pdfDir, index, title) => {
-  const articleTitleFilePath = path.join(pdfDir, "articleTitles.json");
-  let articleTitles = {};
+// 添加缺失的函数（从重构文档中发现的bug修复）
+export const removeFromFailedLinks = ensureInit(async (pdfDir, url) => {
+  await metadataService.removeFromFailedLinks(url);
+});
 
-  try {
-    const data = await fs.readFile(articleTitleFilePath, 'utf-8');
-    articleTitles = JSON.parse(data);
-  } catch (err) {
-    if (err.code !== 'ENOENT') {
-      console.error("Error reading article titles file:", err);
-    }
-  }
-
-  articleTitles[index] = title;
-  await fs.writeFile(articleTitleFilePath, JSON.stringify(articleTitles, null, 2));
-};
-
-const logImageLoadFailure = async (pdfDir, url, index) => {
-  const failuresFilePath = path.join(pdfDir, "imageLoadFailures.json");
-  let failures = [];
-
-  try {
-    const data = await fs.readFile(failuresFilePath, 'utf-8');
-    failures = JSON.parse(data);
-  } catch (err) {
-    if (err.code !== 'ENOENT') {
-      console.error("Error reading image load failures file:", err);
-    }
-  }
-  const existingFailure = failures.find(f => f.url === url && f.index === index);
-  if (existingFailure) {
-    return;
-  }
-
-  failures.push({ index, url });
-  await fs.writeFile(failuresFilePath, JSON.stringify(failures, null, 2));
-};
-
-const getImageLoadFailures = async (pdfDir) => {
-  const failuresFilePath = path.join(pdfDir, "imageLoadFailures.json");
-  try {
-    const data = await fs.readFile(failuresFilePath, 'utf-8');
-    return JSON.parse(data);
-  } catch (err) {
-    if (err.code === 'ENOENT') {
-      return [];  // 如果文件不存在，返回空数组
-    }
-    console.error("Error reading image load failures file:", err);
-    throw err;
-  }
-};
-
-module.exports = { 
-  ensureDirectoryExists, 
-  getPdfPath, 
-  logFailedLink, 
-  cleanDirectory, 
-  saveArticleTitle,
-  logImageLoadFailure,
-  getImageLoadFailures
-};
+// CommonJS兼容
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    ensureDirectoryExists,
+    extractSubfolder,
+    determineDirectory,
+    getPdfPath,
+    logFailedLink,
+    cleanDirectory,
+    saveArticleTitle,
+    logImageLoadFailure,
+    getImageLoadFailures,
+    removeFromFailedLinks
+  };
+}

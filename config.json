@@ -11,5 +11,13 @@
   "pageTimeout": 30000,
   "imageTimeout": 10000,
   "allowedDomains": ["rc.nextjs.org", "nextjs.org"],
-  "logLevel": "info"
+  "logLevel": "info",
+  "metadata": {
+    "enabled": true,
+    "directory": "metadata"
+  },
+  "output": {
+    "finalPdfDirectory": "finalPdf",
+    "tempDirectory": ".temp"
+  }
 }
