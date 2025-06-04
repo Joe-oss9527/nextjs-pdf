@@ -9,5 +9,7 @@
   "maxRetries": 3,
   "retryDelay": 1000,
   "pageTimeout": 30000,
-  "imageTimeout": 10000
+  "imageTimeout": 10000,
+  "allowedDomains": ["rc.nextjs.org", "nextjs.org"],
+  "logLevel": "info"
 }

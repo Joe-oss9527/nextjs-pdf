@@ -1,21 +1,35 @@
 {
-  "name": "nextjs-pdf",
-  "version": "1.0.0",
-  "description": "",
+  "name": "nextjs-pdf-scraper",
+  "version": "2.0.0",
+  "description": "Next.js documentation PDF scraper with improved architecture",
   "main": "src/main.js",
+  "type": "module",
   "scripts": {
     "start": "node src/main.js",
-    "test": "jest"
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "lint": "eslint src/**/*.js"
   },
-  "keywords": [],
+  "keywords": [
+    "scraper",
+    "pdf",
+    "nextjs",
+    "puppeteer"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "async": "^3.2.5",
+    "joi": "^17.13.3",
     "pdf-lib": "^1.17.1",
-    "puppeteer": "^22.4.1"
+    "puppeteer": "^22.4.1",
+    "winston": "^3.17.0"
   },
   "devDependencies": {
+    "eslint": "^8.55.0",
     "jest": "^29.7.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   }
 }
