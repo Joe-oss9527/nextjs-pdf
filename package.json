@@ -2,11 +2,12 @@
   "name": "nextjs-pdf-scraper",
   "version": "2.0.0",
   "description": "Next.js documentation PDF scraper with improved architecture",
-  "main": "src/main.js",
+  "main": "src/app.js",
   "type": "module",
   "scripts": {
-    "start": "node src/main.js",
-    "test": "jest",
+    "start": "node src/app.js",
+    "test": "node test-stage8-integration.js",
+    "test:demo": "node demo-stage8.js",
     "test:watch": "jest --watch",
     "lint": "eslint src/**/*.js"
   },
