@@ -1,0 +1,2 @@
+{"level":"error","message":"\u001b[31m✗ [6/10] url-5\u001b[39m - test","service":"pdf-scraper","timestamp":"2025-06-04 14:40:15"}
+{"level":"error","message":"\u001b[31m✗ [7/10] url-6\u001b[39m - test","service":"pdf-scraper","timestamp":"2025-06-04 14:40:15"}
