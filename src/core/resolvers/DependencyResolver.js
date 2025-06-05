@@ -1,6 +1,6 @@
 // src/core/resolvers/DependencyResolver.js
 /**
- * 智能依赖解析器
+ * 智能依赖解析器 - 修复版本
  * 负责依赖关系验证、循环依赖检测和注册顺序优化
  */
 
@@ -31,8 +31,8 @@ export class DependencyResolver {
     // 4. 拓扑排序
     const sortedNames = this._topologicalSort(graph);
 
-    // 5. 按优先级排序同级服务
-    const result = this._applePrioritySort(sortedNames, definitions);
+    // 5. 按优先级排序同级服务 - 🔧 修复方法名
+    const result = this._applyPrioritySort(sortedNames, definitions);
 
     this.logger.debug('依赖解析完成', {
       registrationOrder: result.map(d => d.name)
@@ -201,10 +201,10 @@ export class DependencyResolver {
   }
 
   /**
-   * 应用优先级排序
+   * 🔧 修复：应用优先级排序（修正方法名）
    * @private
    */
-  _applePrioritySort(sortedNames, definitions) {
+  _applyPrioritySort(sortedNames, definitions) {
     const defMap = new Map(definitions.map(d => [d.name, d]));
     const levelGroups = new Map();
 
@@ -235,6 +235,44 @@ export class DependencyResolver {
     }
 
     return result;
+  }
+
+  /**
+   * 🆕 新增：创建安全的并行注册批次
+   * 确保即使在并行注册时也不会违反依赖关系
+   */
+  createSafeBatches(definitions) {
+    const defMap = new Map(definitions.map(d => [d.name, d]));
+    const batches = [];
+    const processed = new Set();
+
+    while (processed.size < definitions.length) {
+      const currentBatch = [];
+
+      for (const def of definitions) {
+        if (processed.has(def.name)) continue;
+
+        // 检查所有依赖是否已经被处理
+        const allDepsProcessed = def.dependencies.every(dep => processed.has(dep));
+
+        if (allDepsProcessed) {
+          currentBatch.push(def);
+          processed.add(def.name);
+        }
+      }
+
+      if (currentBatch.length === 0) {
+        // 如果没有可以处理的服务，说明存在循环依赖
+        const remaining = definitions.filter(d => !processed.has(d.name));
+        throw new DependencyError(
+          `无法解析剩余服务的依赖关系: ${remaining.map(d => d.name).join(', ')}`
+        );
+      }
+
+      batches.push(currentBatch);
+    }
+
+    return batches;
   }
 
   /**
@@ -271,6 +309,44 @@ export class DependencyResolver {
     }
 
     return summary;
+  }
+
+  /**
+   * 🆕 新增：验证服务图的完整性
+   */
+  validateServiceGraph(definitions) {
+    const errors = [];
+    const warnings = [];
+
+    try {
+      // 基本验证
+      this._validateDependencies(this._buildDependencyGraph(definitions), definitions);
+      this._detectCircularDependencies(this._buildDependencyGraph(definitions));
+
+      // 深度验证
+      const graph = this._buildDependencyGraph(definitions);
+
+      // 检查孤立服务
+      for (const [name, node] of graph) {
+        if (node.dependencies.length === 0 && node.dependents.length === 0) {
+          warnings.push(`服务 '${name}' 是孤立的，没有依赖也不被依赖`);
+        }
+
+        // 检查深层依赖链
+        if (node.dependencies.length > 5) {
+          warnings.push(`服务 '${name}' 的直接依赖过多 (${node.dependencies.length})，考虑重构`);
+        }
+      }
+
+    } catch (error) {
+      errors.push(error.message);
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings
+    };
   }
 }
 

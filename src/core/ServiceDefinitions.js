@@ -1,6 +1,6 @@
 // src/core/ServiceDefinitions.js
 /**
- * 服务定义配置文件
+ * 服务定义配置文件 - 修复版本
  * 声明式定义所有应用服务及其依赖关系
  */
 
@@ -51,7 +51,8 @@ export const serviceDefinitions = [
     tags: {
       critical: true,
       layer: 'foundation',
-      preload: true
+      preload: true,
+      async: true // 🔧 明确标记为异步
     },
     timeout: 10000
   }),
@@ -170,6 +171,7 @@ export const serviceDefinitions = [
   new ServiceDefinition({
     name: 'browserPool',
     type: ServiceType.FACTORY,
+    // 🔧 修复：返回Promise而不是在函数内部await
     implementation: async (config, logger) => {
       const browserPool = new BrowserPool({
         maxBrowsers: config.concurrency || 5,
@@ -189,9 +191,8 @@ export const serviceDefinitions = [
         logger
       });
 
-      // 浏览器池需要异步初始化
-      await browserPool.initialize();
-      return browserPool;
+      // 🔧 修复：返回Promise，让ServiceFactory处理异步
+      return browserPool.initialize().then(() => browserPool);
     },
     dependencies: ['config', 'logger'],
     priority: ServicePriority.NORMAL,
@@ -200,7 +201,8 @@ export const serviceDefinitions = [
     tags: {
       layer: 'browser',
       resource: 'heavy',
-      hasAsyncInit: true
+      hasAsyncInit: true, // 🔧 修复：正确标记异步初始化
+      async: true // 🔧 添加：标记为异步服务
     },
     timeout: 60000 // 浏览器初始化可能需要更长时间
   }),
@@ -268,6 +270,7 @@ export const serviceDefinitions = [
   new ServiceDefinition({
     name: 'scraper',
     type: ServiceType.FACTORY,
+    // 🔧 修复：优化异步处理
     implementation: async (...dependencies) => {
       const [
         config, logger, browserPool, pageManager,
@@ -289,8 +292,8 @@ export const serviceDefinitions = [
         imageService
       });
 
-      // 爬虫服务可能需要异步初始化
-      if (!scraper.isInitialized) {
+      // 🔧 修复：确保异步初始化被正确处理
+      if (scraper.initialize && typeof scraper.initialize === 'function') {
         await scraper.initialize();
       }
 
@@ -307,7 +310,9 @@ export const serviceDefinitions = [
     tags: {
       layer: 'application',
       critical: true,
-      hasAsyncInit: true
+      hasAsyncInit: true, // 🔧 修复：正确标记异步初始化
+      async: true, // 🔧 添加：标记为异步服务
+      requiredMethods: ['run', 'getStatus', 'cleanup'] // 🆕 添加：期望的方法
     },
     timeout: 45000 // 爬虫初始化可能需要较长时间
   })
@@ -356,11 +361,62 @@ export const serviceGroups = {
 };
 
 /**
+ * 🆕 服务启动配置
+ * 定义不同环境下的服务启动策略
+ */
+export const serviceStartupConfigs = {
+  development: {
+    enableParallelRegistration: false,
+    continueOnError: true,
+    enableRetry: true,
+    maxRetries: 2,
+    enableHealthCheck: true,
+    preloadCritical: true
+  },
+
+  production: {
+    enableParallelRegistration: true,
+    continueOnError: false,
+    enableRetry: true,
+    maxRetries: 5,
+    enableHealthCheck: true,
+    preloadCritical: true
+  },
+
+  testing: {
+    enableParallelRegistration: false,
+    continueOnError: false,
+    enableRetry: false,
+    maxRetries: 1,
+    enableHealthCheck: false,
+    preloadCritical: false
+  }
+};
+
+/**
  * 获取关键服务列表
  */
 export function getCriticalServices() {
   return serviceDefinitions
     .filter(def => def.isCritical())
+    .map(def => def.name);
+}
+
+/**
+ * 🆕 获取异步服务列表
+ */
+export function getAsyncServices() {
+  return serviceDefinitions
+    .filter(def => def.isAsync())
+    .map(def => def.name);
+}
+
+/**
+ * 🆕 获取需要初始化的服务列表
+ */
+export function getInitializationServices() {
+  return serviceDefinitions
+    .filter(def => def.requiresInitialization())
     .map(def => def.name);
 }
 
@@ -398,10 +454,73 @@ export function getServiceDefinition(serviceName) {
 }
 
 /**
+ * 🆕 获取启动配置
+ */
+export function getStartupConfig(environment = 'production') {
+  return serviceStartupConfigs[environment] || serviceStartupConfigs.production;
+}
+
+/**
+ * 🆕 分析服务依赖关系
+ */
+export function analyzeServiceDependencies() {
+  const analysis = {
+    totalServices: serviceDefinitions.length,
+    dependencyGraph: new Map(),
+    levels: new Map(),
+    orphans: [],
+    heavyDependents: [],
+    circularRisks: []
+  };
+
+  // 构建依赖图
+  serviceDefinitions.forEach(def => {
+    analysis.dependencyGraph.set(def.name, {
+      dependencies: def.dependencies,
+      dependents: [],
+      level: 0,
+      async: def.isAsync(),
+      critical: def.isCritical()
+    });
+  });
+
+  // 计算依赖关系
+  serviceDefinitions.forEach(def => {
+    def.dependencies.forEach(depName => {
+      const depNode = analysis.dependencyGraph.get(depName);
+      if (depNode) {
+        depNode.dependents.push(def.name);
+      }
+    });
+  });
+
+  // 分析孤立服务
+  analysis.dependencyGraph.forEach((node, name) => {
+    if (node.dependencies.length === 0 && node.dependents.length === 0) {
+      analysis.orphans.push(name);
+    }
+  });
+
+  // 分析重度依赖服务
+  analysis.dependencyGraph.forEach((node, name) => {
+    if (node.dependents.length > 3) {
+      analysis.heavyDependents.push({
+        name,
+        dependentCount: node.dependents.length,
+        dependents: node.dependents
+      });
+    }
+  });
+
+  return analysis;
+}
+
+/**
  * 验证所有服务定义
  */
 export function validateServiceDefinitions() {
   const errors = [];
+  const warnings = [];
   const serviceNames = new Set();
 
   // 检查重复和基本验证
@@ -410,6 +529,18 @@ export function validateServiceDefinitions() {
       errors.push(`重复的服务名称: ${definition.name}`);
     }
     serviceNames.add(definition.name);
+
+    // 🆕 检查异步服务的标记一致性
+    if (definition.isAsync() && definition.type === ServiceType.FACTORY) {
+      if (!definition.tags.async) {
+        warnings.push(`服务 '${definition.name}' 是异步工厂但没有 async 标记`);
+      }
+    }
+
+    // 🆕 检查初始化配置一致性
+    if (definition.requiresInitialization() && definition.type === ServiceType.VALUE) {
+      warnings.push(`值类型服务 '${definition.name}' 不应该需要初始化`);
+    }
   }
 
   // 检查依赖完整性
@@ -425,8 +556,64 @@ export function validateServiceDefinitions() {
     throw new Error(`服务定义验证失败:\n${errors.join('\n')}`);
   }
 
-  return true;
+  return { valid: true, warnings };
+}
+
+/**
+ * 🆕 生成服务启动计划
+ */
+export function generateStartupPlan(environment = 'production') {
+  const config = getStartupConfig(environment);
+  const analysis = analyzeServiceDependencies();
+
+  return {
+    config,
+    analysis,
+    estimatedTime: serviceDefinitions.reduce((total, def) =>
+      total + def.getEstimatedInitTime(), 0),
+    criticalServices: getCriticalServices(),
+    asyncServices: getAsyncServices(),
+    initializationServices: getInitializationServices(),
+    recommendations: generateStartupRecommendations(analysis)
+  };
+}
+
+/**
+ * 🆕 生成启动建议
+ */
+function generateStartupRecommendations(analysis) {
+  const recommendations = [];
+
+  if (analysis.orphans.length > 0) {
+    recommendations.push({
+      type: 'warning',
+      message: `发现 ${analysis.orphans.length} 个孤立服务，考虑是否需要移除`,
+      services: analysis.orphans
+    });
+  }
+
+  if (analysis.heavyDependents.length > 0) {
+    recommendations.push({
+      type: 'info',
+      message: '以下服务被多个其他服务依赖，确保它们稳定可靠',
+      services: analysis.heavyDependents.map(h => h.name)
+    });
+  }
+
+  const asyncServices = getAsyncServices();
+  if (asyncServices.length > 0) {
+    recommendations.push({
+      type: 'info',
+      message: '建议为异步服务增加超时和错误处理',
+      services: asyncServices
+    });
+  }
+
+  return recommendations;
 }
 
 // 执行验证以确保配置正确
-validateServiceDefinitions();
+const validation = validateServiceDefinitions();
+if (validation.warnings.length > 0) {
+  console.warn('服务定义验证警告:', validation.warnings);
+}
