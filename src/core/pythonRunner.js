@@ -1,5 +1,4 @@
 import { spawn } from 'child_process';
-import path from 'path';
 import fs from 'fs';
 import { createLogger } from '../utils/logger.js';
 
@@ -23,7 +22,7 @@ class PythonRunner {
             },
             ...config
         };
-        
+
         this.logger = logger || createLogger('PythonRunner');
         this.runningProcesses = new Map();
     }
@@ -38,19 +37,19 @@ class PythonRunner {
     async runScript(scriptPath, args = [], options = {}) {
       const startTime = Date.now();
       const processId = `python_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
       try {
         // 验证脚本文件（跳过Python命令行选项如-c）
         if (scriptPath !== '-c' && !scriptPath.startsWith('-')) {
           await this.validateScript(scriptPath);
         }
-      
+
         const executionOptions = {
           ...this.config,
           ...options,
           timeout: options.timeout || this.config.timeout
         };
-      
+
         this.logger.info(`Starting Python script execution`, {
           processId,
           scriptPath,
@@ -59,7 +58,7 @@ class PythonRunner {
         });
 
         const result = await this.executeProcess(scriptPath, args, executionOptions, processId);
-            
+
             const duration = Date.now() - startTime;
             this.logger.info(`Python script execution completed successfully`, {
                 processId,
@@ -107,7 +106,7 @@ class PythonRunner {
     async executeProcess(scriptPath, args, options, processId) {
         return new Promise((resolve, reject) => {
             const fullArgs = [scriptPath, ...args];
-            
+
             const child = spawn(options.pythonExecutable, fullArgs, {
                 cwd: options.cwd,
                 env: options.env,
@@ -134,7 +133,7 @@ class PythonRunner {
                     processId,
                     timeout: options.timeout
                 });
-                
+
                 this.killProcess(child, processId);
             }, options.timeout);
 
@@ -142,7 +141,7 @@ class PythonRunner {
             child.stdout.on('data', (data) => {
                 const chunk = data.toString(options.encoding);
                 stdout += chunk;
-                
+
                 // 实时日志输出
                 if (options.logOutput) {
                     this.logger.debug(`Python stdout [${processId}]:`, chunk.trim());
@@ -153,7 +152,7 @@ class PythonRunner {
             child.stderr.on('data', (data) => {
                 const chunk = data.toString(options.encoding);
                 stderr += chunk;
-                
+
                 // 实时日志输出
                 if (options.logOutput) {
                     this.logger.debug(`Python stderr [${processId}]:`, chunk.trim());
@@ -163,7 +162,7 @@ class PythonRunner {
             // 进程退出处理
             child.on('exit', (code, signal) => {
                 clearTimeout(timeoutId);
-                
+
                 this.logger.debug(`Python process exited`, {
                     processId,
                     exitCode: code,
@@ -193,7 +192,7 @@ class PythonRunner {
             // 进程错误处理
             child.on('error', (error) => {
                 clearTimeout(timeoutId);
-                
+
                 this.logger.error(`Python process error`, {
                     processId,
                     error: error.message
@@ -220,12 +219,12 @@ class PythonRunner {
         try {
             // 检查文件是否存在
             await fs.promises.access(scriptPath);
-            
+
             // 检查是否是Python文件
             if (!scriptPath.endsWith('.py')) {
                 throw new Error(`Invalid Python script file: ${scriptPath}`);
             }
-            
+
             // 检查文件是否可读
             const stats = await fs.promises.stat(scriptPath);
             if (!stats.isFile()) {
@@ -246,7 +245,7 @@ class PythonRunner {
             if (process && !process.killed) {
                 // 尝试优雅关闭
                 process.kill('SIGTERM');
-                
+
                 // 如果5秒后仍未关闭，强制终止
                 setTimeout(() => {
                     if (!process.killed) {
@@ -286,16 +285,16 @@ class PythonRunner {
      */
     async killAllProcesses() {
         const processes = Array.from(this.runningProcesses.entries());
-        
+
         this.logger.info(`Terminating ${processes.length} running Python processes`);
-        
+
         for (const [processId, info] of processes) {
             this.killProcess(info.process, processId);
         }
 
         // 等待进程终止
         await new Promise(resolve => setTimeout(resolve, 6000));
-        
+
         this.runningProcesses.clear();
         this.logger.info('All Python processes terminated');
     }

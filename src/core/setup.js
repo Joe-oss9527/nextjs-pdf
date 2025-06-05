@@ -57,20 +57,20 @@ async function setupContainer() {
         // 2. 注册文件操作层服务
 
         // 文件服务
-        container.register('fileService', (config, logger) => {
+        container.register('fileService', (logger) => {
             return new FileService(logger); // 修正：FileService 构造函数只需要 logger
         }, {
             singleton: true,
-            dependencies: ['config', 'logger'],
+            dependencies: ['logger'],
             lifecycle: 'singleton'
         });
 
         // 路径服务
-        container.register('pathService', (config, logger) => {
+        container.register('pathService', (config) => {
             return new PathService(config);  // 修正：PathService 构造函数只需要 config
         }, {
             singleton: true,
-            dependencies: ['config', 'logger'],
+            dependencies: ['config'],
             lifecycle: 'singleton'
         });
 
@@ -86,13 +86,13 @@ async function setupContainer() {
         // 4. 注册数据管理层服务
 
         // 状态管理器
-        container.register('stateManager', async (config, fileService, pathService, logger) => {
+        container.register('stateManager', async (fileService, pathService, logger) => {
             const stateManager = new StateManager(fileService, pathService, logger);
             await stateManager.load();
             return stateManager;
         }, {
             singleton: true,
-            dependencies: ['config', 'fileService', 'pathService', 'logger'],
+            dependencies: ['fileService', 'pathService', 'logger'],
             lifecycle: 'singleton'
         });
 
@@ -210,11 +210,11 @@ async function setupContainer() {
         // 8. 注册Python集成服务
 
         // Python合并服务
-        container.register('pythonMergeService', (config, fileService, logger) => {
+        container.register('pythonMergeService', (config, logger) => {
             return new PythonMergeService(config, logger);
         }, {
             singleton: true,
-            dependencies: ['config', 'fileService', 'logger'],
+            dependencies: ['config', 'logger'],
             lifecycle: 'singleton'
         });
 
