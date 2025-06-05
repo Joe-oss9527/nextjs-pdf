@@ -1,6 +1,6 @@
 // src/services/progressTracker.js
-import { EventEmitter } from 'events';
-import chalk from 'chalk';
+import { EventEmitter } from "events";
+import chalk from "chalk";
 
 export class ProgressTracker extends EventEmitter {
   constructor(logger) {
@@ -16,12 +16,12 @@ export class ProgressTracker extends EventEmitter {
       startTime: null,
       endTime: null,
       currentUrl: null,
-      eta: null
+      eta: null,
     };
 
     this.urlStats = new Map(); // 每个URL的详细统计
     this.progressInterval = null;
-    this.displayMode = 'detailed'; // 'simple' | 'detailed'
+    this.displayMode = "detailed"; // 'simple' | 'detailed'
   }
 
   /**
@@ -30,17 +30,17 @@ export class ProgressTracker extends EventEmitter {
   start(total, options = {}) {
     this.stats.total = total;
     this.stats.startTime = Date.now();
-    this.displayMode = options.displayMode || 'detailed';
+    this.displayMode = options.displayMode || "detailed";
 
-    this.logger.info('开始爬取任务', {
+    this.logger.info("开始爬取任务", {
       总数: total,
-      模式: this.displayMode
+      模式: this.displayMode,
     });
 
-    this.emit('start', { total });
+    this.emit("start", { total });
 
     // 开始定期显示进度
-    if (this.displayMode === 'detailed') {
+    if (this.displayMode === "detailed") {
       this.startProgressDisplay();
     }
   }
@@ -53,14 +53,14 @@ export class ProgressTracker extends EventEmitter {
     this.stats.currentUrl = null;
 
     const urlStat = this.getOrCreateUrlStat(url);
-    urlStat.status = 'success';
+    urlStat.status = "success";
     urlStat.endTime = Date.now();
     urlStat.duration = urlStat.endTime - urlStat.startTime;
     urlStat.details = details;
 
     this.updateETA();
-    this.logProgress('success', url);
-    this.emit('success', { url, stats: this.getStats() });
+    this.logProgress("success", url);
+    this.emit("success", { url, stats: this.getStats() });
   }
 
   /**
@@ -73,28 +73,28 @@ export class ProgressTracker extends EventEmitter {
     this.stats.currentUrl = null;
 
     const urlStat = this.getOrCreateUrlStat(url);
-    urlStat.status = willRetry ? 'pending-retry' : 'failed';
+    urlStat.status = willRetry ? "pending-retry" : "failed";
     urlStat.error = error.message || String(error);
     urlStat.attempts = (urlStat.attempts || 0) + 1;
 
     this.updateETA();
-    this.logProgress('failure', url, error);
-    this.emit('failure', { url, error, stats: this.getStats() });
+    this.logProgress("failure", url, error);
+    this.emit("failure", { url, error, stats: this.getStats() });
   }
 
   /**
    * 记录跳过
    */
-  skip(url, reason = '') {
+  skip(url, reason = "") {
     this.stats.skipped++;
 
     const urlStat = this.getOrCreateUrlStat(url);
-    urlStat.status = 'skipped';
+    urlStat.status = "skipped";
     urlStat.reason = reason;
 
     this.updateETA();
-    this.logProgress('skip', url, reason);
-    this.emit('skip', { url, reason, stats: this.getStats() });
+    this.logProgress("skip", url, reason);
+    this.emit("skip", { url, reason, stats: this.getStats() });
   }
 
   /**
@@ -104,11 +104,11 @@ export class ProgressTracker extends EventEmitter {
     this.stats.retried++;
 
     const urlStat = this.getOrCreateUrlStat(url);
-    urlStat.status = 'retrying';
+    urlStat.status = "retrying";
     urlStat.attempts = attempt;
 
     this.logger.warn(`重试 [${attempt}]: ${url}`);
-    this.emit('retry', { url, attempt });
+    this.emit("retry", { url, attempt });
   }
 
   /**
@@ -119,9 +119,9 @@ export class ProgressTracker extends EventEmitter {
 
     const urlStat = this.getOrCreateUrlStat(url);
     urlStat.startTime = Date.now();
-    urlStat.status = 'processing';
+    urlStat.status = "processing";
 
-    this.emit('url-start', { url });
+    this.emit("url-start", { url });
   }
 
   /**
@@ -134,10 +134,13 @@ export class ProgressTracker extends EventEmitter {
     const duration = (this.stats.endTime - this.stats.startTime) / 1000;
     const summary = this.getSummary();
 
-    this.logger.info('爬取任务完成', summary);
+    this.logger.info("爬取任务完成", {
+      ...summary,
+      总耗时: `${duration.toFixed(2)}秒`, // 使用 duration
+    });
     this.displayFinalReport();
 
-    this.emit('finish', { stats: this.getStats(), summary });
+    this.emit("finish", { stats: this.getStats(), summary, duration });
   }
 
   /**
@@ -147,12 +150,12 @@ export class ProgressTracker extends EventEmitter {
     if (!this.urlStats.has(url)) {
       this.urlStats.set(url, {
         url,
-        status: 'pending',
+        status: "pending",
         startTime: null,
         endTime: null,
         duration: null,
         attempts: 0,
-        error: null
+        error: null,
       });
     }
     return this.urlStats.get(url);
@@ -162,7 +165,8 @@ export class ProgressTracker extends EventEmitter {
    * 更新预计完成时间
    */
   updateETA() {
-    const processed = this.stats.completed + this.stats.failed + this.stats.skipped;
+    const processed =
+      this.stats.completed + this.stats.failed + this.stats.skipped;
     if (processed === 0) return;
 
     const elapsed = Date.now() - this.stats.startTime;
@@ -175,10 +179,12 @@ export class ProgressTracker extends EventEmitter {
    * 获取统计信息
    */
   getStats() {
-    const processed = this.stats.completed + this.stats.failed + this.stats.skipped;
-    const percentage = this.stats.total > 0
-      ? (processed / this.stats.total * 100).toFixed(2)
-      : 0;
+    const processed =
+      this.stats.completed + this.stats.failed + this.stats.skipped;
+    const percentage =
+      this.stats.total > 0
+        ? ((processed / this.stats.total) * 100).toFixed(2)
+        : 0;
 
     const elapsed = (Date.now() - this.stats.startTime) / 1000;
     const rate = processed > 0 ? processed / elapsed : 0;
@@ -189,7 +195,7 @@ export class ProgressTracker extends EventEmitter {
       percentage,
       rate: rate.toFixed(2),
       elapsed: elapsed.toFixed(0),
-      etaSeconds: this.stats.eta ? Math.round(this.stats.eta / 1000) : null
+      etaSeconds: this.stats.eta ? Math.round(this.stats.eta / 1000) : null,
     };
   }
 
@@ -209,7 +215,7 @@ export class ProgressTracker extends EventEmitter {
       重试次数: this.stats.retried,
       成功率: `${((this.stats.completed / this.stats.total) * 100).toFixed(2)}%`,
       总耗时: `${duration.toFixed(2)}秒`,
-      平均速度: `${(this.stats.total / duration).toFixed(2)} 页/秒`
+      平均速度: `${(this.stats.total / duration).toFixed(2)} 页/秒`,
     };
   }
 
@@ -220,32 +226,32 @@ export class ProgressTracker extends EventEmitter {
     const stats = this.getStats();
     const processed = stats.processed;
 
-    if (this.displayMode === 'simple') {
+    if (this.displayMode === "simple") {
       return; // 简单模式下不输出每个URL的日志
     }
 
     const progressBar = this.createProgressBar(stats.percentage);
     const etaStr = stats.etaSeconds
       ? `预计剩余: ${this.formatTime(stats.etaSeconds)}`
-      : '';
+      : "";
 
     switch (type) {
-      case 'success':
+      case "success":
         this.logger.info(
           chalk.green(`✓ [${processed}/${this.stats.total}] ${url}`) +
-          ` ${progressBar} ${stats.percentage}% ${etaStr}`
+            ` ${progressBar} ${stats.percentage}% ${etaStr}`,
         );
         break;
-      case 'failure':
+      case "failure":
         this.logger.error(
           chalk.red(`✗ [${processed}/${this.stats.total}] ${url}`) +
-          ` - ${extra?.message || '未知错误'}`
+            ` - ${extra?.message || "未知错误"}`,
         );
         break;
-      case 'skip':
+      case "skip":
         this.logger.info(
           chalk.yellow(`⚠ [${processed}/${this.stats.total}] 跳过: ${url}`) +
-          (extra ? ` - ${extra}` : '')
+            (extra ? ` - ${extra}` : ""),
         );
         break;
     }
@@ -256,9 +262,9 @@ export class ProgressTracker extends EventEmitter {
    */
   createProgressBar(percentage) {
     const width = 20;
-    const filled = Math.round(width * percentage / 100);
+    const filled = Math.round((width * percentage) / 100);
     const empty = width - filled;
-    return chalk.green('█'.repeat(filled)) + chalk.gray('░'.repeat(empty));
+    return chalk.green("█".repeat(filled)) + chalk.gray("░".repeat(empty));
   }
 
   /**
@@ -285,8 +291,10 @@ export class ProgressTracker extends EventEmitter {
       }
       console.log(
         `进度: ${stats.percentage}% (${stats.processed}/${this.stats.total}) ` +
-        `速率: ${stats.rate} 页/秒 ` +
-        (stats.etaSeconds ? `剩余: ${this.formatTime(stats.etaSeconds)}` : '')
+          `速率: ${stats.rate} 页/秒 ` +
+          (stats.etaSeconds
+            ? `剩余: ${this.formatTime(stats.etaSeconds)}`
+            : ""),
       );
     }, 5000); // 每5秒更新一次
   }
@@ -305,25 +313,25 @@ export class ProgressTracker extends EventEmitter {
    * 显示最终报告
    */
   displayFinalReport() {
-    console.log('\n' + chalk.bold('=== 爬取任务完成报告 ==='));
+    console.log("\n" + chalk.bold("=== 爬取任务完成报告 ==="));
     const summary = this.getSummary();
 
     Object.entries(summary).forEach(([key, value]) => {
-      const color = key === '失败' && value > 0 ? chalk.red : chalk.green;
+      const color = key === "失败" && value > 0 ? chalk.red : chalk.green;
       console.log(`${key}: ${color(value)}`);
     });
 
     // 显示失败的URL
     if (this.stats.failed > 0) {
-      console.log('\n' + chalk.red('失败的URL:'));
+      console.log("\n" + chalk.red("失败的URL:"));
       this.urlStats.forEach((stat, url) => {
-        if (stat.status === 'failed') {
+        if (stat.status === "failed") {
           console.log(chalk.red(`  - ${url}: ${stat.error}`));
         }
       });
     }
 
-    console.log(chalk.bold('\n======================\n'));
+    console.log(chalk.bold("\n======================\n"));
   }
 
   /**
@@ -334,11 +342,11 @@ export class ProgressTracker extends EventEmitter {
       summary: this.getSummary(),
       stats: this.getStats(),
       urlDetails: Array.from(this.urlStats.values()),
-      generatedAt: new Date().toISOString()
+      generatedAt: new Date().toISOString(),
     };
 
     await fileService.writeJson(outputPath, report);
-    this.logger.info('导出详细进度报告', { path: outputPath });
+    this.logger.info("导出详细进度报告", { path: outputPath });
 
     return report;
   }

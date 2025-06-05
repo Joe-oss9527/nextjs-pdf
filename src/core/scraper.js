@@ -148,7 +148,8 @@ export class Scraper extends EventEmitter {
         });
       } catch (error) {
         this.logger.warn('导航链接选择器等待超时', {
-          selector: this.config.navLinksSelector
+          selector: this.config.navLinksSelector,
+          error: error.message
         });
       }
 
@@ -344,7 +345,8 @@ export class Scraper extends EventEmitter {
       } catch (error) {
         this.logger.warn('内容选择器等待超时', {
           url,
-          selector: this.config.contentSelector
+          selector: this.config.contentSelector,
+          error: error.message
         });
       }
 
