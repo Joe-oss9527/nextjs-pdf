@@ -17,7 +17,7 @@ export class FileService {
       this.logger.debug(`确保目录存在: ${dirPath}`);
     } catch (error) {
       throw new FileOperationError(
-        `创建目录失败: ${dirPath}`,
+        `创建目录失败: ${dirPath} - ${error.message}`,
         dirPath,
         'mkdir'
       );
@@ -34,7 +34,7 @@ export class FileService {
       this.logger.info(`清理目录: ${dirPath}`);
     } catch (error) {
       throw new FileOperationError(
-        `清理目录失败: ${dirPath}`,
+        `清理目录失败: ${dirPath} - ${error.message}`,
         dirPath,
         'clean'
       );
@@ -54,7 +54,7 @@ export class FileService {
         return defaultValue;
       }
       throw new FileOperationError(
-        `读取JSON文件失败: ${filePath}`,
+        `读取JSON文件失败: ${filePath} - ${error.message}`,
         filePath,
         'readJson'
       );
@@ -72,7 +72,7 @@ export class FileService {
       this.logger.debug(`写入JSON文件: ${filePath}`);
     } catch (error) {
       throw new FileOperationError(
-        `写入JSON文件失败: ${filePath}`,
+        `写入JSON文件失败: ${filePath} - ${error.message}`,
         filePath,
         'writeJson'
       );
@@ -92,7 +92,7 @@ export class FileService {
       await this.writeJson(filePath, array);
     } catch (error) {
       throw new FileOperationError(
-        `追加到JSON数组失败: ${filePath}`,
+        `追加到JSON数组失败: ${filePath} - ${error.message}`,
         filePath,
         'appendToJsonArray'
       );
@@ -112,7 +112,7 @@ export class FileService {
       await this.writeJson(filePath, filtered);
     } catch (error) {
       throw new FileOperationError(
-        `从JSON数组移除项失败: ${filePath}`,
+        `从JSON数组移除项失败: ${filePath} - ${error.message}`,
         filePath,
         'removeFromJsonArray'
       );
@@ -143,7 +143,7 @@ export class FileService {
       return files;
     } catch (error) {
       throw new FileOperationError(
-        `列出目录文件失败: ${dirPath}`,
+        `列出目录文件失败: ${dirPath} - ${error.message}`,
         dirPath,
         'listFiles'
       );
@@ -160,7 +160,7 @@ export class FileService {
       this.logger.debug(`复制文件: ${source} -> ${destination}`);
     } catch (error) {
       throw new FileOperationError(
-        `复制文件失败: ${source} -> ${destination}`,
+        `复制文件失败: ${source} -> ${destination} - ${error.message}`,
         source,
         'copyFile'
       );

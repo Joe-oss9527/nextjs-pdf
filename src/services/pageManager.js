@@ -245,7 +245,10 @@ export class PageManager extends EventEmitter {
       'connect.facebook.net'
     ];
 
-    return blockedDomains.some(domain => url.includes(domain));
+    const shouldBlockByType = ['media'].includes(resourceType);
+    const shouldBlockByDomain = blockedDomains.some(domain => url.includes(domain));
+
+    return shouldBlockByType || shouldBlockByDomain;
   }
 
   /**

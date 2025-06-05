@@ -179,9 +179,6 @@ export class ImageService extends EventEmitter {
     try {
       this.logger?.debug('开始等待图片加载');
 
-      // 监听页面中的图片加载事件
-      const imageStats = { loaded: 0, failed: 0 };
-
       await page.evaluateOnNewDocument(() => {
         window.__imageLoadStats = { loaded: 0, failed: 0 };
 
