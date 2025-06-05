@@ -11,8 +11,8 @@
     "test": "node test-stage8-integration.js",
     "test:demo": "node demo-stage8.js",
     "test:watch": "jest --watch",
-    "lint": "eslint 'src/**/*.js'",
-    "lint:fix": "eslint 'src/**/*.js' --fix"
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix"
   },
   "keywords": [
     "scraper",

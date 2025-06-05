@@ -565,11 +565,11 @@ export function validateServiceDefinitions() {
 export function generateStartupPlan(environment = 'production') {
   const config = getStartupConfig(environment);
   const analysis = analyzeServiceDependencies();
-
+  
   return {
     config,
     analysis,
-    estimatedTime: serviceDefinitions.reduce((total, def) =>
+    estimatedTime: serviceDefinitions.reduce((total, def) => 
       total + def.getEstimatedInitTime(), 0),
     criticalServices: getCriticalServices(),
     asyncServices: getAsyncServices(),
