@@ -44,7 +44,7 @@ function validateServiceName(name) {
   if (!name || typeof name !== 'string') {
     return false;
   }
-
+  
   // 更严格的服务名验证：字母开头，只允许字母、数字、下划线
   return /^[a-zA-Z][a-zA-Z0-9_]*$/.test(name);
 }
@@ -53,16 +53,16 @@ function validateDependencies(dependencies) {
   if (!Array.isArray(dependencies)) {
     return false;
   }
-
+  
   // 检查重复依赖
   const uniqueDeps = new Set(dependencies);
   if (uniqueDeps.size !== dependencies.length) {
     return false;
   }
-
-  return dependencies.every(dep =>
-    typeof dep === 'string' &&
-    dep.trim() &&
+  
+  return dependencies.every(dep => 
+    typeof dep === 'string' && 
+    dep.trim() && 
     validateServiceName(dep)
   );
 }
@@ -88,59 +88,59 @@ export class ServiceDefinition {
 
     // 定义不可变属性 - 🔧 使用深冻结
     Object.defineProperties(this, {
-      name: {
-        value: name,
-        writable: false,
-        enumerable: true,
-        configurable: false
+      name: { 
+        value: name, 
+        writable: false, 
+        enumerable: true, 
+        configurable: false 
       },
-      type: {
-        value: type,
-        writable: false,
-        enumerable: true,
-        configurable: false
+      type: { 
+        value: type, 
+        writable: false, 
+        enumerable: true, 
+        configurable: false 
       },
-      implementation: {
-        value: implementation,
-        writable: false,
-        enumerable: true,
-        configurable: false
+      implementation: { 
+        value: implementation, 
+        writable: false, 
+        enumerable: true, 
+        configurable: false 
       },
-      dependencies: {
-        value: deepFreeze([...dependencies]),
-        writable: false,
-        enumerable: true,
-        configurable: false
+      dependencies: { 
+        value: deepFreeze([...dependencies]), 
+        writable: false, 
+        enumerable: true, 
+        configurable: false 
       },
-      priority: {
-        value: priority,
-        writable: false,
-        enumerable: true,
-        configurable: false
+      priority: { 
+        value: priority, 
+        writable: false, 
+        enumerable: true, 
+        configurable: false 
       },
-      singleton: {
-        value: Boolean(singleton),
-        writable: false,
-        enumerable: true,
-        configurable: false
+      singleton: { 
+        value: Boolean(singleton), 
+        writable: false, 
+        enumerable: true, 
+        configurable: false 
       },
-      description: {
-        value: description,
-        writable: false,
-        enumerable: true,
-        configurable: false
+      description: { 
+        value: description, 
+        writable: false, 
+        enumerable: true, 
+        configurable: false 
       },
-      tags: {
+      tags: { 
         value: deepFreeze({ ...tags }), // 🔧 修复：使用深冻结
-        writable: false,
-        enumerable: true,
-        configurable: false
+        writable: false, 
+        enumerable: true, 
+        configurable: false 
       },
-      timeout: {
-        value: timeout,
-        writable: false,
-        enumerable: true,
-        configurable: false
+      timeout: { 
+        value: timeout, 
+        writable: false, 
+        enumerable: true, 
+        configurable: false 
       }
     });
 
@@ -209,13 +209,13 @@ export class ServiceDefinition {
     if (this.type === ServiceType.VALUE) {
       return false;
     }
-
+    
     if (this.type === ServiceType.FACTORY) {
       return this.implementation.constructor.name === 'AsyncFunction' ||
              this.implementation.toString().includes('async') ||
              this.tags.async === true;
     }
-
+    
     return this.tags.async === true;
   }
 
@@ -234,26 +234,26 @@ export class ServiceDefinition {
     if (this.tags.estimatedInitTime) {
       return this.tags.estimatedInitTime;
     }
-
+    
     // 基于服务类型的默认估计
     const defaults = {
       [ServiceType.VALUE]: 0,
       [ServiceType.CLASS]: 100,
       [ServiceType.FACTORY]: 200
     };
-
+    
     let baseTime = defaults[this.type] || 100;
-
+    
     // 如果是异步服务，增加时间
     if (this.isAsync()) {
       baseTime *= 2;
     }
-
+    
     // 如果需要初始化，增加时间
     if (this.requiresInitialization()) {
       baseTime += 1000;
     }
-
+    
     return baseTime;
   }
 
@@ -284,7 +284,7 @@ export class ServiceDefinition {
     if (!(other instanceof ServiceDefinition)) {
       return false;
     }
-
+    
     return this.name === other.name &&
            this.type === other.type &&
            this.priority === other.priority &&
@@ -335,13 +335,13 @@ export class ServiceDefinitionError extends Error {
     this.name = 'ServiceDefinitionError';
     this.details = details;
     this.timestamp = new Date().toISOString();
-
+    
     // 保持原型链
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, ServiceDefinitionError);
     }
   }
-
+  
   toJSON() {
     return {
       name: this.name,

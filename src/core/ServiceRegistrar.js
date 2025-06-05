@@ -128,12 +128,12 @@ export class ServiceRegistrar extends EventEmitter {
   async _registerInParallel(definitions) {
     // 使用依赖解析器创建安全的批次
     const safeBatches = this.dependencyResolver.createSafeBatches(definitions);
-
+    
     this.logger.debug(`创建了 ${safeBatches.length} 个安全的并行注册批次`);
 
     for (let i = 0; i < safeBatches.length; i++) {
       const batch = safeBatches[i];
-
+      
       this.logger.debug(`处理批次 ${i + 1}/${safeBatches.length}`, {
         services: batch.map(d => d.name),
         batchSize: batch.length
@@ -141,7 +141,7 @@ export class ServiceRegistrar extends EventEmitter {
 
       // 🔧 修复：在每个批次内部限制并发数
       const chunks = this._chunkArray(batch, this.options.maxConcurrency);
-
+      
       for (const chunk of chunks) {
         await Promise.all(
           chunk.map(def => this._registerServiceWithRetry(def))
@@ -451,7 +451,7 @@ export class ServiceRegistrar extends EventEmitter {
     // 实现服务降级逻辑
     // 例如：注册一个默认实现或空对象
     const defaultImplementation = definition.tags.defaultImplementation || {};
-
+    
     this.container.register(
       definition.name,
       () => defaultImplementation,
@@ -612,7 +612,7 @@ export class ServiceRegistrar extends EventEmitter {
    */
   getServiceDependencyGraph() {
     const graph = new Map();
-
+    
     for (const serviceName of this.registeredServices) {
       // 从容器获取服务配置
       const serviceConfig = this.container.services.get(serviceName);
@@ -623,7 +623,7 @@ export class ServiceRegistrar extends EventEmitter {
         });
       }
     }
-
+    
     return Object.fromEntries(graph);
   }
 
@@ -690,7 +690,7 @@ export class ServiceRegistrationError extends Error {
     this.report = report;
     this.originalError = originalError;
     this.timestamp = new Date().toISOString();
-
+    
     // 保持原型链
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, ServiceRegistrationError);

@@ -245,22 +245,22 @@ export class DependencyResolver {
     const defMap = new Map(definitions.map(d => [d.name, d]));
     const batches = [];
     const processed = new Set();
-
+    
     while (processed.size < definitions.length) {
       const currentBatch = [];
-
+      
       for (const def of definitions) {
         if (processed.has(def.name)) continue;
-
+        
         // 检查所有依赖是否已经被处理
         const allDepsProcessed = def.dependencies.every(dep => processed.has(dep));
-
+        
         if (allDepsProcessed) {
           currentBatch.push(def);
           processed.add(def.name);
         }
       }
-
+      
       if (currentBatch.length === 0) {
         // 如果没有可以处理的服务，说明存在循环依赖
         const remaining = definitions.filter(d => !processed.has(d.name));
@@ -268,10 +268,10 @@ export class DependencyResolver {
           `无法解析剩余服务的依赖关系: ${remaining.map(d => d.name).join(', ')}`
         );
       }
-
+      
       batches.push(currentBatch);
     }
-
+    
     return batches;
   }
 
@@ -317,31 +317,31 @@ export class DependencyResolver {
   validateServiceGraph(definitions) {
     const errors = [];
     const warnings = [];
-
+    
     try {
       // 基本验证
       this._validateDependencies(this._buildDependencyGraph(definitions), definitions);
       this._detectCircularDependencies(this._buildDependencyGraph(definitions));
-
+      
       // 深度验证
       const graph = this._buildDependencyGraph(definitions);
-
+      
       // 检查孤立服务
       for (const [name, node] of graph) {
         if (node.dependencies.length === 0 && node.dependents.length === 0) {
           warnings.push(`服务 '${name}' 是孤立的，没有依赖也不被依赖`);
         }
-
+        
         // 检查深层依赖链
         if (node.dependencies.length > 5) {
           warnings.push(`服务 '${name}' 的直接依赖过多 (${node.dependencies.length})，考虑重构`);
         }
       }
-
+      
     } catch (error) {
       errors.push(error.message);
     }
-
+    
     return {
       valid: errors.length === 0,
       errors,

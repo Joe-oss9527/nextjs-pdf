@@ -118,7 +118,7 @@ export class ServiceFactory {
     try {
       // 🔧 增强：检测异步工厂函数
       const isAsync = this._isAsyncFunction(factory) || definition.isAsync();
-
+      
       if (isAsync) {
         this.logger.debug(`执行异步工厂函数: ${definition.name}`);
       }
@@ -152,7 +152,7 @@ export class ServiceFactory {
       }
 
       const instance = new Constructor(...dependencies);
-
+      
       // 🔧 增强：验证实例化结果
       if (instance.constructor !== Constructor) {
         this.logger.warn(`服务 ${definition.name} 的实例构造函数不匹配`);
@@ -188,8 +188,8 @@ export class ServiceFactory {
     if (typeof instance === 'object' && instance !== null) {
       // 🔧 增强：验证期望的方法
       if (definition.tags.requiredMethods) {
-        const requiredMethods = Array.isArray(definition.tags.requiredMethods)
-          ? definition.tags.requiredMethods
+        const requiredMethods = Array.isArray(definition.tags.requiredMethods) 
+          ? definition.tags.requiredMethods 
           : [definition.tags.requiredMethods];
 
         for (const method of requiredMethods) {
@@ -312,7 +312,7 @@ export class ServiceFactory {
     if (hasInitMethod) {
       const isAsyncInit = this._isAsyncFunction(instance.initialize) ||
                           definition.tags.hasAsyncInit === true;
-
+      
       if (isAsyncInit) {
         this.logger.debug(`检测到异步初始化方法: ${definition.name}`);
       }
@@ -553,7 +553,7 @@ export class ServiceCreationError extends Error {
     this.serviceType = serviceType;
     this.originalError = originalError;
     this.timestamp = new Date().toISOString();
-
+    
     // 保持原型链
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, ServiceCreationError);
