@@ -9,7 +9,7 @@ import { NetworkError } from '../utils/errors.js';
 export class PageManager extends EventEmitter {
   constructor(browserPool, options = {}) {
     super();
-    
+
     this.browserPool = browserPool;
     this.options = {
       defaultTimeout: options.defaultTimeout || 30000,
@@ -24,7 +24,7 @@ export class PageManager extends EventEmitter {
     this.logger = options.logger;
     this.pages = new Map();
     this.isClosed = false;
-    
+
     // 统计信息
     this.stats = {
       created: 0,
@@ -90,7 +90,7 @@ export class PageManager extends EventEmitter {
 
     } catch (error) {
       this.stats.errors++;
-      
+
       // 如果页面创建失败，确保释放浏览器
       if (browser) {
         this.browserPool.releaseBrowser(browser);
@@ -123,7 +123,7 @@ export class PageManager extends EventEmitter {
       // 启用请求拦截以优化性能
       if (options.enableRequestInterception) {
         await page.setRequestInterception(true);
-        
+
         page.on('request', (request) => {
           const resourceType = request.resourceType();
           const url = request.url();
@@ -181,7 +181,7 @@ export class PageManager extends EventEmitter {
       if (pageInfo) {
         pageInfo.errorCount++;
       }
-      
+
       this.logger?.error(`页面错误 [${id}]`, { error: error.message });
       this.emit('page-error', { id, error });
     });
@@ -192,7 +192,7 @@ export class PageManager extends EventEmitter {
       if (pageInfo) {
         pageInfo.errorCount++;
       }
-      
+
       this.logger?.warn(`页面JS错误 [${id}]`, { error: error.message });
       this.emit('page-js-error', { id, error });
     });
@@ -216,10 +216,10 @@ export class PageManager extends EventEmitter {
 
     // 响应事件
     page.on('response', (response) => {
-      this.emit('page-response', { 
-        id, 
-        url: response.url(), 
-        status: response.status() 
+      this.emit('page-response', {
+        id,
+        url: response.url(),
+        status: response.status()
       });
     });
 
@@ -309,8 +309,8 @@ export class PageManager extends EventEmitter {
     const pageIds = Array.from(this.pages.keys());
     this.logger?.info(`开始关闭所有页面 (${pageIds.length} 个)`);
 
-    const closePromises = pageIds.map(id => 
-      this.closePage(id).catch(error => 
+    const closePromises = pageIds.map(id =>
+      this.closePage(id).catch(error =>
         this.logger?.error(`关闭页面 [${id}] 时出错`, { error: error.message })
       )
     );
@@ -328,7 +328,7 @@ export class PageManager extends EventEmitter {
 
     for (const [id, pageInfo] of this.pages) {
       const idleTime = now - pageInfo.lastActivity;
-      
+
       // 检查页面是否超时或已关闭
       if (idleTime > maxIdleTime || pageInfo.page.isClosed()) {
         toCleanup.push(id);
@@ -337,7 +337,7 @@ export class PageManager extends EventEmitter {
 
     if (toCleanup.length > 0) {
       this.logger?.info(`清理 ${toCleanup.length} 个超时页面`);
-      
+
       const cleanupPromises = toCleanup.map(id => this.closePage(id));
       await Promise.all(cleanupPromises);
     }
@@ -350,7 +350,7 @@ export class PageManager extends EventEmitter {
    */
   getStatus() {
     const pages = Array.from(this.pages.values());
-    
+
     return {
       isClosed: this.isClosed,
       totalPages: this.pages.size,
@@ -389,7 +389,7 @@ export class PageManager extends EventEmitter {
    */
   async createPages(pageConfigs) {
     const results = [];
-    
+
     for (const config of pageConfigs) {
       try {
         const page = await this.createPage(config.id, config.options);
@@ -413,10 +413,10 @@ export class PageManager extends EventEmitter {
 
     // 保存原有配置
     const pageOptions = { ...this.options, ...options };
-    
+
     // 关闭旧页面
     await this.closePage(id);
-    
+
     // 创建新页面
     return this.createPage(id, pageOptions);
   }
