@@ -506,6 +506,91 @@ export class ImageService extends EventEmitter {
   }
 
   /**
+   * 🔧 修复：页面级别的清理方法 - 支持无参数调用
+   */
+  async cleanup(page = null) {
+    try {
+      // 如果没有页面参数，执行全局清理
+      if (!page) {
+        this.logger?.debug('无页面参数，执行全局清理');
+        return this.dispose();
+      }
+
+      // 检查页面是否有效
+      if (page.isClosed && page.isClosed()) {
+        this.logger?.debug('页面已关闭，跳过页面相关的清理操作');
+        this.emit('cleanup-complete', { skipped: true, reason: 'page-closed' });
+        return;
+      }
+
+      // 执行页面相关的清理
+      return this.cleanupPage(page);
+
+    } catch (error) {
+      this.logger?.warn('清理图片服务资源时发生错误', { error: error.message });
+      this.emit('cleanup-error', { error });
+    }
+  }
+
+  /**
+   * 🆕 新增：专用的页面清理方法
+   */
+  async cleanupPage(page) {
+    if (!page || (page.isClosed && page.isClosed())) {
+      this.logger?.debug('页面无效或已关闭，跳过页面清理');
+      return false;
+    }
+
+    try {
+      await page.evaluate(() => {
+        // 清理观察器
+        if (window.__imageObserver) {
+          window.__imageObserver.disconnect();
+          delete window.__imageObserver;
+        }
+
+        if (window.__mutationObserver) {
+          window.__mutationObserver.disconnect();
+          delete window.__mutationObserver;
+        }
+
+        // 清理标记
+        delete window.__imageObserverSetup;
+        delete window.__imageLoadStats;
+      });
+
+      this.logger?.debug('图片服务页面清理完成');
+      this.emit('page-cleanup-complete', { success: true });
+      return true;
+
+    } catch (error) {
+      this.logger?.debug('页面清理失败（可能页面已关闭）', { error: error.message });
+      this.emit('page-cleanup-error', { error });
+      return false;
+    }
+  }
+
+  /**
+   * 🆕 新增：容器自动调用的 dispose 方法
+   */
+  async dispose() {
+    try {
+      this.logger?.debug('开始清理图片服务（全局清理）...');
+
+      // 全局清理，不依赖页面对象
+      this.resetStats();
+      this.removeAllListeners();
+
+      this.logger?.debug('图片服务全局清理完成');
+      this.emit('dispose-complete');
+
+    } catch (error) {
+      this.logger?.error('图片服务全局清理失败', { error: error.message });
+      this.emit('dispose-error', { error });
+    }
+  }
+
+  /**
    * 获取图片服务统计信息
    */
   getStats() {
@@ -531,34 +616,5 @@ export class ImageService extends EventEmitter {
     };
 
     this.emit('stats-reset');
-  }
-
-  /**
-   * 清理资源
-   */
-  async cleanup(page) {
-    try {
-      await page.evaluate(() => {
-        // 清理观察器
-        if (window.__imageObserver) {
-          window.__imageObserver.disconnect();
-          delete window.__imageObserver;
-        }
-
-        if (window.__mutationObserver) {
-          window.__mutationObserver.disconnect();
-          delete window.__mutationObserver;
-        }
-
-        // 清理标记
-        delete window.__imageObserverSetup;
-        delete window.__imageLoadStats;
-      });
-
-      this.emit('cleanup-complete');
-
-    } catch (error) {
-      this.logger?.warn('清理图片服务资源时发生错误', { error: error.message });
-    }
   }
 }

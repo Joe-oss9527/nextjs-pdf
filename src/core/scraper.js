@@ -226,6 +226,14 @@ export class Scraper extends EventEmitter {
 
     } finally {
       if (page) {
+        // 🔧 修复：在关闭页面前清理图片服务
+        try {
+          await this.imageService.cleanupPage(page);
+        } catch (cleanupError) {
+          this.logger?.debug('URL收集页面的图片服务清理失败（非致命错误）', {
+            error: cleanupError.message
+          });
+        }
         await this.pageManager.closePage('url-collector');
       }
     }
@@ -485,7 +493,18 @@ export class Scraper extends EventEmitter {
       throw new NetworkError(`页面爬取失败: ${url}`, url, error);
 
     } finally {
+      // 🔧 修复：正确的清理顺序
       if (page) {
+        try {
+          // 1. 先清理页面相关的图片服务资源
+          await this.imageService.cleanupPage(page);
+        } catch (cleanupError) {
+          this.logger?.debug('图片服务页面清理失败（非致命错误）', {
+            error: cleanupError.message
+          });
+        }
+
+        // 2. 然后关闭页面
         await this.pageManager.closePage(pageId);
       }
     }
@@ -692,28 +711,32 @@ export class Scraper extends EventEmitter {
   }
 
   /**
-   * 清理资源
+   * 清理资源 - 🔧 修复版本
    */
   async cleanup() {
     this.logger.info('开始清理资源...');
 
     try {
-      // 清理队列管理器
+      // 1. 暂停并清理队列管理器
       if (this.queueManager) {
+        this.queueManager.pause();
         this.queueManager.clear();
       }
 
-      // 清理页面管理器
+      // 2. 🔧 修复：图片服务的全局清理将由容器自动调用 dispose()
+      // 这里不需要手动调用，避免重复清理
+
+      // 3. 清理页面管理器（这会关闭所有页面）
       if (this.pageManager) {
         await this.pageManager.closeAll();
       }
 
-      // 清理浏览器池
+      // 4. 清理浏览器池
       if (this.browserPool) {
         await this.browserPool.close();
       }
 
-      // 保存最终状态
+      // 5. 保存最终状态
       if (this.stateManager) {
         await this.stateManager.save();
       }
