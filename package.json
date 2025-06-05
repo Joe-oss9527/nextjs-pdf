@@ -6,6 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "node src/app.js",
+    "start:clean": "npm run clean && npm start",
+    "clean": "rm -rf pdfs/*/ pdfs/finalPdf/* pdfs/metadata/*",
     "test": "node test-stage8-integration.js",
     "test:demo": "node demo-stage8.js",
     "test:watch": "jest --watch",

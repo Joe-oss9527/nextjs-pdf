@@ -27,7 +27,7 @@ export class PathService {
   }
 
   /**
-   * 获取PDF文件的完整路径
+   * 获取PDF文件的完整路径 - 修复：支持数字索引优先
    */
   getPdfPath(url, options = {}) {
     const { useHash = true, index = null } = options;
@@ -41,14 +41,19 @@ export class PathService {
     // 确定目录
     const directory = this.determineDirectory(url);
 
-    // 构建文件名
+    // 🔥 关键修改：构建文件名 - 数字索引优先，带补零
     let finalFileName;
-    if (useHash) {
+
+    if (!useHash && index !== null) {
+      // 使用数字索引（3位补零确保正确排序）
+      const paddedIndex = String(index).padStart(3, '0');
+      finalFileName = `${paddedIndex}-${fileName}.pdf`;
+    } else if (useHash) {
+      // 使用哈希（向后兼容）
       const hash = getUrlHash(url);
       finalFileName = `${hash}-${fileName}.pdf`;
-    } else if (index !== null) {
-      finalFileName = `${index}-${fileName}.pdf`;
     } else {
+      // 后备方案：直接使用文件名
       finalFileName = `${fileName}.pdf`;
     }
 
@@ -99,10 +104,10 @@ export class PathService {
   }
 
   /**
-   * 解析PDF文件名，提取信息
+   * 解析PDF文件名，提取信息 - 改进：支持数字和哈希前缀
    */
   parsePdfFileName(fileName) {
-    // 假设格式: hash-original-name.pdf 或 index-original-name.pdf
+    // 假设格式: 000-original-name.pdf 或 hash-original-name.pdf
     const nameWithoutExt = path.basename(fileName, '.pdf');
     const parts = nameWithoutExt.split('-');
 
@@ -110,20 +115,23 @@ export class PathService {
       const prefix = parts[0];
       const originalName = parts.slice(1).join('-');
 
-      // 判断是hash还是index
-      const isHash = /^[a-f0-9]{8}$/.test(prefix);
+      // 判断是数字索引还是哈希
+      const isNumericIndex = /^\d{3}$/.test(prefix); // 3位数字
+      const isHash = /^[a-f0-9]{8}$/.test(prefix); // 8位十六进制哈希
 
       return {
         prefix,
         originalName,
+        isNumericIndex,
         isHash,
-        index: isHash ? null : parseInt(prefix, 10)
+        index: isNumericIndex ? parseInt(prefix, 10) : null
       };
     }
 
     return {
       prefix: null,
       originalName: nameWithoutExt,
+      isNumericIndex: false,
       isHash: false,
       index: null
     };
@@ -135,5 +143,34 @@ export class PathService {
   getTempPath(filename) {
     const tempDir = path.join(this.config.pdfDir, '.temp');
     return path.join(tempDir, filename);
+  }
+
+  /**
+   * 根据索引生成标准化的PDF文件名 - 新增方法
+   */
+  generateIndexedFileName(url, index) {
+    return this.getPdfPath(url, { useHash: false, index });
+  }
+
+  /**
+   * 根据哈希生成PDF文件名 - 新增方法
+   */
+  generateHashedFileName(url) {
+    return this.getPdfPath(url, { useHash: true });
+  }
+
+  /**
+   * 验证文件名格式 - 新增方法
+   */
+  validateFileName(fileName) {
+    const parsed = this.parsePdfFileName(fileName);
+
+    return {
+      isValid: parsed.isNumericIndex || parsed.isHash || !parsed.prefix,
+      type: parsed.isNumericIndex ? 'indexed' :
+            parsed.isHash ? 'hashed' : 'simple',
+      index: parsed.index,
+      originalName: parsed.originalName
+    };
   }
 }

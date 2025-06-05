@@ -2653,3 +2653,301 @@
 {"level":"info","message":"Container disposed successfully","service":"pdf-scraper","timestamp":"2025-06-05 10:57:52"}
 {"level":"info","message":"Container shutdown completed","service":"pdf-scraper","timestamp":"2025-06-05 10:57:52"}
 {"level":"info","message":"✅ Application cleanup completed","service":"pdf-scraper","timestamp":"2025-06-05 10:57:52"}
+{"level":"info","message":"🚀 Starting PDF Scraper Application...","service":"pdf-scraper","timestamp":"2025-06-05 11:27:56"}
+{"level":"info","message":"All dependencies validated successfully","service":"pdf-scraper","timestamp":"2025-06-05 11:27:56"}
+{"level":"info","message":"Setting up dependency injection container...","service":"pdf-scraper","timestamp":"2025-06-05 11:27:56"}
+{"level":"info","message":"Loading configuration from: /Users/yvan/Documents/Developer/nextjs-pdf/config.json","service":"pdf-scraper","timestamp":"2025-06-05 11:27:56"}
+{"level":"info","message":"📦 Setting up dependency injection container...","service":"pdf-scraper","timestamp":"2025-06-05 11:27:56"}
+{"level":"info","message":"Pre-loading critical services...","service":"pdf-scraper","timestamp":"2025-06-05 11:27:56"}
+{"level":"info","message":"Configuration loaded and validated successfully","service":"pdf-scraper","timestamp":"2025-06-05 11:27:57"}
+{"level":"info","message":"Configuration loaded and validated","service":"pdf-scraper","timestamp":"2025-06-05 11:27:57"}
+{"level":"info","message":"🐍 Checking Python environment...","service":"pdf-scraper","timestamp":"2025-06-05 11:27:57"}
+{"level":"info","message":"Container setup completed successfully","service":"pdf-scraper","timestamp":"2025-06-05 11:27:57"}
+{"created":4,"instances":4,"level":"info","message":"Container statistics:","service":"pdf-scraper","singletons":13,"timestamp":"2025-06-05 11:27:57","total":13}
+{"level":"info","message":"Configuration validation passed successfully","service":"pdf-scraper","timestamp":"2025-06-05 11:27:57"}
+{"level":"info","message":"Configuration validation passed successfully","service":"pdf-scraper","timestamp":"2025-06-05 11:27:57"}
+{"args":["import sys; print(sys.version)"],"level":"info","message":"Starting Python script execution","processId":"python_1749094077007_03955ls4p","scriptPath":"-c","service":"pdf-scraper","timeout":10000,"timestamp":"2025-06-05 11:27:57"}
+{"duration":20,"exitCode":0,"level":"info","message":"Python script execution completed successfully","processId":"python_1749094077007_03955ls4p","service":"pdf-scraper","timestamp":"2025-06-05 11:27:57"}
+{"level":"info","message":"✅ Python environment ready:","service":"pdf-scraper","timestamp":"2025-06-05 11:27:57"}
+{"level":"info","message":"Python environment check passed","service":"pdf-scraper","timestamp":"2025-06-05 11:27:57","version":"3.11.2 (v3.11.2:878ead1ac1, Feb  7 2023, 10:02:41) [Clang 13.0.0 (clang-1300.0.29.30)]"}
+{"headless":true,"level":"info","maxBrowsers":5,"message":"开始初始化浏览器池","service":"pdf-scraper","timestamp":"2025-06-05 11:27:57"}
+{"level":"info","message":"🏥 Container health check:","service":"pdf-scraper","services":[{"hasInstance":true,"name":"config","status":"created"},{"hasInstance":true,"name":"logger","status":"created"},{"hasInstance":true,"name":"fileService","status":"created"},{"hasInstance":true,"name":"pathService","status":"created"},{"hasInstance":false,"name":"metadataService","status":"registered"},{"hasInstance":false,"name":"stateManager","status":"registered"},{"hasInstance":false,"name":"progressTracker","status":"registered"},{"hasInstance":false,"name":"queueManager","status":"registered"},{"hasInstance":false,"name":"browserPool","status":"registered"},{"hasInstance":false,"name":"pageManager","status":"registered"},{"hasInstance":false,"name":"imageService","status":"registered"},{"hasInstance":false,"name":"scraper","status":"registered"},{"hasInstance":false,"name":"pythonMergeService","status":"registered"}],"stats":{"created":4,"instances":4,"singletons":13,"total":13},"status":"healthy","timestamp":"2025-06-05 11:27:57"}
+{"level":"info","message":"✅ Application initialized successfully in 37ms","service":"pdf-scraper","timestamp":"2025-06-05 11:27:57"}
+{"level":"info","message":"🎯 Starting complete PDF scraping and merge workflow...","service":"pdf-scraper","timestamp":"2025-06-05 11:27:57"}
+{"level":"info","message":"🕷️  Starting web scraping process...","service":"pdf-scraper","timestamp":"2025-06-05 11:27:57"}
+{"availableBrowsers":5,"level":"info","message":"浏览器池初始化完成","service":"pdf-scraper","timestamp":"2025-06-05 11:27:59","totalBrowsers":5}
+{"level":"info","message":"加载状态数据...","service":"pdf-scraper","timestamp":"2025-06-05 11:27:59"}
+{"level":"info","message":"状态加载完成","service":"pdf-scraper","timestamp":"2025-06-05 11:27:59","失败":0,"已处理":80,"标题数":0}
+{"level":"info","message":"开始初始化爬虫...","service":"pdf-scraper","timestamp":"2025-06-05 11:27:59"}
+{"level":"info","message":"加载状态数据...","service":"pdf-scraper","timestamp":"2025-06-05 11:27:59"}
+{"level":"info","message":"状态加载完成","service":"pdf-scraper","timestamp":"2025-06-05 11:27:59","失败":0,"已处理":80,"标题数":0}
+{"level":"info","message":"爬虫初始化完成","service":"pdf-scraper","timestamp":"2025-06-05 11:27:59"}
+{"level":"info","message":"🧹 Preparing PDF directory...","service":"pdf-scraper","timestamp":"2025-06-05 11:27:59"}
+{"level":"info","message":"清理目录: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs","service":"pdf-scraper","timestamp":"2025-06-05 11:27:59"}
+{"level":"info","message":"开始爬取任务","service":"pdf-scraper","timestamp":"2025-06-05 11:27:59","模式":"detailed"}
+{"level":"info","message":"=== 开始运行爬虫（使用数字索引命名）===","service":"pdf-scraper","timestamp":"2025-06-05 11:27:59"}
+{"level":"warn","message":"爬虫已经初始化","service":"pdf-scraper","timestamp":"2025-06-05 11:27:59"}
+{"level":"info","message":"开始收集URL","rootURL":"https://nextjs.org/docs","service":"pdf-scraper","timestamp":"2025-06-05 11:27:59"}
+{"level":"info","message":"提取到 732 个原始URL","service":"pdf-scraper","timestamp":"2025-06-05 11:28:06"}
+{"level":"info","message":"URL收集完成","service":"pdf-scraper","timestamp":"2025-06-05 11:28:06","原始数量":732,"去重后数量":80,"被忽略数量":572,"重复数量":80}
+{"level":"info","message":"开始爬取任务","service":"pdf-scraper","timestamp":"2025-06-05 11:28:06","总数":80,"模式":"detailed"}
+{"level":"info","message":"\u001b[33m⚠ [1/80] 跳过: https://nextjs.org/docs/app/getting-started\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:06"}
+{"level":"info","message":"\u001b[33m⚠ [2/80] 跳过: https://nextjs.org/docs/app/getting-started/installation\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:06"}
+{"level":"info","message":"\u001b[33m⚠ [3/80] 跳过: https://nextjs.org/docs/app/getting-started/project-structure\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:06"}
+{"level":"info","message":"\u001b[33m⚠ [4/80] 跳过: https://nextjs.org/docs/app/getting-started/layouts-and-pages\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:06"}
+{"level":"info","message":"\u001b[33m⚠ [5/80] 跳过: https://nextjs.org/docs/app/getting-started/images\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:06"}
+{"level":"info","message":"\u001b[33m⚠ [6/80] 跳过: https://nextjs.org/docs/app/getting-started/fonts\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:07"}
+{"level":"info","message":"\u001b[33m⚠ [7/80] 跳过: https://nextjs.org/docs/app/getting-started/css\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:07"}
+{"level":"info","message":"\u001b[33m⚠ [8/80] 跳过: https://nextjs.org/docs/app/getting-started/server-and-client-components\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:07"}
+{"level":"info","message":"\u001b[33m⚠ [9/80] 跳过: https://nextjs.org/docs/app/getting-started/fetching-data\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:07"}
+{"level":"info","message":"\u001b[33m⚠ [10/80] 跳过: https://nextjs.org/docs/app/getting-started/caching-and-revalidating\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:07"}
+{"level":"info","message":"\u001b[33m⚠ [11/80] 跳过: https://nextjs.org/docs/app/getting-started/updating-data\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:08"}
+{"level":"info","message":"\u001b[33m⚠ [12/80] 跳过: https://nextjs.org/docs/app/getting-started/error-handling\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:08"}
+{"level":"info","message":"\u001b[33m⚠ [13/80] 跳过: https://nextjs.org/docs/app/getting-started/partial-prerendering\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:08"}
+{"level":"info","message":"\u001b[33m⚠ [14/80] 跳过: https://nextjs.org/docs/app/getting-started/metadata-and-og-images\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:08"}
+{"level":"info","message":"\u001b[33m⚠ [15/80] 跳过: https://nextjs.org/docs/app/getting-started/deploying\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:08"}
+{"level":"info","message":"\u001b[33m⚠ [16/80] 跳过: https://nextjs.org/docs/app/getting-started/upgrading\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:09"}
+{"level":"info","message":"\u001b[33m⚠ [17/80] 跳过: https://nextjs.org/docs/app/guides\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:09"}
+{"level":"info","message":"\u001b[33m⚠ [18/80] 跳过: https://nextjs.org/docs/app/guides/analytics\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:09"}
+{"level":"info","message":"\u001b[33m⚠ [19/80] 跳过: https://nextjs.org/docs/app/guides/authentication\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:09"}
+{"level":"info","message":"\u001b[33m⚠ [20/80] 跳过: https://nextjs.org/docs/app/guides/ci-build-caching\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:09"}
+{"level":"info","message":"\u001b[33m⚠ [21/80] 跳过: https://nextjs.org/docs/app/guides/content-security-policy\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:10"}
+{"level":"info","message":"\u001b[33m⚠ [22/80] 跳过: https://nextjs.org/docs/app/guides/css-in-js\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:10"}
+{"level":"info","message":"\u001b[33m⚠ [23/80] 跳过: https://nextjs.org/docs/app/guides/custom-server\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:10"}
+{"level":"info","message":"\u001b[33m⚠ [24/80] 跳过: https://nextjs.org/docs/app/guides/debugging\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:10"}
+{"level":"info","message":"\u001b[33m⚠ [25/80] 跳过: https://nextjs.org/docs/app/guides/draft-mode\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:10"}
+{"level":"info","message":"\u001b[33m⚠ [26/80] 跳过: https://nextjs.org/docs/app/guides/environment-variables\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:11"}
+{"level":"info","message":"\u001b[33m⚠ [27/80] 跳过: https://nextjs.org/docs/app/guides/forms\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:11"}
+{"level":"info","message":"\u001b[33m⚠ [28/80] 跳过: https://nextjs.org/docs/app/guides/incremental-static-regeneration\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:11"}
+{"level":"info","message":"\u001b[33m⚠ [29/80] 跳过: https://nextjs.org/docs/app/guides/instrumentation\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:11"}
+{"level":"info","message":"\u001b[33m⚠ [30/80] 跳过: https://nextjs.org/docs/app/guides/internationalization\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:11"}
+{"level":"info","message":"\u001b[33m⚠ [31/80] 跳过: https://nextjs.org/docs/app/guides/json-ld\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:12"}
+{"level":"info","message":"\u001b[33m⚠ [32/80] 跳过: https://nextjs.org/docs/app/guides/lazy-loading\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:12"}
+{"level":"info","message":"\u001b[33m⚠ [33/80] 跳过: https://nextjs.org/docs/app/guides/local-development\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:12"}
+{"level":"info","message":"\u001b[33m⚠ [34/80] 跳过: https://nextjs.org/docs/app/guides/mdx\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:12"}
+{"level":"info","message":"\u001b[33m⚠ [35/80] 跳过: https://nextjs.org/docs/app/guides/memory-usage\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:12"}
+{"level":"info","message":"\u001b[33m⚠ [36/80] 跳过: https://nextjs.org/docs/app/guides/migrating\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:13"}
+{"level":"info","message":"\u001b[33m⚠ [37/80] 跳过: https://nextjs.org/docs/app/guides/migrating/app-router-migration\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:13"}
+{"level":"info","message":"\u001b[33m⚠ [38/80] 跳过: https://nextjs.org/docs/app/guides/migrating/from-create-react-app\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:13"}
+{"level":"info","message":"\u001b[33m⚠ [39/80] 跳过: https://nextjs.org/docs/app/guides/migrating/from-vite\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:13"}
+{"level":"info","message":"\u001b[33m⚠ [40/80] 跳过: https://nextjs.org/docs/app/guides/multi-tenant\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:13"}
+{"level":"info","message":"\u001b[33m⚠ [41/80] 跳过: https://nextjs.org/docs/app/guides/multi-zones\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:14"}
+{"level":"info","message":"\u001b[33m⚠ [42/80] 跳过: https://nextjs.org/docs/app/guides/open-telemetry\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:14"}
+{"level":"info","message":"\u001b[33m⚠ [43/80] 跳过: https://nextjs.org/docs/app/guides/package-bundling\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:14"}
+{"level":"info","message":"\u001b[33m⚠ [44/80] 跳过: https://nextjs.org/docs/app/guides/production-checklist\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:14"}
+{"level":"info","message":"\u001b[33m⚠ [45/80] 跳过: https://nextjs.org/docs/app/guides/progressive-web-apps\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:14"}
+{"level":"info","message":"\u001b[33m⚠ [46/80] 跳过: https://nextjs.org/docs/app/guides/redirecting\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:15"}
+{"level":"info","message":"\u001b[33m⚠ [47/80] 跳过: https://nextjs.org/docs/app/guides/sass\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:15"}
+{"level":"info","message":"\u001b[33m⚠ [48/80] 跳过: https://nextjs.org/docs/app/guides/scripts\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:15"}
+{"level":"info","message":"\u001b[33m⚠ [49/80] 跳过: https://nextjs.org/docs/app/guides/self-hosting\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:15"}
+{"level":"info","message":"\u001b[33m⚠ [50/80] 跳过: https://nextjs.org/docs/app/guides/single-page-applications\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:15"}
+{"level":"info","message":"\u001b[33m⚠ [51/80] 跳过: https://nextjs.org/docs/app/guides/static-exports\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:16"}
+{"level":"info","message":"\u001b[33m⚠ [52/80] 跳过: https://nextjs.org/docs/app/guides/tailwind-css\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:16"}
+{"level":"info","message":"\u001b[33m⚠ [53/80] 跳过: https://nextjs.org/docs/app/guides/testing\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:16"}
+{"level":"info","message":"\u001b[33m⚠ [54/80] 跳过: https://nextjs.org/docs/app/guides/testing/cypress\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:16"}
+{"level":"info","message":"\u001b[33m⚠ [55/80] 跳过: https://nextjs.org/docs/app/guides/testing/jest\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:16"}
+{"level":"info","message":"\u001b[33m⚠ [56/80] 跳过: https://nextjs.org/docs/app/guides/testing/playwright\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:17"}
+{"level":"info","message":"\u001b[33m⚠ [57/80] 跳过: https://nextjs.org/docs/app/guides/testing/vitest\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:17"}
+{"level":"info","message":"\u001b[33m⚠ [58/80] 跳过: https://nextjs.org/docs/app/guides/third-party-libraries\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:17"}
+{"level":"info","message":"\u001b[33m⚠ [59/80] 跳过: https://nextjs.org/docs/app/guides/upgrading\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:17"}
+{"level":"info","message":"\u001b[33m⚠ [60/80] 跳过: https://nextjs.org/docs/app/guides/upgrading/codemods\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:17"}
+{"level":"info","message":"\u001b[33m⚠ [61/80] 跳过: https://nextjs.org/docs/app/guides/upgrading/version-14\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:18"}
+{"level":"info","message":"\u001b[33m⚠ [62/80] 跳过: https://nextjs.org/docs/app/guides/upgrading/version-15\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:18"}
+{"level":"info","message":"\u001b[33m⚠ [63/80] 跳过: https://nextjs.org/docs/app/guides/videos\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:18"}
+{"level":"info","message":"\u001b[33m⚠ [64/80] 跳过: https://nextjs.org/docs/app/building-your-application\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:18"}
+{"level":"info","message":"\u001b[33m⚠ [65/80] 跳过: https://nextjs.org/docs/app/building-your-application/routing\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:18"}
+{"level":"info","message":"\u001b[33m⚠ [66/80] 跳过: https://nextjs.org/docs/app/building-your-application/routing/linking-and-navigating\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:19"}
+{"level":"info","message":"\u001b[33m⚠ [67/80] 跳过: https://nextjs.org/docs/app/building-your-application/routing/loading-ui-and-streaming\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:19"}
+{"level":"info","message":"\u001b[33m⚠ [68/80] 跳过: https://nextjs.org/docs/app/building-your-application/routing/route-handlers\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:19"}
+{"level":"info","message":"\u001b[33m⚠ [69/80] 跳过: https://nextjs.org/docs/app/building-your-application/routing/middleware\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:19"}
+{"level":"info","message":"\u001b[33m⚠ [70/80] 跳过: https://nextjs.org/docs/app/building-your-application/data-fetching\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:19"}
+{"level":"info","message":"\u001b[33m⚠ [71/80] 跳过: https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:20"}
+{"level":"info","message":"\u001b[33m⚠ [72/80] 跳过: https://nextjs.org/docs/app/deep-dive\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:20"}
+{"level":"info","message":"\u001b[33m⚠ [73/80] 跳过: https://nextjs.org/docs/app/deep-dive/caching\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:20"}
+{"level":"info","message":"\u001b[33m⚠ [74/80] 跳过: https://nextjs.org/docs/architecture\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:20"}
+{"level":"info","message":"\u001b[33m⚠ [75/80] 跳过: https://nextjs.org/docs/architecture/accessibility\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:20"}
+{"level":"info","message":"\u001b[33m⚠ [76/80] 跳过: https://nextjs.org/docs/architecture/fast-refresh\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:21"}
+{"level":"info","message":"\u001b[33m⚠ [77/80] 跳过: https://nextjs.org/docs/architecture/nextjs-compiler\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:21"}
+{"level":"info","message":"\u001b[33m⚠ [78/80] 跳过: https://nextjs.org/docs/architecture/supported-browsers\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:21"}
+{"level":"info","message":"\u001b[33m⚠ [79/80] 跳过: https://nextjs.org/docs/community\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:21"}
+{"level":"info","message":"\u001b[33m⚠ [80/80] 跳过: https://nextjs.org/docs/community/contribution-guide\u001b[39m","service":"pdf-scraper","timestamp":"2025-06-05 11:28:21"}
+{"level":"info","message":"没有需要重试的失败URL","service":"pdf-scraper","timestamp":"2025-06-05 11:28:21"}
+{"level":"info","message":"爬取任务完成","service":"pdf-scraper","timestamp":"2025-06-05 11:28:21","失败":0,"平均速度":"5.32 页/秒","总数":80,"总耗时":"15.03秒","成功":0,"成功率":"0.00%","跳过":80,"重试次数":0}
+{"level":"info","message":"=== 爬虫运行完成 ===","service":"pdf-scraper","timestamp":"2025-06-05 11:28:21","失败数":0,"总URL数":80,"成功数":80,"成功率":"100.0%","耗时":"22秒","跳过数":80}
+{"level":"info","message":"开始清理资源...","service":"pdf-scraper","timestamp":"2025-06-05 11:28:21"}
+{"level":"info","message":"开始关闭所有页面 (0 个)","service":"pdf-scraper","timestamp":"2025-06-05 11:28:21"}
+{"level":"info","message":"所有页面已关闭","service":"pdf-scraper","timestamp":"2025-06-05 11:28:21"}
+{"level":"info","message":"开始关闭浏览器池","service":"pdf-scraper","timestamp":"2025-06-05 11:28:21"}
+{"browserId":28688,"level":"warn","message":"浏览器断开连接","service":"pdf-scraper","timestamp":"2025-06-05 11:28:21"}
+{"browserId":28606,"level":"warn","message":"浏览器断开连接","service":"pdf-scraper","timestamp":"2025-06-05 11:28:21"}
+{"browserId":28676,"level":"warn","message":"浏览器断开连接","service":"pdf-scraper","timestamp":"2025-06-05 11:28:21"}
+{"browserId":28662,"level":"warn","message":"浏览器断开连接","service":"pdf-scraper","timestamp":"2025-06-05 11:28:21"}
+{"browserId":28700,"level":"warn","message":"浏览器断开连接","service":"pdf-scraper","timestamp":"2025-06-05 11:28:21"}
+{"level":"info","message":"浏览器池已关闭","service":"pdf-scraper","stats":{"activeRequests":0,"created":5,"disconnected":5,"errors":0,"totalRequests":1},"timestamp":"2025-06-05 11:28:21"}
+{"duration":24478,"level":"info","message":"✅ Web scraping completed successfully","service":"pdf-scraper","stats":{"completed":0,"currentUrl":null,"elapsed":"15","endTime":1749094101387,"eta":0,"etaSeconds":null,"failed":0,"percentage":"100.00","processed":80,"rate":"5.28","retried":0,"skipped":80,"startTime":1749094086359,"total":80},"timestamp":"2025-06-05 11:28:21"}
+{"level":"info","message":"资源清理完成","service":"pdf-scraper","timestamp":"2025-06-05 11:28:21"}
+{"level":"info","message":"Python合并服务初始化完成","service":"pdf-scraper","timestamp":"2025-06-05 11:28:21"}
+{"level":"info","message":"开始PDF合并任务: /Users/yvan/Documents/Developer/nextjs-pdf/src/python/pdf_merger.py","service":"pdf-scraper","timestamp":"2025-06-05 11:28:21"}
+{"level":"info","message":"📄 Starting PDF merge process...","service":"pdf-scraper","timestamp":"2025-06-05 11:28:21"}
+{"level":"info","message":"PDF合并任务完成: 处理 0 个文件","service":"pdf-scraper","timestamp":"2025-06-05 11:28:21"}
+{"duration":127,"level":"info","message":"✅ PDF merge completed successfully","service":"pdf-scraper","timestamp":"2025-06-05 11:28:21"}
+{"level":"info","message":"Disposing Python runner...","service":"pdf-scraper","timestamp":"2025-06-05 11:28:21"}
+{"level":"info","message":"Terminating 0 running Python processes","service":"pdf-scraper","timestamp":"2025-06-05 11:28:21"}
+{"level":"info","merge":{"duration":127,"filesProcessed":0,"mergedFiles":[],"stderr":"2025-06-05 11:28:21,620 - PDFMerger - INFO - 从元数据目录加载了 0 个文章标题\nINFO:PDFMerger:从元数据目录加载了 0 个文章标题\n2025-06-05 11:28:21,620 - PDFMerger - INFO - PDF合并器初始化完成 - PDF目录: pdfs\nINFO:PDFMerger:PDF合并器初始化完成 - PDF目录: pdfs\n2025-06-05 11:28:21,620 - PDFMerger - INFO - 开始PDF合并任务（智能排序版本）\nINFO:PDFMerger:开始PDF合并任务（智能排序版本）\n2025-06-05 11:28:21,620 - PDFMerger - WARNING - 目录中没有PDF文件: pdfs\nWARNING:PDFMerger:目录中没有PDF文件: pdfs\n2025-06-05 11:28:21,620 - PDFMerger - INFO - PDF合并任务完成: 处理了 0 个文件, 共 0 页, 用时 0.0 秒\nINFO:PDFMerger:PDF合并任务完成: 处理了 0 个文件, 共 0 页, 用时 0.0 秒","stdout":"✅ 合并完成! 生成了 0 个PDF文件:\n\n📊 统计信息:\n  - 处理文件数: 0\n  - 总页数: 0\n  - 用时: 0.0 秒\n  - 内存峰值: 0.0 MB","success":true,"totalPages":0},"message":"🎉 Application workflow completed!","scraping":{"duration":24478,"stats":{"completed":0,"currentUrl":null,"elapsed":"15","endTime":1749094101387,"eta":0,"etaSeconds":null,"failed":0,"percentage":"100.00","processed":80,"rate":"5.28","retried":0,"skipped":80,"startTime":1749094086359,"total":80},"success":true},"service":"pdf-scraper","timestamp":"2025-06-05 11:28:21","totalDuration":24606}
+{"level":"info","message":"🛑 Initiating graceful shutdown...","service":"pdf-scraper","timestamp":"2025-06-05 11:28:21"}
+{"level":"info","message":"🧹 Starting application cleanup...","service":"pdf-scraper","timestamp":"2025-06-05 11:28:21"}
+{"level":"info","message":"All Python processes terminated","service":"pdf-scraper","timestamp":"2025-06-05 11:28:27"}
+{"level":"info","message":"Disposing container resources...","service":"pdf-scraper","timestamp":"2025-06-05 11:28:27"}
+{"level":"info","message":"Python runner disposed","service":"pdf-scraper","timestamp":"2025-06-05 11:28:27"}
+{"level":"info","message":"Python合并服务已清理","service":"pdf-scraper","timestamp":"2025-06-05 11:28:27"}
+{"level":"info","message":"开始清理资源...","service":"pdf-scraper","timestamp":"2025-06-05 11:28:27"}
+{"level":"info","message":"开始关闭所有页面 (0 个)","service":"pdf-scraper","timestamp":"2025-06-05 11:28:27"}
+{"level":"info","message":"所有页面已关闭","service":"pdf-scraper","timestamp":"2025-06-05 11:28:27"}
+{"level":"info","message":"Shutting down container...","service":"pdf-scraper","timestamp":"2025-06-05 11:28:27"}
+{"level":"info","message":"资源清理完成","service":"pdf-scraper","timestamp":"2025-06-05 11:28:27"}
+{"level":"info","message":"Container disposed successfully","service":"pdf-scraper","timestamp":"2025-06-05 11:28:27"}
+{"level":"info","message":"Container shutdown completed","service":"pdf-scraper","timestamp":"2025-06-05 11:28:27"}
+{"level":"info","message":"✅ Application cleanup completed","service":"pdf-scraper","timestamp":"2025-06-05 11:28:27"}
+{"level":"info","message":"🚀 Starting PDF Scraper Application...","service":"pdf-scraper","timestamp":"2025-06-05 11:31:56"}
+{"level":"info","message":"All dependencies validated successfully","service":"pdf-scraper","timestamp":"2025-06-05 11:31:56"}
+{"level":"info","message":"Setting up dependency injection container...","service":"pdf-scraper","timestamp":"2025-06-05 11:31:56"}
+{"level":"info","message":"Loading configuration from: /Users/yvan/Documents/Developer/nextjs-pdf/config.json","service":"pdf-scraper","timestamp":"2025-06-05 11:31:56"}
+{"level":"info","message":"📦 Setting up dependency injection container...","service":"pdf-scraper","timestamp":"2025-06-05 11:31:56"}
+{"level":"info","message":"Pre-loading critical services...","service":"pdf-scraper","timestamp":"2025-06-05 11:31:56"}
+{"level":"info","message":"Configuration loaded and validated successfully","service":"pdf-scraper","timestamp":"2025-06-05 11:31:56"}
+{"level":"info","message":"Configuration loaded and validated","service":"pdf-scraper","timestamp":"2025-06-05 11:31:56"}
+{"level":"info","message":"🐍 Checking Python environment...","service":"pdf-scraper","timestamp":"2025-06-05 11:31:56"}
+{"level":"info","message":"Container setup completed successfully","service":"pdf-scraper","timestamp":"2025-06-05 11:31:56"}
+{"created":4,"instances":4,"level":"info","message":"Container statistics:","service":"pdf-scraper","singletons":13,"timestamp":"2025-06-05 11:31:56","total":13}
+{"level":"info","message":"Configuration validation passed successfully","service":"pdf-scraper","timestamp":"2025-06-05 11:31:56"}
+{"level":"info","message":"Configuration validation passed successfully","service":"pdf-scraper","timestamp":"2025-06-05 11:31:56"}
+{"args":["import sys; print(sys.version)"],"level":"info","message":"Starting Python script execution","processId":"python_1749094316649_az1garilw","scriptPath":"-c","service":"pdf-scraper","timeout":10000,"timestamp":"2025-06-05 11:31:56"}
+{"duration":20,"exitCode":0,"level":"info","message":"Python script execution completed successfully","processId":"python_1749094316649_az1garilw","service":"pdf-scraper","timestamp":"2025-06-05 11:31:56"}
+{"level":"info","message":"✅ Python environment ready:","service":"pdf-scraper","timestamp":"2025-06-05 11:31:56"}
+{"level":"info","message":"Python environment check passed","service":"pdf-scraper","timestamp":"2025-06-05 11:31:56","version":"3.11.2 (v3.11.2:878ead1ac1, Feb  7 2023, 10:02:41) [Clang 13.0.0 (clang-1300.0.29.30)]"}
+{"headless":true,"level":"info","maxBrowsers":5,"message":"开始初始化浏览器池","service":"pdf-scraper","timestamp":"2025-06-05 11:31:56"}
+{"level":"info","message":"🏥 Container health check:","service":"pdf-scraper","services":[{"hasInstance":true,"name":"config","status":"created"},{"hasInstance":true,"name":"logger","status":"created"},{"hasInstance":true,"name":"fileService","status":"created"},{"hasInstance":true,"name":"pathService","status":"created"},{"hasInstance":false,"name":"metadataService","status":"registered"},{"hasInstance":false,"name":"stateManager","status":"registered"},{"hasInstance":false,"name":"progressTracker","status":"registered"},{"hasInstance":false,"name":"queueManager","status":"registered"},{"hasInstance":false,"name":"browserPool","status":"registered"},{"hasInstance":false,"name":"pageManager","status":"registered"},{"hasInstance":false,"name":"imageService","status":"registered"},{"hasInstance":false,"name":"scraper","status":"registered"},{"hasInstance":false,"name":"pythonMergeService","status":"registered"}],"stats":{"created":4,"instances":4,"singletons":13,"total":13},"status":"healthy","timestamp":"2025-06-05 11:31:56"}
+{"level":"info","message":"✅ Application initialized successfully in 38ms","service":"pdf-scraper","timestamp":"2025-06-05 11:31:56"}
+{"level":"info","message":"🎯 Starting complete PDF scraping and merge workflow...","service":"pdf-scraper","timestamp":"2025-06-05 11:31:56"}
+{"level":"info","message":"🕷️  Starting web scraping process...","service":"pdf-scraper","timestamp":"2025-06-05 11:31:56"}
+{"availableBrowsers":5,"level":"info","message":"浏览器池初始化完成","service":"pdf-scraper","timestamp":"2025-06-05 11:31:58","totalBrowsers":5}
+{"level":"info","message":"加载状态数据...","service":"pdf-scraper","timestamp":"2025-06-05 11:31:58"}
+{"level":"info","message":"状态加载完成","service":"pdf-scraper","timestamp":"2025-06-05 11:31:58","失败":0,"已处理":0,"标题数":0}
+{"level":"info","message":"开始初始化爬虫...","service":"pdf-scraper","timestamp":"2025-06-05 11:31:58"}
+{"level":"info","message":"加载状态数据...","service":"pdf-scraper","timestamp":"2025-06-05 11:31:58"}
+{"level":"info","message":"状态加载完成","service":"pdf-scraper","timestamp":"2025-06-05 11:31:58","失败":0,"已处理":0,"标题数":0}
+{"level":"info","message":"爬虫初始化完成","service":"pdf-scraper","timestamp":"2025-06-05 11:31:58"}
+{"level":"info","message":"🧹 Preparing PDF directory...","service":"pdf-scraper","timestamp":"2025-06-05 11:31:58"}
+{"level":"info","message":"清理目录: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs","service":"pdf-scraper","timestamp":"2025-06-05 11:31:58"}
+{"level":"info","message":"开始爬取任务","service":"pdf-scraper","timestamp":"2025-06-05 11:31:58","模式":"detailed"}
+{"level":"info","message":"=== 开始运行爬虫（使用数字索引命名）===","service":"pdf-scraper","timestamp":"2025-06-05 11:31:58"}
+{"level":"warn","message":"爬虫已经初始化","service":"pdf-scraper","timestamp":"2025-06-05 11:31:58"}
+{"level":"info","message":"开始收集URL","rootURL":"https://nextjs.org/docs","service":"pdf-scraper","timestamp":"2025-06-05 11:31:58"}
+{"level":"info","message":"提取到 732 个原始URL","service":"pdf-scraper","timestamp":"2025-06-05 11:32:05"}
+{"level":"info","message":"URL收集完成","service":"pdf-scraper","timestamp":"2025-06-05 11:32:05","原始数量":732,"去重后数量":80,"被忽略数量":572,"重复数量":80}
+{"level":"info","message":"开始爬取任务","service":"pdf-scraper","timestamp":"2025-06-05 11:32:05","总数":80,"模式":"detailed"}
+{"level":"info","message":"开始爬取页面 [1/80]: https://nextjs.org/docs/app/getting-started","service":"pdf-scraper","timestamp":"2025-06-05 11:32:05"}
+{"level":"info","message":"开始爬取页面 [2/80]: https://nextjs.org/docs/app/getting-started/installation","service":"pdf-scraper","timestamp":"2025-06-05 11:32:05"}
+{"level":"info","message":"开始爬取页面 [3/80]: https://nextjs.org/docs/app/getting-started/project-structure","service":"pdf-scraper","timestamp":"2025-06-05 11:32:05"}
+{"level":"info","message":"开始爬取页面 [4/80]: https://nextjs.org/docs/app/getting-started/layouts-and-pages","service":"pdf-scraper","timestamp":"2025-06-05 11:32:05"}
+{"level":"info","message":"开始爬取页面 [5/80]: https://nextjs.org/docs/app/getting-started/images","service":"pdf-scraper","timestamp":"2025-06-05 11:32:05"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-getting-started/000-getting-started.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:32:25"}
+{"level":"info","message":"\u001b[32m✓ [1/80] https://nextjs.org/docs/app/getting-started\u001b[39m \u001b[90m░░░░░░░░░░░░░░░░░░░░\u001b[39m 1.25% 预计剩余: 26分16秒","service":"pdf-scraper","timestamp":"2025-06-05 11:32:25"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-getting-started/004-images.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:32:25"}
+{"level":"info","message":"\u001b[32m✓ [2/80] https://nextjs.org/docs/app/getting-started/images\u001b[39m \u001b[32m█\u001b[39m\u001b[90m░░░░░░░░░░░░░░░░░░░\u001b[39m 2.50% 预计剩余: 12分59秒","service":"pdf-scraper","timestamp":"2025-06-05 11:32:25"}
+{"level":"info","message":"开始爬取页面 [6/80]: https://nextjs.org/docs/app/getting-started/fonts","service":"pdf-scraper","timestamp":"2025-06-05 11:32:25"}
+{"level":"info","message":"开始爬取页面 [7/80]: https://nextjs.org/docs/app/getting-started/css","service":"pdf-scraper","timestamp":"2025-06-05 11:32:25"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-getting-started/001-installation.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:32:27"}
+{"level":"info","message":"\u001b[32m✓ [3/80] https://nextjs.org/docs/app/getting-started/installation\u001b[39m \u001b[32m█\u001b[39m\u001b[90m░░░░░░░░░░░░░░░░░░░\u001b[39m 3.75% 预计剩余: 9分25秒","service":"pdf-scraper","timestamp":"2025-06-05 11:32:27"}
+{"level":"info","message":"开始爬取页面 [8/80]: https://nextjs.org/docs/app/getting-started/server-and-client-components","service":"pdf-scraper","timestamp":"2025-06-05 11:32:27"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-getting-started/003-layouts-and-pages.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:32:27"}
+{"level":"info","message":"\u001b[32m✓ [4/80] https://nextjs.org/docs/app/getting-started/layouts-and-pages\u001b[39m \u001b[32m█\u001b[39m\u001b[90m░░░░░░░░░░░░░░░░░░░\u001b[39m 5.00% 预计剩余: 7分1秒","service":"pdf-scraper","timestamp":"2025-06-05 11:32:27"}
+{"level":"info","message":"开始爬取页面 [9/80]: https://nextjs.org/docs/app/getting-started/fetching-data","service":"pdf-scraper","timestamp":"2025-06-05 11:32:27"}
+{"level":"info","message":"开始爬取页面 [10/80]: https://nextjs.org/docs/app/getting-started/caching-and-revalidating","service":"pdf-scraper","timestamp":"2025-06-05 11:32:35"}
+{"level":"warn","message":"图片数量已稳定，停止等待新图片","service":"pdf-scraper","timestamp":"2025-06-05 11:32:35"}
+{"elapsed":1508,"level":"warn","message":"图片加载超时","service":"pdf-scraper","timeout":10000,"timestamp":"2025-06-05 11:32:35"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-getting-started/002-project-structure.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:32:37"}
+{"level":"info","message":"\u001b[32m✓ [5/80] https://nextjs.org/docs/app/getting-started/project-structure\u001b[39m \u001b[32m█\u001b[39m\u001b[90m░░░░░░░░░░░░░░░░░░░\u001b[39m 6.25% 预计剩余: 7分56秒","service":"pdf-scraper","timestamp":"2025-06-05 11:32:37"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-getting-started/006-css.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:32:47"}
+{"level":"info","message":"\u001b[32m✓ [6/80] https://nextjs.org/docs/app/getting-started/css\u001b[39m \u001b[32m██\u001b[39m\u001b[90m░░░░░░░░░░░░░░░░░░\u001b[39m 7.50% 预计剩余: 8分34秒","service":"pdf-scraper","timestamp":"2025-06-05 11:32:47"}
+{"level":"info","message":"开始爬取页面 [11/80]: https://nextjs.org/docs/app/getting-started/updating-data","service":"pdf-scraper","timestamp":"2025-06-05 11:32:47"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-getting-started/007-server-and-client-components.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:32:47"}
+{"level":"info","message":"\u001b[32m✓ [7/80] https://nextjs.org/docs/app/getting-started/server-and-client-components\u001b[39m \u001b[32m██\u001b[39m\u001b[90m░░░░░░░░░░░░░░░░░░\u001b[39m 8.75% 预计剩余: 7分16秒","service":"pdf-scraper","timestamp":"2025-06-05 11:32:47"}
+{"level":"info","message":"开始爬取页面 [12/80]: https://nextjs.org/docs/app/getting-started/error-handling","service":"pdf-scraper","timestamp":"2025-06-05 11:32:47"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-getting-started/005-fonts.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:32:47"}
+{"level":"info","message":"\u001b[32m✓ [8/80] https://nextjs.org/docs/app/getting-started/fonts\u001b[39m \u001b[32m██\u001b[39m\u001b[90m░░░░░░░░░░░░░░░░░░\u001b[39m 10.00% 预计剩余: 6分17秒","service":"pdf-scraper","timestamp":"2025-06-05 11:32:47"}
+{"level":"info","message":"开始爬取页面 [13/80]: https://nextjs.org/docs/app/getting-started/partial-prerendering","service":"pdf-scraper","timestamp":"2025-06-05 11:32:47"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-getting-started/008-fetching-data.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:32:47"}
+{"level":"info","message":"\u001b[32m✓ [9/80] https://nextjs.org/docs/app/getting-started/fetching-data\u001b[39m \u001b[32m██\u001b[39m\u001b[90m░░░░░░░░░░░░░░░░░░\u001b[39m 11.25% 预计剩余: 5分34秒","service":"pdf-scraper","timestamp":"2025-06-05 11:32:47"}
+{"level":"info","message":"开始爬取页面 [14/80]: https://nextjs.org/docs/app/getting-started/metadata-and-og-images","service":"pdf-scraper","timestamp":"2025-06-05 11:32:47"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-getting-started/009-caching-and-revalidating.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:32:58"}
+{"level":"info","message":"\u001b[32m✓ [10/80] https://nextjs.org/docs/app/getting-started/caching-and-revalidating\u001b[39m \u001b[32m███\u001b[39m\u001b[90m░░░░░░░░░░░░░░░░░\u001b[39m 12.50% 预计剩余: 6分12秒","service":"pdf-scraper","timestamp":"2025-06-05 11:32:58"}
+{"level":"info","message":"开始爬取页面 [15/80]: https://nextjs.org/docs/app/getting-started/deploying","service":"pdf-scraper","timestamp":"2025-06-05 11:32:58"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-getting-started/010-updating-data.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:33:06"}
+{"level":"info","message":"\u001b[32m✓ [11/80] https://nextjs.org/docs/app/getting-started/updating-data\u001b[39m \u001b[32m███\u001b[39m\u001b[90m░░░░░░░░░░░░░░░░░\u001b[39m 13.75% 预计剩余: 6分23秒","service":"pdf-scraper","timestamp":"2025-06-05 11:33:06"}
+{"level":"info","message":"开始爬取页面 [16/80]: https://nextjs.org/docs/app/getting-started/upgrading","service":"pdf-scraper","timestamp":"2025-06-05 11:33:06"}
+{"level":"warn","message":"图片数量已稳定，停止等待新图片","service":"pdf-scraper","timestamp":"2025-06-05 11:33:06"}
+{"elapsed":1505,"level":"warn","message":"图片加载超时","service":"pdf-scraper","timeout":10000,"timestamp":"2025-06-05 11:33:06"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-getting-started/011-error-handling.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:33:06"}
+{"level":"info","message":"\u001b[32m✓ [12/80] https://nextjs.org/docs/app/getting-started/error-handling\u001b[39m \u001b[32m███\u001b[39m\u001b[90m░░░░░░░░░░░░░░░░░\u001b[39m 15.00% 预计剩余: 5分48秒","service":"pdf-scraper","timestamp":"2025-06-05 11:33:06"}
+{"level":"info","message":"开始爬取页面 [17/80]: https://nextjs.org/docs/app/guides","service":"pdf-scraper","timestamp":"2025-06-05 11:33:06"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-getting-started/013-metadata-and-og-images.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:33:06"}
+{"level":"info","message":"\u001b[32m✓ [13/80] https://nextjs.org/docs/app/getting-started/metadata-and-og-images\u001b[39m \u001b[32m███\u001b[39m\u001b[90m░░░░░░░░░░░░░░░░░\u001b[39m 16.25% 预计剩余: 5分17秒","service":"pdf-scraper","timestamp":"2025-06-05 11:33:06"}
+{"level":"info","message":"开始爬取页面 [18/80]: https://nextjs.org/docs/app/guides/analytics","service":"pdf-scraper","timestamp":"2025-06-05 11:33:06"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-getting-started/012-partial-prerendering.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:33:10"}
+{"level":"info","message":"\u001b[32m✓ [14/80] https://nextjs.org/docs/app/getting-started/partial-prerendering\u001b[39m \u001b[32m████\u001b[39m\u001b[90m░░░░░░░░░░░░░░░░\u001b[39m 17.50% 预计剩余: 5分7秒","service":"pdf-scraper","timestamp":"2025-06-05 11:33:10"}
+{"level":"info","message":"开始爬取页面 [19/80]: https://nextjs.org/docs/app/guides/authentication","service":"pdf-scraper","timestamp":"2025-06-05 11:33:10"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-getting-started/015-upgrading.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:33:25"}
+{"level":"info","message":"\u001b[32m✓ [15/80] https://nextjs.org/docs/app/getting-started/upgrading\u001b[39m \u001b[32m████\u001b[39m\u001b[90m░░░░░░░░░░░░░░░░\u001b[39m 18.75% 预计剩余: 5分48秒","service":"pdf-scraper","timestamp":"2025-06-05 11:33:25"}
+{"level":"info","message":"开始爬取页面 [20/80]: https://nextjs.org/docs/app/guides/ci-build-caching","service":"pdf-scraper","timestamp":"2025-06-05 11:33:25"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-guides/016-guides.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:33:25"}
+{"level":"info","message":"\u001b[32m✓ [16/80] https://nextjs.org/docs/app/guides\u001b[39m \u001b[32m████\u001b[39m\u001b[90m░░░░░░░░░░░░░░░░\u001b[39m 20.00% 预计剩余: 5分22秒","service":"pdf-scraper","timestamp":"2025-06-05 11:33:25"}
+{"level":"info","message":"开始爬取页面 [21/80]: https://nextjs.org/docs/app/guides/content-security-policy","service":"pdf-scraper","timestamp":"2025-06-05 11:33:25"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-guides/017-analytics.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:33:27"}
+{"level":"info","message":"\u001b[32m✓ [17/80] https://nextjs.org/docs/app/guides/analytics\u001b[39m \u001b[32m████\u001b[39m\u001b[90m░░░░░░░░░░░░░░░░\u001b[39m 21.25% 预计剩余: 5分5秒","service":"pdf-scraper","timestamp":"2025-06-05 11:33:27"}
+{"level":"info","message":"开始爬取页面 [22/80]: https://nextjs.org/docs/app/guides/css-in-js","service":"pdf-scraper","timestamp":"2025-06-05 11:33:27"}
+{"level":"info","message":"开始爬取页面 [23/80]: https://nextjs.org/docs/app/guides/custom-server","service":"pdf-scraper","timestamp":"2025-06-05 11:33:28"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-guides/018-authentication.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:33:30"}
+{"level":"info","message":"\u001b[32m✓ [18/80] https://nextjs.org/docs/app/guides/authentication\u001b[39m \u001b[32m█████\u001b[39m\u001b[90m░░░░░░░░░░░░░░░\u001b[39m 22.50% 预计剩余: 4分54秒","service":"pdf-scraper","timestamp":"2025-06-05 11:33:30"}
+{"level":"info","message":"开始爬取页面 [24/80]: https://nextjs.org/docs/app/guides/debugging","service":"pdf-scraper","timestamp":"2025-06-05 11:33:30"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-getting-started/014-deploying.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:33:33"}
+{"level":"info","message":"\u001b[32m✓ [19/80] https://nextjs.org/docs/app/getting-started/deploying\u001b[39m \u001b[32m█████\u001b[39m\u001b[90m░░░░░░░░░░░░░░░\u001b[39m 23.75% 预计剩余: 4分43秒","service":"pdf-scraper","timestamp":"2025-06-05 11:33:33"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-guides/020-content-security-policy.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:33:46"}
+{"level":"info","message":"\u001b[32m✓ [20/80] https://nextjs.org/docs/app/guides/content-security-policy\u001b[39m \u001b[32m█████\u001b[39m\u001b[90m░░░░░░░░░░░░░░░\u001b[39m 25.00% 预计剩余: 5分3秒","service":"pdf-scraper","timestamp":"2025-06-05 11:33:46"}
+{"level":"info","message":"开始爬取页面 [25/80]: https://nextjs.org/docs/app/guides/draft-mode","service":"pdf-scraper","timestamp":"2025-06-05 11:33:46"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-guides/021-css-in-js.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:33:46"}
+{"level":"info","message":"\u001b[32m✓ [21/80] https://nextjs.org/docs/app/guides/css-in-js\u001b[39m \u001b[32m█████\u001b[39m\u001b[90m░░░░░░░░░░░░░░░\u001b[39m 26.25% 预计剩余: 4分45秒","service":"pdf-scraper","timestamp":"2025-06-05 11:33:46"}
+{"level":"info","message":"开始爬取页面 [26/80]: https://nextjs.org/docs/app/guides/environment-variables","service":"pdf-scraper","timestamp":"2025-06-05 11:33:46"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-guides/019-ci-build-caching.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:33:47"}
+{"level":"info","message":"\u001b[32m✓ [22/80] https://nextjs.org/docs/app/guides/ci-build-caching\u001b[39m \u001b[32m██████\u001b[39m\u001b[90m░░░░░░░░░░░░░░\u001b[39m 27.50% 预计剩余: 4分29秒","service":"pdf-scraper","timestamp":"2025-06-05 11:33:47"}
+{"level":"info","message":"开始爬取页面 [27/80]: https://nextjs.org/docs/app/guides/forms","service":"pdf-scraper","timestamp":"2025-06-05 11:33:47"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-guides/023-debugging.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:33:49"}
+{"level":"info","message":"\u001b[32m✓ [23/80] https://nextjs.org/docs/app/guides/debugging\u001b[39m \u001b[32m██████\u001b[39m\u001b[90m░░░░░░░░░░░░░░\u001b[39m 28.75% 预计剩余: 4分18秒","service":"pdf-scraper","timestamp":"2025-06-05 11:33:49"}
+{"level":"info","message":"开始爬取页面 [28/80]: https://nextjs.org/docs/app/guides/incremental-static-regeneration","service":"pdf-scraper","timestamp":"2025-06-05 11:33:49"}
+{"level":"info","message":"开始爬取页面 [29/80]: https://nextjs.org/docs/app/guides/instrumentation","service":"pdf-scraper","timestamp":"2025-06-05 11:33:58"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-guides/022-custom-server.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:34:01"}
+{"level":"info","message":"\u001b[32m✓ [24/80] https://nextjs.org/docs/app/guides/custom-server\u001b[39m \u001b[32m██████\u001b[39m\u001b[90m░░░░░░░░░░░░░░\u001b[39m 30.00% 预计剩余: 4分30秒","service":"pdf-scraper","timestamp":"2025-06-05 11:34:01"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-guides/025-environment-variables.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:34:04"}
+{"level":"info","message":"\u001b[32m✓ [25/80] https://nextjs.org/docs/app/guides/environment-variables\u001b[39m \u001b[32m██████\u001b[39m\u001b[90m░░░░░░░░░░░░░░\u001b[39m 31.25% 预计剩余: 4分22秒","service":"pdf-scraper","timestamp":"2025-06-05 11:34:04"}
+{"level":"info","message":"开始爬取页面 [30/80]: https://nextjs.org/docs/app/guides/internationalization","service":"pdf-scraper","timestamp":"2025-06-05 11:34:04"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-guides/024-draft-mode.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:34:06"}
+{"level":"info","message":"\u001b[32m✓ [26/80] https://nextjs.org/docs/app/guides/draft-mode\u001b[39m \u001b[32m███████\u001b[39m\u001b[90m░░░░░░░░░░░░░\u001b[39m 32.50% 预计剩余: 4分11秒","service":"pdf-scraper","timestamp":"2025-06-05 11:34:06"}
+{"level":"info","message":"开始爬取页面 [31/80]: https://nextjs.org/docs/app/guides/json-ld","service":"pdf-scraper","timestamp":"2025-06-05 11:34:06"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-guides/026-forms.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:34:06"}
+{"level":"info","message":"\u001b[32m✓ [27/80] https://nextjs.org/docs/app/guides/forms\u001b[39m \u001b[32m███████\u001b[39m\u001b[90m░░░░░░░░░░░░░\u001b[39m 33.75% 预计剩余: 3分58秒","service":"pdf-scraper","timestamp":"2025-06-05 11:34:06"}
+{"level":"info","message":"开始爬取页面 [32/80]: https://nextjs.org/docs/app/guides/lazy-loading","service":"pdf-scraper","timestamp":"2025-06-05 11:34:06"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-guides/027-incremental-static-regeneration.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:34:14"}
+{"level":"info","message":"\u001b[32m✓ [28/80] https://nextjs.org/docs/app/guides/incremental-static-regeneration\u001b[39m \u001b[32m███████\u001b[39m\u001b[90m░░░░░░░░░░░░░\u001b[39m 35.00% 预计剩余: 4分0秒","service":"pdf-scraper","timestamp":"2025-06-05 11:34:14"}
+{"level":"info","message":"开始爬取页面 [33/80]: https://nextjs.org/docs/app/guides/local-development","service":"pdf-scraper","timestamp":"2025-06-05 11:34:14"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-guides/029-internationalization.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:34:22"}
+{"level":"info","message":"\u001b[32m✓ [29/80] https://nextjs.org/docs/app/guides/internationalization\u001b[39m \u001b[32m███████\u001b[39m\u001b[90m░░░░░░░░░░░░░\u001b[39m 36.25% 预计剩余: 4分2秒","service":"pdf-scraper","timestamp":"2025-06-05 11:34:22"}
+{"level":"info","message":"开始爬取页面 [34/80]: https://nextjs.org/docs/app/guides/mdx","service":"pdf-scraper","timestamp":"2025-06-05 11:34:22"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-guides/030-json-ld.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:34:25"}
+{"level":"info","message":"\u001b[32m✓ [30/80] https://nextjs.org/docs/app/guides/json-ld\u001b[39m \u001b[32m████████\u001b[39m\u001b[90m░░░░░░░░░░░░\u001b[39m 37.50% 预计剩余: 3分53秒","service":"pdf-scraper","timestamp":"2025-06-05 11:34:25"}
+{"level":"info","message":"开始爬取页面 [35/80]: https://nextjs.org/docs/app/guides/memory-usage","service":"pdf-scraper","timestamp":"2025-06-05 11:34:25"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-guides/031-lazy-loading.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:34:26"}
+{"level":"info","message":"\u001b[32m✓ [31/80] https://nextjs.org/docs/app/guides/lazy-loading\u001b[39m \u001b[32m████████\u001b[39m\u001b[90m░░░░░░░░░░░░\u001b[39m 38.75% 预计剩余: 3分43秒","service":"pdf-scraper","timestamp":"2025-06-05 11:34:26"}
+{"level":"info","message":"开始爬取页面 [36/80]: https://nextjs.org/docs/app/guides/migrating","service":"pdf-scraper","timestamp":"2025-06-05 11:34:26"}
+{"level":"info","message":"开始爬取页面 [37/80]: https://nextjs.org/docs/app/guides/migrating/app-router-migration","service":"pdf-scraper","timestamp":"2025-06-05 11:34:28"}
+{"level":"info","message":"PDF已保存: /Users/yvan/Documents/Developer/nextjs-pdf/pdfs/app-guides/028-instrumentation.pdf","service":"pdf-scraper","timestamp":"2025-06-05 11:34:29"}
+{"level":"info","message":"\u001b[32m✓ [32/80] https://nextjs.org/docs/app/guides/instrumentation\u001b[39m \u001b[32m████████\u001b[39m\u001b[90m░░░░░░░░░░░░\u001b[39m 40.00% 预计剩余: 3分36秒","service":"pdf-scraper","timestamp":"2025-06-05 11:34:29"}
