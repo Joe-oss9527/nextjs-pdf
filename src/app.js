@@ -14,7 +14,7 @@ class Application {
         this.pythonRunner = null;
         this.isShuttingDown = false;
         this.startTime = null;
-        
+
         // 绑定信号处理
         this.setupSignalHandlers();
     }
@@ -24,7 +24,7 @@ class Application {
      */
     setupSignalHandlers() {
         const signals = ['SIGINT', 'SIGTERM', 'SIGQUIT'];
-        
+
         signals.forEach(signal => {
             process.on(signal, async () => {
                 this.logger.info(`Received ${signal}, initiating graceful shutdown...`);
@@ -59,14 +59,14 @@ class Application {
             // 1. 创建依赖注入容器
             this.logger.info('📦 Setting up dependency injection container...');
             this.container = await createContainer();
-            
+
             // 2. 获取配置和服务
             const config = await this.container.get('config');
             const appLogger = await this.container.get('logger');
-            
+
             // 3. 初始化Python运行器
             this.pythonRunner = new PythonRunner(config, appLogger);
-            
+
             // 4. 检查Python环境（可选）
             this.logger.info('🐍 Checking Python environment...');
             const pythonCheck = await this.pythonRunner.checkPythonEnvironment();
@@ -83,7 +83,7 @@ class Application {
 
             const initTime = Date.now() - this.startTime;
             this.logger.info(`✅ Application initialized successfully in ${initTime}ms`);
-            
+
         } catch (error) {
             this.logger.error('❌ Failed to initialize application:', error);
             await this.cleanup();
@@ -119,7 +119,7 @@ class Application {
             // 获取爬虫统计信息
             const stats = progressTracker.getStats();
             const scrapeTime = Date.now() - scrapeStartTime;
-            
+
             this.logger.info('✅ Web scraping completed successfully', {
                 duration: scrapeTime,
                 stats
@@ -152,10 +152,10 @@ class Application {
             const pythonMergeService = await this.container.get('pythonMergeService');
 
             // 使用新的Python合并服务
-            const result = await pythonMergeService.mergePdfs();
-            
+            const result = await pythonMergeService.mergePDFs();
+
             const mergeTime = Date.now() - mergeStartTime;
-            
+
             if (result.success) {
                 this.logger.info('✅ PDF merge completed successfully', {
                     duration: mergeTime,
@@ -204,7 +204,7 @@ class Application {
             }
 
             const totalTime = Date.now() - totalStartTime;
-            
+
             // 生成最终报告
             const finalReport = {
                 totalDuration: totalTime,
@@ -214,7 +214,7 @@ class Application {
             };
 
             this.logger.info('🎉 Application workflow completed!', finalReport);
-            
+
             return finalReport;
 
         } catch (error) {
@@ -228,7 +228,7 @@ class Application {
      */
     getStatus() {
         const uptime = this.startTime ? Date.now() - this.startTime : 0;
-        
+
         return {
             status: this.isShuttingDown ? 'shutting_down' : 'running',
             uptime,
@@ -265,7 +265,7 @@ class Application {
             }
 
             this.logger.info('✅ Application cleanup completed');
-            
+
         } catch (error) {
             this.logger.error('❌ Error during cleanup:', error);
         }
@@ -284,10 +284,10 @@ class Application {
 
         try {
             await this.cleanup();
-            
+
             const shutdownTime = Date.now() - shutdownStartTime;
             this.logger.info(`✅ Graceful shutdown completed in ${shutdownTime}ms`);
-            
+
         } catch (error) {
             this.logger.error('❌ Error during shutdown:', error);
         }
@@ -300,7 +300,7 @@ class Application {
         try {
             const status = this.getStatus();
             const pythonCheck = this.pythonRunner ? await this.pythonRunner.checkPythonEnvironment() : null;
-            
+
             return {
                 healthy: true,
                 status: status.status,
@@ -309,7 +309,7 @@ class Application {
                 pythonEnvironment: pythonCheck,
                 timestamp: new Date().toISOString()
             };
-            
+
         } catch (error) {
             return {
                 healthy: false,
@@ -325,11 +325,11 @@ class Application {
  */
 async function main() {
     const app = new Application();
-    
+
     try {
         // 运行应用程序
         const result = await app.run();
-        
+
         console.log('\n' + '='.repeat(60));
         console.log('🎉 APPLICATION COMPLETED SUCCESSFULLY');
         console.log('='.repeat(60));
@@ -337,22 +337,22 @@ async function main() {
         console.log(`🕷️  Scraping: ${result.scraping.success ? '✅ Success' : '❌ Failed'}`);
         console.log(`📄 PDF Merge: ${result.merge.success ? '✅ Success' : '❌ Failed'}`);
         console.log('='.repeat(60));
-        
+
         // 优雅关闭
         await app.shutdown();
-        
+
         process.exit(0);
-        
+
     } catch (error) {
         console.error('\n' + '='.repeat(60));
         console.error('💥 APPLICATION FAILED');
         console.error('='.repeat(60));
         console.error('Error:', error.message);
         console.error('='.repeat(60));
-        
+
         // 确保清理资源
         await app.cleanup();
-        
+
         process.exit(1);
     }
 }
