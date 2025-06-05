@@ -373,7 +373,7 @@ export class ServiceRegistrar extends EventEmitter {
    */
   async _preloadCriticalServices() {
     const criticalServices = Array.from(this.serviceMetrics.entries())
-      .filter(([name, metrics]) => metrics.critical)
+      .filter(([, metrics]) => metrics.critical)
       .map(([name]) => name);
 
     if (criticalServices.length === 0) {
@@ -632,7 +632,7 @@ export class ServiceRegistrar extends EventEmitter {
    */
   async retryFailedServices() {
     const failedServices = Array.from(this.serviceMetrics.entries())
-      .filter(([name, metrics]) => metrics.state === 'failed')
+      .filter(([, metrics]) => metrics.state === 'failed')
       .map(([name]) => name);
 
     if (failedServices.length === 0) {

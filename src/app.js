@@ -3,7 +3,6 @@ import {
   createDevContainer,
   createProductionContainer,
   shutdownContainer,
-  getContainerHealth,
   monitorContainer
 } from "./core/setup.js";
 import PythonRunner from "./core/pythonRunner.js";
@@ -91,7 +90,6 @@ class Application {
    * 初始化应用程序 - 增强版本
    */
   async initialize() {
-    const initStartTime = Date.now();
     
     try {
       this.startTime = Date.now();
@@ -231,7 +229,7 @@ class Application {
         
         // 记录不健康的服务
         Object.entries(healthResults)
-          .filter(([name, result]) => !result.healthy)
+          .filter(([, result]) => !result.healthy)
           .forEach(([name, result]) => {
             this.logger.warn(`❌ Service ${name} failed health check:`, result.error);
           });
