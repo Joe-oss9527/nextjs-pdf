@@ -1,6 +1,5 @@
 /**
- * 核心爬虫类 - 第六阶段重构
- * 集成前5阶段的所有服务，实现完整的爬虫逻辑
+ * 核心爬虫类 - 修复PDF文件命名使用数字索引
  */
 
 import path from 'path';
@@ -287,7 +286,7 @@ export class Scraper extends EventEmitter {
   }
 
   /**
-   * 爬取单个页面
+   * 爬取单个页面 - 关键修改：使用数字索引命名
    */
   async scrapePage(url, index) {
     // 检查是否已处理
@@ -358,24 +357,16 @@ export class Scraper extends EventEmitter {
         return (h1?.innerText || title?.innerText || heading?.innerText || '').trim();
       }, this.config.contentSelector);
 
-      if (title) {
-        // 修复：使用正确的方法名 saveArticleTitle
-        await this.metadataService.saveArticleTitle(String(index), title);
-        this.logger.debug(`提取到标题: ${title}`);
-      }
-
       // 处理懒加载图片
       let imagesLoaded = false;
       try {
         imagesLoaded = await this.imageService.triggerLazyLoading(page);
         if (!imagesLoaded) {
           this.logger.warn(`部分图片未能加载: ${url}`);
-          // 修复：使用正确的方法名和参数 logImageLoadFailure
           await this.metadataService.logImageLoadFailure(url, index);
         }
       } catch (error) {
         this.logger.warn('图片加载处理失败', { url, error: error.message });
-        // 修复：使用正确的方法名和参数 logImageLoadFailure
         await this.metadataService.logImageLoadFailure(url, index);
       }
 
@@ -417,8 +408,12 @@ export class Scraper extends EventEmitter {
         }
       }, this.config.contentSelector);
 
-      // 生成PDF
-      const pdfPath = this.pathService.getPdfPath(url, { index: index });
+      // 🔥 关键修改：生成PDF时使用数字索引而不是哈希
+      const pdfPath = this.pathService.getPdfPath(url, {
+        useHash: false,  // 使用索引而不是哈希
+        index: index
+      });
+
       await this.fileService.ensureDirectory(path.dirname(pdfPath));
 
       await page.pdf({
@@ -436,9 +431,18 @@ export class Scraper extends EventEmitter {
 
       this.logger.info(`PDF已保存: ${pdfPath}`);
 
+      // 保存URL到索引的映射，用于追溯和调试
+      this.stateManager.setUrlIndex(url, index);
+
       // 标记为已处理
       this.stateManager.markProcessed(url, pdfPath);
       this.progressTracker.success(url);
+
+      // 如果有标题，保存标题映射（使用字符串索引以匹配Python期望）
+      if (title) {
+        await this.metadataService.saveArticleTitle(String(index), title);
+        this.logger.debug(`提取到标题 [${index}]: ${title}`);
+      }
 
       // 定期保存状态
       const processedCount = this.progressTracker.getStats().processed;
@@ -555,7 +559,7 @@ export class Scraper extends EventEmitter {
     this.startTime = Date.now();
 
     try {
-      this.logger.info('=== 开始运行爬虫 ===');
+      this.logger.info('=== 开始运行爬虫（使用数字索引命名）===');
 
       // 初始化
       await this.initialize();
@@ -569,8 +573,6 @@ export class Scraper extends EventEmitter {
 
       // 开始进度追踪
       this.progressTracker.start(urls.length);
-
-      // 队列管理器已在构造时配置好
 
       // 添加任务到队列
       urls.forEach((url, index) => {
