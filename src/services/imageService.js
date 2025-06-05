@@ -8,7 +8,7 @@ import { EventEmitter } from 'events';
 export class ImageService extends EventEmitter {
   constructor(options = {}) {
     super();
-    
+
     this.options = {
       defaultTimeout: options.defaultTimeout || 15000,
       checkInterval: options.checkInterval || 500,
@@ -36,6 +36,12 @@ export class ImageService extends EventEmitter {
    */
   async setupImageObserver(page) {
     try {
+      // 修复：只传递可序列化的配置项，排除 logger
+      const serializableOptions = {
+        observerRootMargin: this.options.observerRootMargin,
+        enableIntersectionObserver: this.options.enableIntersectionObserver
+      };
+
       await page.evaluateOnNewDocument((options) => {
         // 防止重复设置
         if (window.__imageObserverSetup) return;
@@ -47,17 +53,17 @@ export class ImageService extends EventEmitter {
           constructor() {
             super();
             this.loading = 'eager';
-            
+
             // 监听加载事件
             this.addEventListener('load', () => {
-              window.dispatchEvent(new CustomEvent('imageLoaded', { 
-                detail: { src: this.src, success: true } 
+              window.dispatchEvent(new CustomEvent('imageLoaded', {
+                detail: { src: this.src, success: true }
               }));
             });
-            
+
             this.addEventListener('error', () => {
-              window.dispatchEvent(new CustomEvent('imageLoaded', { 
-                detail: { src: this.src, success: false } 
+              window.dispatchEvent(new CustomEvent('imageLoaded', {
+                detail: { src: this.src, success: false }
               }));
             });
           }
@@ -71,7 +77,7 @@ export class ImageService extends EventEmitter {
             entries.forEach(entry => {
               if (entry.isIntersecting) {
                 const img = entry.target;
-                
+
                 // 处理 data-src 懒加载
                 if (img.dataset.src && !img.src) {
                   img.src = img.dataset.src;
@@ -79,12 +85,12 @@ export class ImageService extends EventEmitter {
                     detail: { src: img.dataset.src }
                   }));
                 }
-                
+
                 // 处理 data-srcset 懒加载
                 if (img.dataset.srcset && !img.srcset) {
                   img.srcset = img.dataset.srcset;
                 }
-                
+
                 // 处理其他懒加载属性
                 ['data-original', 'data-lazy-src', 'data-echo'].forEach(attr => {
                   const value = img.getAttribute(attr);
@@ -95,11 +101,11 @@ export class ImageService extends EventEmitter {
                     }));
                   }
                 });
-                
+
                 observer.unobserve(img);
               }
             });
-          }, { 
+          }, {
             rootMargin: options.observerRootMargin,
             threshold: 0.1
           });
@@ -152,7 +158,7 @@ export class ImageService extends EventEmitter {
           setupIntersectionObserver();
         }
 
-      }, this.options);
+      }, serializableOptions); // 传递可序列化的选项
 
       this.logger?.debug('图片观察器设置完成');
       this.emit('observer-setup', { pageUrl: page.url() });
@@ -175,10 +181,10 @@ export class ImageService extends EventEmitter {
 
       // 监听页面中的图片加载事件
       const imageStats = { loaded: 0, failed: 0 };
-      
+
       await page.evaluateOnNewDocument(() => {
         window.__imageLoadStats = { loaded: 0, failed: 0 };
-        
+
         window.addEventListener('imageLoaded', (event) => {
           if (event.detail.success) {
             window.__imageLoadStats.loaded++;
@@ -196,7 +202,7 @@ export class ImageService extends EventEmitter {
         const result = await page.evaluate(() => {
           const images = Array.from(document.querySelectorAll('img'));
           const stats = window.__imageLoadStats || { loaded: 0, failed: 0 };
-          
+
           const imageInfo = images.map(img => ({
             src: img.src || img.dataset.src || '',
             complete: img.complete,
@@ -207,7 +213,7 @@ export class ImageService extends EventEmitter {
           }));
 
           const validImages = imageInfo.filter(info => info.src);
-          const loadedImages = validImages.filter(info => 
+          const loadedImages = validImages.filter(info =>
             info.complete && info.naturalHeight > 0
           );
           const failedImages = validImages.filter(info => info.hasError);
@@ -218,7 +224,7 @@ export class ImageService extends EventEmitter {
             failed: failedImages.length,
             pending: validImages.length - loadedImages.length - failedImages.length,
             stats,
-            allLoaded: validImages.length > 0 && 
+            allLoaded: validImages.length > 0 &&
                       (loadedImages.length + failedImages.length) === validImages.length
           };
         });
@@ -237,7 +243,7 @@ export class ImageService extends EventEmitter {
         if (result.allLoaded) {
           const loadTime = Date.now() - startTime;
           this.stats.totalLoadTime += loadTime;
-          
+
           this.logger?.debug('所有图片加载完成', {
             total: result.total,
             loaded: result.loaded,
@@ -270,7 +276,7 @@ export class ImageService extends EventEmitter {
 
       const finalTime = Date.now() - startTime;
       this.logger?.warn('图片加载超时', { timeout: config.defaultTimeout, elapsed: finalTime });
-      
+
       this.emit('images-timeout', {
         timeout: config.defaultTimeout,
         elapsed: finalTime,
@@ -309,10 +315,10 @@ export class ImageService extends EventEmitter {
         while (currentPosition < scrollInfo.totalHeight) {
           const stepStart = Date.now();
           window.scrollTo(0, currentPosition);
-          
+
           // 等待滚动动画和懒加载触发
           await new Promise(resolve => setTimeout(resolve, delay));
-          
+
           const stepEnd = Date.now();
           scrollInfo.scrollSteps.push({
             position: currentPosition,
@@ -353,7 +359,7 @@ export class ImageService extends EventEmitter {
    */
   async triggerLazyLoading(page, options = {}) {
     const config = { ...this.options, ...options };
-    
+
     try {
       this.logger?.debug('开始触发懒加载图片');
 
@@ -442,7 +448,7 @@ export class ImageService extends EventEmitter {
   async processPageImages(page, options = {}) {
     const config = { ...this.options, ...options };
     const startTime = Date.now();
-    
+
     try {
       this.logger?.info('开始处理页面图片');
 
@@ -458,12 +464,12 @@ export class ImageService extends EventEmitter {
       // 多次尝试确保所有图片都加载
       let attempts = 0;
       let allLoaded = false;
-      
+
       while (attempts < config.maxScrollAttempts && !allLoaded) {
         await this.scrollPage(page);
         allLoaded = await this.waitForImages(page, { defaultTimeout: 8000 });
         attempts++;
-        
+
         if (!allLoaded) {
           this.logger?.debug(`图片加载尝试 ${attempts}/${config.maxScrollAttempts}`);
         }
@@ -505,8 +511,8 @@ export class ImageService extends EventEmitter {
   getStats() {
     return {
       ...this.stats,
-      averageLoadTime: this.stats.imagesProcessed > 0 
-        ? this.stats.totalLoadTime / this.stats.imagesProcessed 
+      averageLoadTime: this.stats.imagesProcessed > 0
+        ? this.stats.totalLoadTime / this.stats.imagesProcessed
         : 0
     };
   }
@@ -523,7 +529,7 @@ export class ImageService extends EventEmitter {
       scrollOperations: 0,
       totalLoadTime: 0
     };
-    
+
     this.emit('stats-reset');
   }
 
@@ -538,19 +544,19 @@ export class ImageService extends EventEmitter {
           window.__imageObserver.disconnect();
           delete window.__imageObserver;
         }
-        
+
         if (window.__mutationObserver) {
           window.__mutationObserver.disconnect();
           delete window.__mutationObserver;
         }
-        
+
         // 清理标记
         delete window.__imageObserverSetup;
         delete window.__imageLoadStats;
       });
 
       this.emit('cleanup-complete');
-      
+
     } catch (error) {
       this.logger?.warn('清理图片服务资源时发生错误', { error: error.message });
     }
