@@ -12,7 +12,7 @@ import { retry, delay } from '../utils/common.js';
 export class Scraper extends EventEmitter {
   constructor(dependencies) {
     super();
-    
+
     // 依赖注入 - 集成前5阶段的所有服务
     this.config = dependencies.config;
     this.logger = dependencies.logger;
@@ -76,19 +76,24 @@ export class Scraper extends EventEmitter {
     try {
       this.logger.info('开始初始化爬虫...');
 
-      // 初始化浏览器池
-      await this.browserPool.initialize();
+      // 初始化浏览器池（如果还没有初始化）
+      if (!this.browserPool.isInitialized) {
+        await this.browserPool.initialize();
+      }
 
-      // 加载状态
-      await this.stateManager.load();
+      // 加载状态（如果还没有加载）
+      if (this.stateManager && typeof this.stateManager.load === 'function') {
+        await this.stateManager.load();
+      }
 
       // 配置队列管理器
       this.queueManager.setConcurrency(this.config.concurrency || 3);
 
       // 确保输出目录存在
-      await this.fileService.ensureDirectory(this.config.outputDir);
+      await this.fileService.ensureDirectory(this.config.pdfDir);
+
       // 确保元数据目录存在
-      const metadataDir = path.dirname(this.pathService.getMetadataPath('progress'));
+      const metadataDir = path.join(this.config.pdfDir, 'metadata');
       await this.fileService.ensureDirectory(metadataDir);
 
       this.isInitialized = true;
@@ -113,7 +118,7 @@ export class Scraper extends EventEmitter {
     }
 
     this.logger.info('开始收集URL', { rootURL: this.config.rootURL });
-    
+
     let page = null;
     try {
       // 创建页面
@@ -164,12 +169,12 @@ export class Scraper extends EventEmitter {
       // URL去重和规范化
       const normalizedUrls = new Map();
       const duplicates = new Set();
-      
+
       rawUrls.forEach((url, index) => {
         try {
           const normalized = normalizeUrl(url);
           const hash = getUrlHash(normalized);
-          
+
           if (normalizedUrls.has(hash)) {
             duplicates.add(url);
             return;
@@ -200,7 +205,7 @@ export class Scraper extends EventEmitter {
       });
 
       if (duplicates.size > 0) {
-        this.logger.debug('发现重复URL', { 
+        this.logger.debug('发现重复URL', {
           count: duplicates.size,
           examples: Array.from(duplicates).slice(0, 5)
         });
@@ -344,17 +349,18 @@ export class Scraper extends EventEmitter {
       const title = await page.evaluate((selector) => {
         const contentElement = document.querySelector(selector);
         if (!contentElement) return '';
-        
+
         // 尝试多种标题提取方式
         const h1 = contentElement.querySelector('h1');
         const title = contentElement.querySelector('title, .title, .page-title');
         const heading = contentElement.querySelector('h2, h3');
-        
+
         return (h1?.innerText || title?.innerText || heading?.innerText || '').trim();
       }, this.config.contentSelector);
 
       if (title) {
-        await this.metadataService.setArticleTitle(String(index), title);
+        // 修复：使用正确的方法名 saveArticleTitle
+        await this.metadataService.saveArticleTitle(String(index), title);
         this.logger.debug(`提取到标题: ${title}`);
       }
 
@@ -364,11 +370,13 @@ export class Scraper extends EventEmitter {
         imagesLoaded = await this.imageService.triggerLazyLoading(page);
         if (!imagesLoaded) {
           this.logger.warn(`部分图片未能加载: ${url}`);
-          await this.metadataService.recordImageLoadFailure(url);
+          // 修复：使用正确的方法名和参数 logImageLoadFailure
+          await this.metadataService.logImageLoadFailure(url, index);
         }
       } catch (error) {
         this.logger.warn('图片加载处理失败', { url, error: error.message });
-        await this.metadataService.recordImageLoadFailure(url);
+        // 修复：使用正确的方法名和参数 logImageLoadFailure
+        await this.metadataService.logImageLoadFailure(url, index);
       }
 
       // 清理页面内容
@@ -383,26 +391,26 @@ export class Scraper extends EventEmitter {
             '.navigation', '.nav', '.menu',
             '.comments', '.comment-section'
           ];
-          
+
           elementsToRemove.forEach(sel => {
             contentElement.querySelectorAll(sel).forEach(el => el.remove());
           });
 
           // 设置为页面唯一内容
           document.body.innerHTML = contentElement.outerHTML;
-          
+
           // 添加基础样式
           const style = document.createElement('style');
           style.textContent = `
-            body { 
-              font-family: Arial, sans-serif; 
-              line-height: 1.6; 
-              margin: 20px; 
-              color: #333; 
+            body {
+              font-family: Arial, sans-serif;
+              line-height: 1.6;
+              margin: 20px;
+              color: #333;
             }
-            img { 
-              max-width: 100%; 
-              height: auto; 
+            img {
+              max-width: 100%;
+              height: auto;
             }
           `;
           document.head.appendChild(style);
@@ -410,17 +418,17 @@ export class Scraper extends EventEmitter {
       }, this.config.contentSelector);
 
       // 生成PDF
-      const pdfPath = await this.pathService.getPdfPath(url, index);
+      const pdfPath = this.pathService.getPdfPath(url, { index: index });
       await this.fileService.ensureDirectory(path.dirname(pdfPath));
 
       await page.pdf({
         path: pdfPath,
         format: 'A4',
-        margin: { 
-          top: '1cm', 
-          right: '1cm', 
-          bottom: '1cm', 
-          left: '1cm' 
+        margin: {
+          top: '1cm',
+          right: '1cm',
+          bottom: '1cm',
+          left: '1cm'
         },
         printBackground: true,
         preferCSSPageSize: false
@@ -429,7 +437,7 @@ export class Scraper extends EventEmitter {
       this.logger.info(`PDF已保存: ${pdfPath}`);
 
       // 标记为已处理
-      this.stateManager.markProcessed(url);
+      this.stateManager.markProcessed(url, pdfPath);
       this.progressTracker.success(url);
 
       // 定期保存状态
@@ -505,7 +513,7 @@ export class Scraper extends EventEmitter {
         // 重新爬取
         const index = this.urlQueue.indexOf(url);
         const realIndex = index >= 0 ? index : this.urlQueue.length;
-        
+
         await this.scrapePage(url, realIndex);
         retrySuccessCount++;
 
@@ -623,7 +631,7 @@ export class Scraper extends EventEmitter {
 
     } finally {
       this.isRunning = false;
-      
+
       // 清理资源
       try {
         await this.cleanup();
@@ -674,10 +682,10 @@ export class Scraper extends EventEmitter {
 
     this.logger.info('停止爬虫...');
     this.isRunning = false;
-    
+
     await this.queueManager.clear();
     await this.cleanup();
-    
+
     this.emit('stopped');
   }
 
