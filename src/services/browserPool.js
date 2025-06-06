@@ -167,39 +167,116 @@ export class BrowserPool extends EventEmitter {
       return browser;
     }
 
-    // 等待有可用的浏览器
+    // 等待有可用的浏览器，使用智能超时和重试
+    return this.waitForAvailableBrowser();
+  }
+
+  /**
+   * 智能等待可用浏览器
+   */
+  async waitForAvailableBrowser() {
+    const maxWaitTime = 45000; // 45秒总超时
+    const checkInterval = 500;   // 500ms检查间隔
+    const startTime = Date.now();
+    
     return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        this.stats.activeRequests--;
-        reject(new Error('获取浏览器超时'));
-      }, 30000); // 30秒超时
+      const cleanup = () => {
+        this.stats.activeRequests = Math.max(0, this.stats.activeRequests - 1);
+      };
 
-      const checkAvailable = () => {
-        if (this.isClosed) {
-          clearTimeout(timeout);
-          this.stats.activeRequests--;
-          reject(new Error('浏览器池已关闭'));
-          return;
-        }
+      const checkAvailable = async () => {
+        try {
+          // 检查是否已关闭
+          if (this.isClosed) {
+            cleanup();
+            reject(new Error('浏览器池已关闭'));
+            return;
+          }
 
-        if (this.availableBrowsers.length > 0) {
-          clearTimeout(timeout);
-          const browser = this.availableBrowsers.shift();
-          this.busyBrowsers.push(browser);
-          
-          this.emit('browser-acquired', {
-            browserId: browser.process()?.pid || 'unknown',
-            available: this.availableBrowsers.length,
-            busy: this.busyBrowsers.length
-          });
+          // 检查是否超时
+          const elapsed = Date.now() - startTime;
+          if (elapsed > maxWaitTime) {
+            cleanup();
+            this.logger?.error('获取浏览器超时', {
+              elapsed: elapsed,
+              maxWaitTime: maxWaitTime,
+              available: this.availableBrowsers.length,
+              busy: this.busyBrowsers.length,
+              total: this.browsers.length
+            });
+            reject(new Error(`获取浏览器超时 (${elapsed}ms)`));
+            return;
+          }
 
-          resolve(browser);
-        } else {
+          // 如果有可用浏览器
+          if (this.availableBrowsers.length > 0) {
+            const browser = this.availableBrowsers.shift();
+            
+            // 检查浏览器是否还连接
+            if (!browser.isConnected()) {
+              this.logger?.warn('发现断开的浏览器，尝试重新创建');
+              await this.handleBrowserDisconnect(browser);
+              
+              // 尝试创建新浏览器替换
+              try {
+                const newBrowser = await this.createBrowser();
+                this.browsers.push(newBrowser);
+                this.availableBrowsers.push(newBrowser);
+              } catch (error) {
+                this.logger?.error('重新创建浏览器失败', { error: error.message });
+              }
+              
+              // 继续等待
+              setTimeout(checkAvailable, checkInterval);
+              return;
+            }
+
+            this.busyBrowsers.push(browser);
+            
+            this.emit('browser-acquired', {
+              browserId: browser.process()?.pid || 'unknown',
+              available: this.availableBrowsers.length,
+              busy: this.busyBrowsers.length,
+              waitTime: elapsed
+            });
+
+            resolve(browser);
+            return;
+          }
+
+          // 如果没有可用浏览器，且总数小于最大值，尝试创建新的
+          if (this.browsers.length < this.options.maxBrowsers) {
+            try {
+              this.logger?.debug('尝试创建新浏览器实例以满足需求');
+              const newBrowser = await this.createBrowser();
+              this.browsers.push(newBrowser);
+              this.busyBrowsers.push(newBrowser);
+              
+              this.emit('browser-acquired', {
+                browserId: newBrowser.process()?.pid || 'unknown',
+                available: this.availableBrowsers.length,
+                busy: this.busyBrowsers.length,
+                waitTime: elapsed,
+                created: true
+              });
+
+              resolve(newBrowser);
+              return;
+            } catch (error) {
+              this.logger?.warn('动态创建浏览器失败', { error: error.message });
+            }
+          }
+
           // 继续等待
-          setTimeout(checkAvailable, 100);
+          setTimeout(checkAvailable, checkInterval);
+
+        } catch (error) {
+          cleanup();
+          reject(error);
         }
       };
 
+      // 开始检查
       checkAvailable();
     });
   }
