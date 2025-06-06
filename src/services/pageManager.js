@@ -193,6 +193,12 @@ export class PageManager extends EventEmitter {
         pageInfo.errorCount++;
       }
 
+      // 过滤掉已知的Next.js路由错误
+      if (this.isIgnorableJSError(error)) {
+        this.logger?.debug(`忽略的JS错误 [${id}]`, { error: error.message });
+        return;
+      }
+
       this.logger?.warn(`页面JS错误 [${id}]`, { error: error.message });
       this.emit('page-js-error', { id, error });
     });
@@ -229,6 +235,33 @@ export class PageManager extends EventEmitter {
         this.logger?.debug(`页面控制台错误 [${id}]`, { message: msg.text() });
       }
     });
+  }
+
+  /**
+   * 判断是否为可忽略的JS错误
+   */
+  isIgnorableJSError(error) {
+    const message = error.message || '';
+    
+    // Next.js路由相关错误
+    const nextjsErrors = [
+      'Invariant: attempted to hard navigate to the same URL',
+      'Navigation cancelled by a newer navigation',
+      'AbortError: The operation was aborted',
+      'ResizeObserver loop limit exceeded'
+    ];
+
+    // 第三方脚本错误
+    const thirdPartyErrors = [
+      'Script error.',
+      'Non-Error promise rejection captured',
+      'TypeError: Cannot read properties of null',
+      'TypeError: Cannot read properties of undefined'
+    ];
+
+    // 检查是否为已知的可忽略错误
+    return nextjsErrors.some(pattern => message.includes(pattern)) ||
+           thirdPartyErrors.some(pattern => message.includes(pattern));
   }
 
   /**

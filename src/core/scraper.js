@@ -295,6 +295,77 @@ export class Scraper extends EventEmitter {
   }
 
   /**
+   * 渐进式导航策略 - 从快到慢尝试不同的等待策略
+   */
+  async navigateWithFallback(page, url) {
+    const strategies = [
+      // 1. 快速策略 - 适合简单页面
+      {
+        name: 'domcontentloaded',
+        options: { waitUntil: 'domcontentloaded', timeout: 15000 }
+      },
+      // 2. 标准策略 - 等待网络空闲
+      {
+        name: 'networkidle2',
+        options: { waitUntil: 'networkidle2', timeout: 30000 }
+      },
+      // 3. 完整策略 - 等待所有资源
+      {
+        name: 'networkidle0',
+        options: { waitUntil: 'networkidle0', timeout: 45000 }
+      },
+      // 4. 最大容忍策略 - 仅等待页面加载
+      {
+        name: 'load',
+        options: { waitUntil: 'load', timeout: 60000 }
+      }
+    ];
+
+    let lastError = null;
+
+    for (const strategy of strategies) {
+      try {
+        this.logger.debug(`尝试导航策略: ${strategy.name}`, { url });
+        
+        const response = await page.goto(url, strategy.options);
+        
+        // 检查响应状态
+        if (response && response.status() >= 400) {
+          throw new Error(`HTTP ${response.status()}: ${response.statusText()}`);
+        }
+
+        this.logger.debug(`导航成功使用策略: ${strategy.name}`, { url });
+        return { success: true, strategy: strategy.name };
+
+      } catch (error) {
+        lastError = error;
+        this.logger.warn(`导航策略 ${strategy.name} 失败`, {
+          url,
+          error: error.message
+        });
+
+        // 如果是超时错误，继续尝试下一个策略
+        if (error.message.includes('timeout') || error.message.includes('Navigation timeout')) {
+          continue;
+        }
+
+        // 如果是其他错误，根据错误类型决定是否继续
+        if (error.message.includes('net::ERR_ABORTED') || 
+            error.message.includes('net::ERR_FAILED')) {
+          // 网络错误，尝试等待一下再重试
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          continue;
+        }
+
+        // 其他类型的错误直接失败
+        break;
+      }
+    }
+
+    return { success: false, error: lastError?.message || 'All navigation strategies failed' };
+  }
+
+  /**
    * 爬取单个页面 - 关键修改：使用数字索引命名
    */
   async scrapePage(url, index) {
@@ -317,23 +388,11 @@ export class Scraper extends EventEmitter {
       // 设置图片观察器
       await this.imageService.setupImageObserver(page);
 
-      // 访问页面
-      await retry(
-        () => page.goto(url, {
-          waitUntil: 'networkidle0',
-          timeout: this.config.pageTimeout || 30000
-        }),
-        {
-          maxAttempts: this.config.maxRetries || 3,
-          delay: 2000,
-          onRetry: (attempt, error) => {
-            this.logger.warn(`页面加载重试 ${attempt}次`, {
-              url,
-              error: error.message
-            });
-          }
-        }
-      );
+      // 访问页面 - 使用渐进式超时策略
+      const navigationResult = await this.navigateWithFallback(page, url);
+      if (!navigationResult.success) {
+        throw new Error(`导航失败: ${navigationResult.error}`);
+      }
 
       // 等待内容加载
       let contentFound = false;

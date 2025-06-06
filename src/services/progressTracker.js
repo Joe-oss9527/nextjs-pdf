@@ -49,10 +49,15 @@ export class ProgressTracker extends EventEmitter {
    * 记录成功
    */
   success(url, details = {}) {
-    this.stats.completed++;
-    this.stats.currentUrl = null;
-
     const urlStat = this.getOrCreateUrlStat(url);
+    
+    // 只有当URL状态不是success时才增加completed计数
+    // 这样可以避免重试时重复计数
+    if (urlStat.status !== "success") {
+      this.stats.completed++;
+    }
+    
+    this.stats.currentUrl = null;
     urlStat.status = "success";
     urlStat.endTime = Date.now();
     urlStat.duration = urlStat.endTime - urlStat.startTime;
@@ -67,12 +72,14 @@ export class ProgressTracker extends EventEmitter {
    * 记录失败
    */
   failure(url, error, willRetry = false) {
-    if (!willRetry) {
+    const urlStat = this.getOrCreateUrlStat(url);
+    
+    // 只有确认最终失败时才增加失败计数
+    if (!willRetry && urlStat.status !== "failed") {
       this.stats.failed++;
     }
+    
     this.stats.currentUrl = null;
-
-    const urlStat = this.getOrCreateUrlStat(url);
     urlStat.status = willRetry ? "pending-retry" : "failed";
     urlStat.error = error.message || String(error);
     urlStat.attempts = (urlStat.attempts || 0) + 1;
@@ -86,9 +93,13 @@ export class ProgressTracker extends EventEmitter {
    * 记录跳过
    */
   skip(url, reason = "") {
-    this.stats.skipped++;
-
     const urlStat = this.getOrCreateUrlStat(url);
+    
+    // 只有当URL状态不是skipped时才增加跳过计数
+    if (urlStat.status !== "skipped") {
+      this.stats.skipped++;
+    }
+
     urlStat.status = "skipped";
     urlStat.reason = reason;
 
@@ -179,19 +190,22 @@ export class ProgressTracker extends EventEmitter {
    * 获取统计信息
    */
   getStats() {
-    const processed =
-      this.stats.completed + this.stats.failed + this.stats.skipped;
+    // 计算基于实际处理的唯一URL数量
+    const processedUrls = Array.from(this.urlStats.values()).filter(
+      stat => stat.status === 'success' || stat.status === 'failed' || stat.status === 'skipped'
+    ).length;
+    
     const percentage =
       this.stats.total > 0
-        ? ((processed / this.stats.total) * 100).toFixed(2)
+        ? ((processedUrls / this.stats.total) * 100).toFixed(2)
         : 0;
 
     const elapsed = (Date.now() - this.stats.startTime) / 1000;
-    const rate = processed > 0 ? processed / elapsed : 0;
+    const rate = processedUrls > 0 ? processedUrls / elapsed : 0;
 
     return {
       ...this.stats,
-      processed,
+      processed: processedUrls, // 使用基于唯一URL的计数
       percentage,
       rate: rate.toFixed(2),
       elapsed: elapsed.toFixed(0),
@@ -207,13 +221,22 @@ export class ProgressTracker extends EventEmitter {
       ? (this.stats.endTime - this.stats.startTime) / 1000
       : 0;
 
+    // 计算基于唯一URL的成功数量
+    const successUrls = Array.from(this.urlStats.values()).filter(
+      stat => stat.status === 'success'
+    ).length;
+
+    const successRate = this.stats.total > 0 
+      ? ((successUrls / this.stats.total) * 100).toFixed(2)
+      : '0.00';
+
     return {
       总数: this.stats.total,
-      成功: this.stats.completed,
+      成功: successUrls, // 使用基于唯一URL的计数
       失败: this.stats.failed,
       跳过: this.stats.skipped,
       重试次数: this.stats.retried,
-      成功率: `${((this.stats.completed / this.stats.total) * 100).toFixed(2)}%`,
+      成功率: `${successRate}%`,
       总耗时: `${duration.toFixed(2)}秒`,
       平均速度: `${(this.stats.total / duration).toFixed(2)} 页/秒`,
     };
@@ -262,9 +285,17 @@ export class ProgressTracker extends EventEmitter {
    */
   createProgressBar(percentage) {
     const width = 20;
-    const filled = Math.round((width * percentage) / 100);
-    const empty = width - filled;
-    return chalk.green("█".repeat(filled)) + chalk.gray("░".repeat(empty));
+    
+    // 限制百分比在0-100之间，防止进度条计算错误
+    const clampedPercentage = Math.max(0, Math.min(100, percentage));
+    const filled = Math.round((width * clampedPercentage) / 100);
+    const empty = Math.max(0, width - filled); // 确保empty不为负数
+    
+    // 额外检查，确保字符串重复次数不为负数
+    const filledCount = Math.max(0, filled);
+    const emptyCount = Math.max(0, empty);
+    
+    return chalk.green("█".repeat(filledCount)) + chalk.gray("░".repeat(emptyCount));
   }
 
   /**
