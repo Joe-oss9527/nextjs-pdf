@@ -53,6 +53,7 @@ pip install -r requirements.txt    # Install Python PDF processing dependencies
 - All services are registered in `src/core/setup.js` with proper dependency injection
 - Services should have dispose/cleanup methods for graceful shutdown
 - Use the container to resolve dependencies rather than direct imports
+- **PDFStyleService** - Handles PDF styling, theme detection, and content optimization
 
 ### Configuration Management
 - Main config in `config.json` - validated with Joi schemas in `src/config/schema.js`
@@ -112,6 +113,13 @@ Main configuration file `config.json` includes:
 - `queue` - Queue management settings
 - `python` - Python executable and timeout settings
 - `monitoring` - Health check and progress settings
+- `pdf` - PDF generation and styling options:
+  - `theme` - PDF theme mode ('light' or 'dark')
+  - `preserveCodeHighlighting` - Keep syntax highlighting in code blocks
+  - `enableCodeWrap` - Enable code line wrapping to prevent overflow
+  - `fontSize` - Base font size for PDF content
+  - `fontFamily` - Font family for body text
+  - `codeFont` - Font family for code blocks
 
 ## Debugging and Monitoring
 
