@@ -528,5 +528,3 @@ export class PDFStyleService {
     }
   }
 }
-
-export default PDFStyleService;

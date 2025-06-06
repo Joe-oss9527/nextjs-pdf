@@ -6,13 +6,14 @@ import { validateConfig } from '../config/configValidator.js';
 import { ConfigLoader } from '../config/configLoader.js';
 import { FileService } from '../services/fileService.js';
 import { PathService } from '../services/pathService.js';
-import { MetadataService } from '../services/metadataService.js'; // 添加这个导入
+import { MetadataService } from '../services/metadataService.js';
 import { StateManager } from '../services/stateManager.js';
 import { ProgressTracker } from '../services/progressTracker.js';
 import { QueueManager } from '../services/queueManager.js';
 import { BrowserPool } from '../services/browserPool.js';
 import { PageManager } from '../services/pageManager.js';
 import { ImageService } from '../services/imageService.js';
+import { PDFStyleService } from '../services/pdfStyleService.js';
 import { Scraper } from './scraper.js';
 import { PythonMergeService } from '../services/PythonMergeService.js';
 
@@ -157,6 +158,23 @@ async function setupContainer() {
             lifecycle: 'singleton'
         });
 
+        // PDF样式服务
+        container.register('pdfStyleService', (config) => {
+            const pdfConfig = config.pdf || {};
+            return new PDFStyleService({
+                theme: pdfConfig.theme || 'light',
+                preserveCodeHighlighting: pdfConfig.preserveCodeHighlighting !== false,
+                enableCodeWrap: pdfConfig.enableCodeWrap !== false,
+                fontSize: pdfConfig.fontSize || '14px',
+                fontFamily: pdfConfig.fontFamily || 'system-ui, -apple-system, sans-serif',
+                codeFont: pdfConfig.codeFont || 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace'
+            });
+        }, {
+            singleton: true,
+            dependencies: ['config'],
+            lifecycle: 'singleton'
+        });
+
         // 7. 注册核心爬虫服务
 
         // 爬虫服务 - 修复依赖注入
@@ -171,7 +189,8 @@ async function setupContainer() {
             stateManager,
             progressTracker,
             queueManager,
-            imageService
+            imageService,
+            pdfStyleService     // 添加 pdfStyleService
         ) => {
             const scraper = new Scraper({
                 config,
@@ -184,7 +203,8 @@ async function setupContainer() {
                 stateManager,
                 progressTracker,
                 queueManager,
-                imageService
+                imageService,
+                pdfStyleService     // 传递 pdfStyleService
             });
 
             await scraper.initialize();
@@ -202,7 +222,8 @@ async function setupContainer() {
                 'stateManager',
                 'progressTracker',
                 'queueManager',
-                'imageService'
+                'imageService',
+                'pdfStyleService'   // 添加依赖
             ],
             lifecycle: 'singleton'
         });
