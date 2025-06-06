@@ -7,13 +7,12 @@ import { EventEmitter } from 'events';
 import { normalizeUrl, getUrlHash, validateUrl as utilValidateUrl } from '../utils/url.js';
 import { NetworkError, ValidationError } from '../utils/errors.js';
 import { retry, delay } from '../utils/common.js';
-import PDFStyleService from '../services/pdfStyleService.js';
 
 export class Scraper extends EventEmitter {
   constructor(dependencies) {
     super();
 
-    // 依赖注入 - 集成前5阶段的所有服务
+    // 依赖注入 - 集成所有服务
     this.config = dependencies.config;
     this.logger = dependencies.logger;
     this.browserPool = dependencies.browserPool;
@@ -25,17 +24,7 @@ export class Scraper extends EventEmitter {
     this.progressTracker = dependencies.progressTracker;
     this.queueManager = dependencies.queueManager;
     this.imageService = dependencies.imageService;
-
-    // 初始化PDF样式服务
-    const pdfConfig = this.config.pdf || {};
-    this.pdfStyleService = new PDFStyleService({
-      theme: pdfConfig.theme || 'light',
-      preserveCodeHighlighting: pdfConfig.preserveCodeHighlighting !== false,
-      enableCodeWrap: pdfConfig.enableCodeWrap !== false,
-      fontSize: pdfConfig.fontSize || '14px',
-      fontFamily: pdfConfig.fontFamily || 'system-ui, -apple-system, sans-serif',
-      codeFont: pdfConfig.codeFont || 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace'
-    });
+    this.pdfStyleService = dependencies.pdfStyleService;
 
     // 内部状态
     this.urlQueue = [];
