@@ -4,6 +4,7 @@
  */
 
 import { createLogger } from '../utils/logger.js';
+import { delay } from '../utils/common.js';
 
 export class PDFStyleService {
   constructor(config = {}) {
@@ -453,8 +454,21 @@ export class PDFStyleService {
 
       }, contentSelector, this.getPDFOptimizedCSS(targetTheme), targetTheme);
 
-      // 4. 等待样式应用
-      await page.waitForTimeout(500);
+      // 4. 等待样式应用完成 - 使用现代Puppeteer API
+      try {
+        // 等待样式元素存在并应用
+        await page.waitForFunction(
+          () => {
+            const style = document.querySelector('#pdf-style');
+            return style && getComputedStyle(document.body).fontFamily.includes('system-ui');
+          },
+          { timeout: 2000 }
+        );
+      } catch (error) {
+        // 如果检测失败，回退到简单等待
+        this.logger.debug('样式应用检测失败，使用回退等待', { error: error.message });
+        await delay(500);
+      }
 
       this.logger.debug('PDF样式应用完成');
       
@@ -485,9 +499,7 @@ export class PDFStyleService {
       preferCSSPageSize: false,
       displayHeaderFooter: false,
       // 确保样式正确打印
-      scale: 1,
-      // 等待网络空闲以确保样式加载完成
-      waitUntil: 'networkidle0'
+      scale: 1
     };
   }
 
