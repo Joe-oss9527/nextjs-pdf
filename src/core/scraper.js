@@ -7,6 +7,7 @@ import { EventEmitter } from 'events';
 import { normalizeUrl, getUrlHash, validateUrl as utilValidateUrl } from '../utils/url.js';
 import { NetworkError, ValidationError } from '../utils/errors.js';
 import { retry, delay } from '../utils/common.js';
+import PDFStyleService from '../services/pdfStyleService.js';
 
 export class Scraper extends EventEmitter {
   constructor(dependencies) {
@@ -24,6 +25,17 @@ export class Scraper extends EventEmitter {
     this.progressTracker = dependencies.progressTracker;
     this.queueManager = dependencies.queueManager;
     this.imageService = dependencies.imageService;
+
+    // 初始化PDF样式服务
+    const pdfConfig = this.config.pdf || {};
+    this.pdfStyleService = new PDFStyleService({
+      theme: pdfConfig.theme || 'light',
+      preserveCodeHighlighting: pdfConfig.preserveCodeHighlighting !== false,
+      enableCodeWrap: pdfConfig.enableCodeWrap !== false,
+      fontSize: pdfConfig.fontSize || '14px',
+      fontFamily: pdfConfig.fontFamily || 'system-ui, -apple-system, sans-serif',
+      codeFont: pdfConfig.codeFont || 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace'
+    });
 
     // 内部状态
     this.urlQueue = [];
@@ -439,43 +451,11 @@ export class Scraper extends EventEmitter {
         await this.metadataService.logImageLoadFailure(url, index);
       }
 
-      // 清理页面内容
-      await page.evaluate((selector) => {
-        const contentElement = document.querySelector(selector);
-        if (contentElement) {
-          // 移除不需要的元素
-          const elementsToRemove = [
-            'script', 'noscript', 'style',
-            'button', 'input', 'textarea', 'select',
-            '.advertisement', '.ads', '.sidebar',
-            '.navigation', '.nav', '.menu',
-            '.comments', '.comment-section'
-          ];
-
-          elementsToRemove.forEach(sel => {
-            contentElement.querySelectorAll(sel).forEach(el => el.remove());
-          });
-
-          // 设置为页面唯一内容
-          document.body.innerHTML = contentElement.outerHTML;
-
-          // 添加基础样式
-          const style = document.createElement('style');
-          style.textContent = `
-            body {
-              font-family: Arial, sans-serif;
-              line-height: 1.6;
-              margin: 20px;
-              color: #333;
-            }
-            img {
-              max-width: 100%;
-              height: auto;
-            }
-          `;
-          document.head.appendChild(style);
-        }
-      }, this.config.contentSelector);
+      // 应用PDF样式优化
+      await this.pdfStyleService.applyPDFStyles(page, this.config.contentSelector);
+      
+      // 处理特殊内容类型
+      await this.pdfStyleService.processSpecialContent(page);
 
       // 🔥 关键修改：生成PDF时使用数字索引而不是哈希
       const pdfPath = this.pathService.getPdfPath(url, {
@@ -485,18 +465,13 @@ export class Scraper extends EventEmitter {
 
       await this.fileService.ensureDirectory(path.dirname(pdfPath));
 
-      await page.pdf({
-        path: pdfPath,
-        format: 'A4',
-        margin: {
-          top: '1cm',
-          right: '1cm',
-          bottom: '1cm',
-          left: '1cm'
-        },
-        printBackground: true,
-        preferCSSPageSize: false
-      });
+      // 使用优化的PDF生成选项
+      const pdfOptions = {
+        ...this.pdfStyleService.getPDFOptions(),
+        path: pdfPath
+      };
+      
+      await page.pdf(pdfOptions);
 
       this.logger.info(`PDF已保存: ${pdfPath}`);
 

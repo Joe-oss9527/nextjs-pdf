@@ -1,7 +1,6 @@
 import { createContainer, shutdownContainer, getContainerHealth } from './core/setup.js';
 import PythonRunner from './core/pythonRunner.js';
 import { createLogger } from './utils/logger.js';
-import path from 'path';
 
 /**
  * 主应用程序类
@@ -148,7 +147,6 @@ class Application {
             this.logger.info('📄 Starting PDF merge process...');
             const mergeStartTime = Date.now();
 
-            const config = await this.container.get('config');
             const pythonMergeService = await this.container.get('pythonMergeService');
 
             // 使用新的Python合并服务
