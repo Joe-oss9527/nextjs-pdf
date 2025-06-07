@@ -326,13 +326,16 @@ export class ProgressTracker extends EventEmitter {
       if (this.stats.currentUrl) {
         console.log(chalk.cyan(`处理中: ${this.stats.currentUrl}`));
       }
-      console.log(
-        `进度: ${stats.percentage}% (${stats.processed}/${this.stats.total}) ` +
-          `速率: ${stats.rate} 页/秒 ` +
-          (stats.etaSeconds && stats.etaSeconds > 0
-            ? `剩余: ${this.formatTime(stats.etaSeconds)}`
-            : ""),
-      );
+      // Only display progress if total is properly set
+      if (this.stats.total > 0) {
+        console.log(
+          `进度: ${stats.percentage}% (${stats.processed}/${this.stats.total}) ` +
+            `速率: ${stats.rate} 页/秒 ` +
+            (stats.etaSeconds && stats.etaSeconds > 0
+              ? `剩余: ${this.formatTime(stats.etaSeconds)}`
+              : ""),
+        );
+      }
     }, 5000); // 每5秒更新一次
   }
 
