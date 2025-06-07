@@ -136,11 +136,15 @@ async function setupContainer() {
         });
 
         // 页面管理器
-        container.register('pageManager', (browserPool, logger) => {
-            return new PageManager(browserPool, { logger });
+        container.register('pageManager', (browserPool, config, logger) => {
+            return new PageManager(browserPool, { 
+                logger,
+                userAgent: config.browser?.userAgent,
+                ...config.browser
+            });
         }, {
             singleton: true,
-            dependencies: ['browserPool', 'logger'],
+            dependencies: ['browserPool', 'config', 'logger'],
             lifecycle: 'singleton'
         });
 

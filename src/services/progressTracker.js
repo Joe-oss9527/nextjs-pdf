@@ -182,8 +182,14 @@ export class ProgressTracker extends EventEmitter {
 
     const elapsed = Date.now() - this.stats.startTime;
     const rate = processed / elapsed;
-    const remaining = this.stats.total - processed;
-    this.stats.eta = remaining / rate;
+    const remaining = Math.max(0, this.stats.total - processed); // Ensure remaining is not negative
+    
+    // Only calculate ETA if there are remaining items and rate is reasonable
+    if (remaining > 0 && rate > 0) {
+      this.stats.eta = remaining / rate;
+    } else {
+      this.stats.eta = 0; // No remaining time if completed or rate is 0
+    }
   }
 
   /**
@@ -254,7 +260,7 @@ export class ProgressTracker extends EventEmitter {
     }
 
     const progressBar = this.createProgressBar(stats.percentage);
-    const etaStr = stats.etaSeconds
+    const etaStr = stats.etaSeconds && stats.etaSeconds > 0
       ? `预计剩余: ${this.formatTime(stats.etaSeconds)}`
       : "";
 
@@ -323,7 +329,7 @@ export class ProgressTracker extends EventEmitter {
       console.log(
         `进度: ${stats.percentage}% (${stats.processed}/${this.stats.total}) ` +
           `速率: ${stats.rate} 页/秒 ` +
-          (stats.etaSeconds
+          (stats.etaSeconds && stats.etaSeconds > 0
             ? `剩余: ${this.formatTime(stats.etaSeconds)}`
             : ""),
       );
