@@ -116,15 +116,15 @@ export class PDFStyleService {
 
       /* === 页面布局 === */
       body {
-        font-family: ${this.settings.fontFamily};
         font-size: ${this.settings.fontSize};
         line-height: 1.6;
         margin: 0;
         padding: 20px;
-        background-color: ${isDark ? '#1a1a1a' : '#ffffff'} !important;
-        color: ${isDark ? '#e0e0e0' : '#333333'} !important;
         max-width: none;
         overflow-x: visible;
+        /* 降低优先级，允许原始样式设置背景和颜色 */
+        background-color: ${isDark ? '#1a1a1a' : '#ffffff'};
+        color: ${isDark ? '#e0e0e0' : '#333333'};
       }
 
       /* === 标题样式 === */
@@ -351,13 +351,36 @@ export class PDFStyleService {
         contentSelector 
       });
 
-      // 3. 应用样式和内容处理
+      // 3. 保存原始样式表并应用样式处理
       await page.evaluate((selector, css, theme) => {
         // 清理页面内容
         const contentElement = document.querySelector(selector);
         if (!contentElement) {
           throw new Error(`内容选择器未找到: ${selector}`);
         }
+
+        // ✨ 新增：保存所有现有的样式表和样式
+        const preservedStyles = [];
+        
+        // 保存外部样式表 (link标签)
+        document.querySelectorAll('link[rel="stylesheet"]').forEach(link => {
+          preservedStyles.push({
+            type: 'link',
+            href: link.href,
+            media: link.media || 'all'
+          });
+        });
+        
+        // 保存内嵌样式表 (style标签)
+        document.querySelectorAll('style').forEach(style => {
+          if (style.id !== 'pdf-style') { // 排除我们自己的样式
+            preservedStyles.push({
+              type: 'style',
+              content: style.textContent,
+              media: style.media || 'all'
+            });
+          }
+        });
 
         // 移除不需要的元素
         const elementsToRemove = [
@@ -422,10 +445,31 @@ export class PDFStyleService {
           document.body.setAttribute('data-theme', 'light');
         }
 
-        // 设置为页面唯一内容
+        // ✨ 修改：保留原始head内容，只替换body内容
         document.body.innerHTML = contentElement.outerHTML;
 
-        // 添加优化的CSS样式
+        // ✨ 新增：重新添加保存的样式表
+        preservedStyles.forEach(styleInfo => {
+          if (styleInfo.type === 'link') {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = styleInfo.href;
+            link.media = styleInfo.media;
+            // 确保可以正确处理相对路径的CSS
+            if (styleInfo.href.startsWith('/')) {
+              const baseUrl = window.location.origin;
+              link.href = baseUrl + styleInfo.href;
+            }
+            document.head.appendChild(link);
+          } else if (styleInfo.type === 'style') {
+            const style = document.createElement('style');
+            style.textContent = styleInfo.content;
+            style.media = styleInfo.media;
+            document.head.appendChild(style);
+          }
+        });
+
+        // 添加优化的CSS样式（优先级更高，放在最后）
         const existingStyle = document.querySelector('#pdf-style');
         if (existingStyle) {
           existingStyle.remove();
@@ -456,18 +500,32 @@ export class PDFStyleService {
 
       // 4. 等待样式应用完成 - 使用现代Puppeteer API
       try {
-        // 等待样式元素存在并应用
+        // 等待外部样式表加载完成
         await page.waitForFunction(
           () => {
-            const style = document.querySelector('#pdf-style');
-            return style && getComputedStyle(document.body).fontFamily.includes('system-ui');
+            // 检查所有样式表是否已加载
+            const stylesheets = Array.from(document.styleSheets);
+            const allLoaded = stylesheets.every(sheet => {
+              try {
+                // 尝试访问cssRules来确认样式表已加载
+                return sheet.cssRules || sheet.rules;
+              } catch (e) {
+                // 跨域样式表无法访问cssRules，但如果没有抛出网络错误说明已加载
+                return !e.message.includes('NetworkError');
+              }
+            });
+            
+            // 同时检查我们的PDF样式是否已应用
+            const pdfStyle = document.querySelector('#pdf-style');
+            return allLoaded && pdfStyle;
           },
-          { timeout: 2000 }
+          { timeout: 5000 }
         );
+        this.logger.debug('所有样式表已加载完成');
       } catch (error) {
         // 如果检测失败，回退到简单等待
-        this.logger.debug('样式应用检测失败，使用回退等待', { error: error.message });
-        await delay(500);
+        this.logger.debug('样式加载检测失败，使用回退等待', { error: error.message });
+        await delay(1000);
       }
 
       this.logger.debug('PDF样式应用完成');
