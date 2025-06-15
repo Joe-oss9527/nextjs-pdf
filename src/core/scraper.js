@@ -25,6 +25,7 @@ export class Scraper extends EventEmitter {
     this.queueManager = dependencies.queueManager;
     this.imageService = dependencies.imageService;
     this.pdfStyleService = dependencies.pdfStyleService;
+    this.pandocPDFService = dependencies.pandocPDFService;
 
     // 内部状态
     this.urlQueue = [];
@@ -454,13 +455,37 @@ export class Scraper extends EventEmitter {
 
       await this.fileService.ensureDirectory(path.dirname(pdfPath));
 
-      // 使用优化的PDF生成选项
-      const pdfOptions = {
-        ...this.pdfStyleService.getPDFOptions(),
-        path: pdfPath
-      };
+      // 根据配置选择PDF生成引擎 - 使用原始配置而不是PDFStyleService处理后的配置
+      const originalConfig = this.config;
+      const pdfEngine = originalConfig.pdf?.engine || 'puppeteer';
       
-      await page.pdf(pdfOptions);
+      // 临时调试：确认配置是否正确
+      this.logger.info(`PDF引擎配置调试`, {
+        configPdfEngine: originalConfig.pdf?.engine,
+        configPdf: originalConfig.pdf,
+        finalPdfEngine: pdfEngine,
+        pdfPath
+      });
+      
+      this.logger.info(`使用PDF引擎: ${pdfEngine}`, { pdfPath });
+      
+      if (pdfEngine === 'pandoc') {
+        // 使用Pandoc引擎生成PDF
+        this.logger.info('开始使用Pandoc引擎生成PDF', { pdfPath });
+        await this.generatePDFWithPandoc(page, pdfPath);
+      } else if (pdfEngine === 'both') {
+        // 生成两个版本的PDF
+        this.logger.info('开始使用双引擎生成PDF', { pdfPath });
+        await this.generateBothPDFs(page, pdfPath);
+      } else {
+        // 默认使用Puppeteer引擎
+        this.logger.info('开始使用Puppeteer引擎生成PDF', { pdfPath });
+        const pdfOptions = {
+          ...this.pdfStyleService.getPDFOptions(),
+          path: pdfPath
+        };
+        await page.pdf(pdfOptions);
+      }
 
       this.logger.info(`PDF已保存: ${pdfPath}`);
 
@@ -773,6 +798,103 @@ export class Scraper extends EventEmitter {
       this.logger.error('资源清理失败', {
         error: error.message,
         stack: error.stack
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * 使用Pandoc引擎生成PDF
+   */
+  async generatePDFWithPandoc(page, pdfPath) {
+    try {
+      // 获取页面HTML内容
+      const htmlContent = await page.content();
+      
+      // 使用PandocPDFService生成PDF
+      const result = await this.pandocPDFService.generatePDF(htmlContent, pdfPath);
+      
+      if (!result.success) {
+        throw new Error(`Pandoc PDF生成失败: ${result.error}`);
+      }
+      
+      this.logger.debug(`Pandoc PDF生成成功: ${pdfPath}`);
+      
+    } catch (error) {
+      this.logger.error('Pandoc PDF生成失败', {
+        pdfPath,
+        error: error.message
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * 生成两个版本的PDF（Puppeteer + Pandoc）
+   */
+  async generateBothPDFs(page, basePdfPath) {
+    try {
+      // 生成文件路径
+      const dir = path.dirname(basePdfPath);
+      const basename = path.basename(basePdfPath, '.pdf');
+      
+      const puppeteerPath = path.join(dir, `${basename}_puppeteer.pdf`);
+      const pandocPath = path.join(dir, `${basename}_pandoc.pdf`);
+      
+      // 并行生成两个版本
+      const [puppeteerResult, pandocResult] = await Promise.allSettled([
+        // Puppeteer版本
+        (async () => {
+          const pdfOptions = {
+            ...this.pdfStyleService.getPDFOptions(),
+            path: puppeteerPath
+          };
+          await page.pdf(pdfOptions);
+          return { engine: 'puppeteer', path: puppeteerPath };
+        })(),
+        
+        // Pandoc版本
+        (async () => {
+          const htmlContent = await page.content();
+          await this.pandocPDFService.generatePDF(htmlContent, pandocPath);
+          return { engine: 'pandoc', path: pandocPath };
+        })()
+      ]);
+
+      // 记录结果
+      const results = [];
+      
+      if (puppeteerResult.status === 'fulfilled') {
+        results.push(puppeteerResult.value);
+        this.logger.debug(`Puppeteer PDF生成成功: ${puppeteerPath}`);
+      } else {
+        this.logger.error('Puppeteer PDF生成失败', {
+          error: puppeteerResult.reason.message
+        });
+      }
+      
+      if (pandocResult.status === 'fulfilled') {
+        results.push(pandocResult.value);
+        this.logger.debug(`Pandoc PDF生成成功: ${pandocPath}`);
+      } else {
+        this.logger.error('Pandoc PDF生成失败', {
+          error: pandocResult.reason.message
+        });
+      }
+
+      if (results.length === 0) {
+        throw new Error('两种PDF引擎都生成失败');
+      }
+
+      this.logger.info(`PDF双引擎生成完成`, {
+        successful: results.length,
+        engines: results.map(r => r.engine)
+      });
+      
+    } catch (error) {
+      this.logger.error('双引擎PDF生成失败', {
+        basePdfPath,
+        error: error.message
       });
       throw error;
     }
