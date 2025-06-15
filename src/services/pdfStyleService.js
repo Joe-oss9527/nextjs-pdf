@@ -125,10 +125,12 @@ export class PDFStyleService {
         font-family: 'Georgia', 'Times New Roman', serif !important;
       }
 
-      /* === 强制覆盖所有深色主题代码块 === */
+      /* === 强制覆盖所有深色主题代码块 + 强制换行 === */
       pre, pre[class*="language-"], pre[class*="hljs"], 
       .highlight, .code-block, .CodeMirror,
-      [data-theme="dark"] pre, [class*="dark"] pre {
+      [data-theme="dark"] pre, [class*="dark"] pre,
+      pre *, pre[class*="language-"] *, pre[class*="hljs"] *,
+      .highlight *, .code-block *, .CodeMirror * {
         background-color: #f8f9fa !important;
         background: #f8f9fa !important;
         border: 1px solid #d1d5db !important;
@@ -139,13 +141,36 @@ export class PDFStyleService {
         font-size: 12px !important;
         line-height: 1.4 !important;
         color: #1f2937 !important;
+        
+        /* === 强制换行 - 多重保险 === */
         white-space: pre-wrap !important;
         word-wrap: break-word !important;
+        word-break: break-all !important;
+        overflow-wrap: break-word !important;
         overflow: visible !important;
-        page-break-inside: avoid !important;
+        overflow-x: visible !important;
+        
+        /* === 防止溢出 === */
         max-width: 100% !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        page-break-inside: avoid !important;
+      }
+      
+      /* === 针对具体的代码元素强制换行 === */
+      pre code, pre span, pre div, pre p,
+      code, span.token, span.hljs-*,
+      .highlight code, .highlight span, .highlight div {
+        white-space: pre-wrap !important;
+        word-wrap: break-word !important;
+        word-break: break-all !important;
+        overflow-wrap: break-word !important;
+        overflow: visible !important;
+        max-width: 100% !important;
+        display: inline !important;
       }
 
+      /* === 内联代码换行优化 === */
       code, code[class*="language-"], code[class*="hljs"],
       [data-theme="dark"] code, [class*="dark"] code {
         background-color: #f3f4f6 !important;
@@ -155,15 +180,34 @@ export class PDFStyleService {
         border-radius: 3px !important;
         font-family: 'Courier New', 'Monaco', monospace !important;
         font-size: 12px !important;
+        
+        /* === 强制内联代码换行 === */
+        white-space: pre-wrap !important;
         word-wrap: break-word !important;
+        word-break: break-all !important;
+        overflow-wrap: break-word !important;
+        overflow: visible !important;
+        max-width: 100% !important;
+        display: inline !important;
       }
 
+      /* === 代码块内的code元素 === */
       pre code, pre[class*="language-"] code, pre[class*="hljs"] code {
         background-color: transparent !important;
         background: transparent !important;
         padding: 0 !important;
         border: none !important;
         border-radius: 0 !important;
+        
+        /* === 确保代码块内代码也能换行 === */
+        white-space: pre-wrap !important;
+        word-wrap: break-word !important;
+        word-break: break-all !important;
+        overflow-wrap: break-word !important;
+        overflow: visible !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        display: inline !important;
       }
 
       /* === 强制所有代码文本为深色 === */
@@ -250,16 +294,38 @@ export class PDFStyleService {
         font-weight: bold !important;
       }
 
+      /* === 全局强制换行样式 - 覆盖所有可能的代码容器 === */
+      * [class*="code"], * [class*="highlight"], * [class*="language"],
+      * [class*="hljs"], * [class*="token"], * [class*="pre"],
+      div[class*="code"], div[class*="highlight"], div[class*="language"],
+      span[class*="code"], span[class*="highlight"], span[class*="language"] {
+        white-space: pre-wrap !important;
+        word-wrap: break-word !important;
+        word-break: break-all !important;
+        overflow-wrap: break-word !important;
+        overflow: visible !important;
+        max-width: 100% !important;
+      }
+      
       /* === 响应式代码块 === */
       @media print {
         body {
           font-size: 12px !important;
         }
         
-        pre, code {
+        /* 打印时特别强制换行 */
+        pre, code, 
+        pre *, code *,
+        [class*="language-"], [class*="hljs"], [class*="highlight"],
+        .code-block, .CodeMirror {
           white-space: pre-wrap !important;
           word-wrap: break-word !important;
+          word-break: break-all !important;
+          overflow-wrap: break-word !important;
           overflow: visible !important;
+          max-width: 100% !important;
+          width: 100% !important;
+          box-sizing: border-box !important;
         }
         
         img {
@@ -303,6 +369,40 @@ export class PDFStyleService {
         document.documentElement.removeAttribute('data-theme');
         document.body.removeAttribute('data-theme');
         document.documentElement.setAttribute('data-theme', 'light');
+        
+        // === 强制所有代码元素启用换行 ===
+        const codeElements = document.querySelectorAll(`
+          pre, pre *, 
+          code, code *,
+          [class*="language-"], [class*="language-"] *,
+          [class*="hljs"], [class*="hljs"] *,
+          .highlight, .highlight *,
+          .code-block, .code-block *,
+          .CodeMirror, .CodeMirror *
+        `);
+        
+        codeElements.forEach(el => {
+          // 强制设置换行相关样式
+          el.style.setProperty('white-space', 'pre-wrap', 'important');
+          el.style.setProperty('word-wrap', 'break-word', 'important');
+          el.style.setProperty('word-break', 'break-all', 'important');
+          el.style.setProperty('overflow-wrap', 'break-word', 'important');
+          el.style.setProperty('overflow', 'visible', 'important');
+          el.style.setProperty('overflow-x', 'visible', 'important');
+          el.style.setProperty('max-width', '100%', 'important');
+          el.style.setProperty('width', '100%', 'important');
+          el.style.setProperty('box-sizing', 'border-box', 'important');
+          
+          // 移除可能阻止换行的属性
+          el.style.removeProperty('white-space');
+          el.style.setProperty('white-space', 'pre-wrap', 'important');
+          
+          // 移除固定宽度
+          if (el.style.width && el.style.width !== '100%') {
+            el.style.removeProperty('width');
+            el.style.setProperty('width', '100%', 'important');
+          }
+        });
 
         // 替换body内容（保持所有原始样式）
         document.body.innerHTML = contentElement.outerHTML;
