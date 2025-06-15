@@ -6,7 +6,7 @@ VENV_PYTHON = $(VENV_DIR)/bin/python
 VENV_PIP = $(VENV_DIR)/bin/pip
 NODE_MODULES = node_modules
 
-.PHONY: help install install-python install-node venv clean clean-all run test lint
+.PHONY: help install install-python install-node venv clean-venv clean clean-all run test lint
 
 help:
 	@echo "Available commands:"
@@ -14,6 +14,7 @@ help:
 	@echo "  install-python - Create virtual environment and install Python dependencies"
 	@echo "  install-node   - Install Node.js dependencies"
 	@echo "  venv          - Create Python virtual environment"
+	@echo "  clean-venv    - Remove and recreate Python virtual environment"
 	@echo "  run           - Generate PDF documentation"
 	@echo "  run-clean     - Clean output and generate PDF documentation"
 	@echo "  test          - Run tests"
@@ -21,18 +22,39 @@ help:
 	@echo "  clean         - Clean generated PDFs and metadata"
 	@echo "  clean-all     - Clean everything including dependencies"
 
-# Create Python virtual environment
+# Create Python virtual environment with enhanced checking
 venv:
-	@echo "Creating Python virtual environment..."
-	$(PYTHON) -m venv $(VENV_DIR)
-	@echo "Virtual environment created at $(VENV_DIR)"
+	@echo "\033[0;34m=== Creating Python Virtual Environment ===\033[0m"
+	@if ! command -v $(PYTHON) >/dev/null 2>&1; then \
+		echo "\033[0;31mError: python3 not found\033[0m"; \
+		echo "\033[1;33mPlease install Python 3: sudo apt install python3 python3-venv python3-pip\033[0m"; \
+		exit 1; \
+	fi
+	@if [ ! -f "requirements.txt" ]; then \
+		echo "\033[0;31mError: requirements.txt not found in current directory\033[0m"; \
+		exit 1; \
+	fi
+	@if [ -d "$(VENV_DIR)" ]; then \
+		echo "\033[1;33mVirtual environment already exists at $(VENV_DIR)\033[0m"; \
+		echo "\033[1;33mRun 'make clean-venv' first to recreate it\033[0m"; \
+	else \
+		echo "\033[0;34mCreating virtual environment at $(VENV_DIR)...\033[0m"; \
+		$(PYTHON) -m venv $(VENV_DIR) || (echo "\033[0;31mFailed to create virtual environment\033[0m"; exit 1); \
+		echo "\033[0;32m✅ Virtual environment created successfully!\033[0m"; \
+	fi
 
 # Install Python dependencies in virtual environment
 install-python: venv
-	@echo "Installing Python dependencies..."
-	$(VENV_PIP) install --upgrade pip
-	$(VENV_PIP) install -r requirements.txt
-	@echo "Python dependencies installed successfully"
+	@echo "\033[0;34m=== Installing Python Dependencies ===\033[0m"
+	@echo "\033[0;34mUpgrading pip...\033[0m"
+	@$(VENV_PIP) install --upgrade pip
+	@echo "\033[0;34mInstalling project dependencies...\033[0m"
+	@$(VENV_PIP) install -r requirements.txt
+	@echo "\033[0;32m✅ Python dependencies installed successfully!\033[0m"
+	@echo "\033[0;34m=== Usage Instructions ===\033[0m"
+	@echo "\033[1;33m1. Activate virtual environment:\033[0m source venv/bin/activate"
+	@echo "\033[1;33m2. Run the project:\033[0m make run"
+	@echo "\033[1;33m3. Deactivate virtual environment:\033[0m deactivate"
 
 # Install Node.js dependencies
 install-node:
@@ -73,6 +95,13 @@ lint:
 lint-fix:
 	@echo "Fixing linting issues..."
 	npm run lint:fix
+
+# Clean and recreate Python virtual environment
+clean-venv:
+	@echo "\033[1;33mRemoving existing Python virtual environment...\033[0m"
+	@rm -rf $(VENV_DIR)
+	@echo "\033[0;32mVirtual environment removed\033[0m"
+	@$(MAKE) install-python
 
 # Clean generated files
 clean:
