@@ -459,10 +459,9 @@ export class Scraper extends EventEmitter {
       const originalConfig = this.config;
       const pdfEngine = originalConfig.pdf?.engine || 'puppeteer';
       
-      // 临时调试：确认配置是否正确
-      this.logger.info(`PDF引擎配置调试`, {
+      // 调试：确认配置是否正确
+      this.logger.debug(`PDF引擎配置`, {
         configPdfEngine: originalConfig.pdf?.engine,
-        configPdf: originalConfig.pdf,
         finalPdfEngine: pdfEngine,
         pdfPath
       });
@@ -472,7 +471,22 @@ export class Scraper extends EventEmitter {
       if (pdfEngine === 'pandoc') {
         // 使用Pandoc引擎生成PDF
         this.logger.info('开始使用Pandoc引擎生成PDF', { pdfPath });
-        await this.generatePDFWithPandoc(page, pdfPath);
+        try {
+          await this.generatePDFWithPandoc(page, pdfPath);
+          this.logger.info('Pandoc引擎PDF生成成功', { pdfPath });
+        } catch (pandocError) {
+          this.logger.error('Pandoc引擎PDF生成失败，将回退到Puppeteer', { 
+            error: pandocError.message,
+            stack: pandocError.stack,
+            pdfPath 
+          });
+          // 回退到Puppeteer
+          const pdfOptions = {
+            ...this.pdfStyleService.getPDFOptions(),
+            path: pdfPath
+          };
+          await page.pdf(pdfOptions);
+        }
       } else if (pdfEngine === 'both') {
         // 生成两个版本的PDF
         this.logger.info('开始使用双引擎生成PDF', { pdfPath });
@@ -808,8 +822,22 @@ export class Scraper extends EventEmitter {
    */
   async generatePDFWithPandoc(page, pdfPath) {
     try {
+      this.logger.info('使用Pandoc生成PDF', { pdfPath });
+      
+      // 检查pandocPDFService是否可用
+      if (!this.pandocPDFService) {
+        throw new Error('PandocPDFService 服务不可用');
+      }
+      
+      // 先检查依赖
+      const status = await this.pandocPDFService.getStatus();
+      if (status.status !== 'ready') {
+        throw new Error(`Pandoc依赖不可用: ${JSON.stringify(status.dependencies)}`);
+      }
+      
       // 获取页面HTML内容
       const htmlContent = await page.content();
+      this.logger.debug('获取页面HTML内容', { length: htmlContent.length });
       
       // 使用PandocPDFService生成PDF
       const result = await this.pandocPDFService.generatePDF(htmlContent, pdfPath);
@@ -818,7 +846,7 @@ export class Scraper extends EventEmitter {
         throw new Error(`Pandoc PDF生成失败: ${result.error}`);
       }
       
-      this.logger.debug(`Pandoc PDF生成成功: ${pdfPath}`);
+      this.logger.info(`Pandoc PDF生成成功: ${pdfPath}`);
       
     } catch (error) {
       this.logger.error('Pandoc PDF生成失败', {

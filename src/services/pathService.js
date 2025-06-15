@@ -146,6 +146,14 @@ export class PathService {
   }
 
   /**
+   * 获取临时目录路径
+   */
+  getTempDirectory() {
+    const tempDir = this.config.output?.tempDirectory || '.temp';
+    return path.resolve(tempDir);
+  }
+
+  /**
    * 根据索引生成标准化的PDF文件名 - 新增方法
    */
   generateIndexedFileName(url, index) {
