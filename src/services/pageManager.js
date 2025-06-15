@@ -15,7 +15,7 @@ export class PageManager extends EventEmitter {
       defaultTimeout: options.defaultTimeout || 30000,
       navigationTimeout: options.navigationTimeout || 30000,
       enableRequestInterception: options.enableRequestInterception !== false,
-      blockedResourceTypes: options.blockedResourceTypes || ['font', 'media', 'stylesheet'],
+      blockedResourceTypes: options.blockedResourceTypes || [],
       userAgent: options.userAgent || null,
       viewport: options.viewport || { width: 1920, height: 1080 },
       ...options
