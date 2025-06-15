@@ -119,6 +119,30 @@ const configSchema = Joi.object({
 
   // PDF生成配置
   pdf: Joi.object({
+    // PDF引擎选择
+    engine: Joi.string().valid('puppeteer', 'pandoc', 'both').default('puppeteer')
+      .description('PDF generation engine'),
+    
+    // 主题配置
+    theme: Joi.string().valid('light', 'dark').default('light')
+      .description('PDF theme mode'),
+    
+    preserveCodeHighlighting: Joi.boolean().default(true)
+      .description('Preserve code syntax highlighting'),
+    
+    enableCodeWrap: Joi.boolean().default(true)
+      .description('Enable code line wrapping'),
+    
+    fontSize: Joi.string().default('14px')
+      .description('Base font size for PDF content'),
+    
+    fontFamily: Joi.string().default('system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif')
+      .description('Font family for body text'),
+    
+    codeFont: Joi.string().default('SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace')
+      .description('Font family for code blocks'),
+    
+    // Puppeteer PDF配置
     format: Joi.string().valid('A4', 'A3', 'Letter', 'Legal').default('A4')
       .description('PDF page format'),
     
@@ -145,7 +169,19 @@ const configSchema = Joi.object({
       .description('Generate PDF bookmarks'),
     
     maxMemoryMB: Joi.number().integer().min(100).max(2000).default(500)
-      .description('Maximum memory usage for PDF operations (MB)')
+      .description('Maximum memory usage for PDF operations (MB)'),
+    
+    // Pandoc专用配置
+    pandoc: Joi.object({
+      pdfEngine: Joi.string().valid('weasyprint', 'prince', 'wkhtmltopdf', 'pagedjs-cli').default('weasyprint')
+        .description('Pandoc PDF engine'),
+      
+      cssFile: Joi.string().default('src/styles/pdf.css')
+        .description('CSS file path for Pandoc styling'),
+      
+      options: Joi.array().items(Joi.string()).default(['--standalone', '--self-contained'])
+        .description('Additional Pandoc command options')
+    }).default().description('Pandoc-specific configuration')
   }).default().description('PDF generation settings'),
 
   // Python集成配置

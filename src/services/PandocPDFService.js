@@ -29,6 +29,8 @@ export class PandocPDFService {
    */
   async checkDependencies() {
     try {
+      this.logger.debug('检查Pandoc依赖...');
+      
       // 检查pandoc
       const pandocVersion = await this.runCommand('pandoc', ['--version']);
       const pandocMatch = pandocVersion.match(/pandoc\s+([\d.]+)/);
@@ -38,7 +40,7 @@ export class PandocPDFService {
       const weasyprintVersion = await this.runCommand(weasyprintCmd, ['--version']);
       const weasyprintMatch = weasyprintVersion.match(/WeasyPrint\s+([\d.]+)/);
 
-      return {
+      const result = {
         available: true,
         pandoc: {
           version: pandocMatch ? pandocMatch[1] : 'unknown',
@@ -50,14 +52,26 @@ export class PandocPDFService {
           command: weasyprintCmd
         }
       };
+      
+      this.logger.debug('依赖检查成功', { 
+        pandocVersion: pandocMatch?.[1] || 'unknown',
+        weasyprintVersion: weasyprintMatch?.[1] || 'unknown'
+      });
+      return result;
+      
     } catch (error) {
-      this.logger.warn('Pandoc或weasyprint依赖检查失败', { error: error.message });
-      return {
+      this.logger.error('Pandoc或weasyprint依赖检查失败', { 
+        error: error.message
+      });
+      
+      const result = {
         available: false,
         error: error.message,
         pandoc: { available: false },
         weasyprint: { available: false }
       };
+      
+      return result;
     }
   }
 
@@ -386,7 +400,7 @@ em, i {
    */
   async generatePDF(htmlContent, outputPath, options = {}) {
     try {
-      this.logger.info('开始使用Pandoc生成PDF', { 
+      this.logger.info('开始Pandoc PDF生成', { 
         outputPath,
         engine: this.pandocConfig.pdfEngine || this.defaults.pdfEngine
       });
@@ -404,6 +418,9 @@ em, i {
       const tempDir = await this.pathService.getTempDirectory();
       const tempHtmlPath = path.join(tempDir, `temp_${Date.now()}.html`);
       
+      // 确保临时目录存在
+      await fs.mkdir(tempDir, { recursive: true });
+      
       // 写入HTML内容
       await fs.writeFile(tempHtmlPath, htmlContent, 'utf-8');
 
@@ -418,22 +435,22 @@ em, i {
       ];
 
       // 如果使用weasyprint，需要设置正确的PATH环境变量
-      const options = {};
+      const cmdOptions = {};
       if (pdfEngine === 'weasyprint') {
         const weasyprintCmd = this.getWeasyprintCommand();
         if (weasyprintCmd.includes('venv')) {
           const venvBinDir = weasyprintCmd.substring(0, weasyprintCmd.lastIndexOf('/'));
-          options.env = {
+          cmdOptions.env = {
             ...process.env,
             PATH: `${venvBinDir}:${process.env.PATH}`
           };
         }
       }
 
-      this.logger.debug('执行Pandoc命令', { args, options });
+      this.logger.debug('执行Pandoc命令', { engine: pdfEngine, cssPath });
 
       // 执行pandoc命令
-      await this.runCommand('pandoc', args, options);
+      await this.runCommand('pandoc', args, cmdOptions);
 
       // 清理临时文件
       try {
