@@ -101,236 +101,151 @@ export class PDFStyleService {
   }
 
   /**
-   * 获取最简化的PDF打印优化CSS
+   * 获取最小干预的PDF优化CSS - 保留原始样式，仅解决关键问题
    */
   getPDFOptimizedCSS() {
     return `
-      /* === PDF打印基础优化 === */
+      /* === 基础打印优化 - 保持原始样式基础 === */
       * {
         -webkit-print-color-adjust: exact !important;
         color-adjust: exact !important;
       }
 
-      /* === 页面布局和边距 === */
+      /* === 页面设置 - 适合Kindle等设备 === */
       @page {
-        margin: 1.5cm !important;
+        margin: 1.5cm;
         size: A4;
       }
-      
-      body {
-        margin: 0 !important;
-        padding: 1.2cm !important;
-        font-size: 14px !important;
-        line-height: 1.6 !important;
-        font-family: 'Georgia', 'Times New Roman', serif !important;
+
+      /* === 仅在深色主题时强制转换为浅色 === */
+      [data-theme="dark"], 
+      .dark, 
+      .dark-mode,
+      .theme-dark,
+      html[data-theme="dark"],
+      body[data-theme="dark"] {
+        background-color: #ffffff !important;
+        color: #1f2937 !important;
       }
 
-      /* === 强制覆盖所有深色主题代码块 + 强制换行 === */
-      pre, pre[class*="language-"], pre[class*="hljs"], 
-      .highlight, .code-block, .CodeMirror,
-      [data-theme="dark"] pre, [class*="dark"] pre,
-      pre *, pre[class*="language-"] *, pre[class*="hljs"] *,
-      .highlight *, .code-block *, .CodeMirror * {
-        background-color: #f8f9fa !important;
-        background: #f8f9fa !important;
-        border: 1px solid #d1d5db !important;
-        border-radius: 6px !important;
-        padding: 16px !important;
-        margin: 1.5em 0 !important;
-        font-family: 'Courier New', 'Monaco', monospace !important;
-        font-size: 12px !important;
-        line-height: 1.4 !important;
-        color: #1f2937 !important;
-        
-        /* === 强制换行 - 多重保险 === */
+      /* === 核心代码换行修复 - 保持原始设计 === */
+      pre, 
+      pre[class*="language-"], 
+      pre[class*="hljs"],
+      .highlight,
+      .code-block,
+      .CodeMirror {
+        /* 仅添加换行支持，不改变原始样式 */
         white-space: pre-wrap !important;
         word-wrap: break-word !important;
-        word-break: break-all !important;
         overflow-wrap: break-word !important;
         overflow: visible !important;
         overflow-x: visible !important;
         
-        /* === 防止溢出 === */
+        /* 防止溢出，但保持原始宽度设计 */
         max-width: 100% !important;
-        width: 100% !important;
         box-sizing: border-box !important;
-        page-break-inside: avoid !important;
+        page-break-inside: avoid;
       }
-      
-      /* === 针对具体的代码元素强制换行 === */
-      pre code, pre span, pre div, pre p,
-      code, span.token, span.hljs-*,
-      .highlight code, .highlight span, .highlight div {
+
+      /* === 代码块内子元素 - 仅确保换行，不改变样式 === */
+      pre *,
+      pre[class*="language-"] *,
+      pre[class*="hljs"] *,
+      .highlight *,
+      .code-block *,
+      .CodeMirror * {
+        /* 仅添加换行支持 */
         white-space: pre-wrap !important;
         word-wrap: break-word !important;
-        word-break: break-all !important;
         overflow-wrap: break-word !important;
         overflow: visible !important;
         max-width: 100% !important;
-        display: inline !important;
       }
 
-      /* === 内联代码换行优化 === */
-      code, code[class*="language-"], code[class*="hljs"],
-      [data-theme="dark"] code, [class*="dark"] code {
-        background-color: #f3f4f6 !important;
-        background: #f3f4f6 !important;
-        color: #1f2937 !important;
-        padding: 2px 4px !important;
-        border-radius: 3px !important;
-        font-family: 'Courier New', 'Monaco', monospace !important;
-        font-size: 12px !important;
-        
-        /* === 强制内联代码换行 === */
+      /* === 内联代码换行 - 最小化改动 === */
+      code {
         white-space: pre-wrap !important;
         word-wrap: break-word !important;
-        word-break: break-all !important;
         overflow-wrap: break-word !important;
-        overflow: visible !important;
-        max-width: 100% !important;
-        display: inline !important;
       }
 
-      /* === 代码块内的code元素 === */
-      pre code, pre[class*="language-"] code, pre[class*="hljs"] code {
-        background-color: transparent !important;
-        background: transparent !important;
-        padding: 0 !important;
-        border: none !important;
-        border-radius: 0 !important;
-        
-        /* === 确保代码块内代码也能换行 === */
-        white-space: pre-wrap !important;
-        word-wrap: break-word !important;
-        word-break: break-all !important;
-        overflow-wrap: break-word !important;
-        overflow: visible !important;
-        max-width: 100% !important;
-        width: 100% !important;
-        display: inline !important;
+      /* === 深色主题代码块转换 === */
+      [data-theme="dark"] pre,
+      [data-theme="dark"] code,
+      .dark pre,
+      .dark code,
+      .theme-dark pre,
+      .theme-dark code {
+        background-color: #f8fafc !important;
+        color: #1e293b !important;
       }
 
-      /* === 强制所有代码文本为深色 === */
-      pre *, pre code *, pre span *, 
-      .hljs *, .token *, .highlight *, 
-      [class*="language-"] *, [class*="hljs-"] *,
-      [data-theme="dark"] pre *, [class*="dark"] pre *,
-      code *, code span *, 
-      .code-block *, .CodeMirror * {
-        color: #1f2937 !important;
-        background-color: transparent !important;
-      }
-
-      /* 特定语法元素颜色 */
-      .hljs-keyword, .token.keyword, 
-      .hljs-built_in, .token.builtin {
-        color: #7c3aed !important;
-      }
-
-      .hljs-string, .token.string,
-      .hljs-attr, .token.attr-name {
-        color: #059669 !important;
-      }
-
-      .hljs-comment, .token.comment {
-        color: #6b7280 !important;
-        font-style: italic;
-      }
-
-      .hljs-number, .token.number,
-      .hljs-literal, .token.boolean {
-        color: #dc2626 !important;
-      }
-
-      .hljs-function, .token.function,
-      .hljs-title, .token.class-name {
-        color: #2563eb !important;
-      }
-
-      .hljs-variable, .token.variable,
-      .hljs-name, .token.tag {
-        color: #1f2937 !important;
-      }
-
-      /* === 避免分页断裂 === */
+      /* === 基础分页控制 === */
       h1, h2, h3, h4, h5, h6 {
         page-break-after: avoid;
-        margin-top: 1.5em !important;
-        margin-bottom: 0.5em !important;
       }
 
       pre, blockquote, table {
         page-break-inside: avoid;
       }
 
-      /* === 隐藏交互元素 === */
-      .no-print,
-      button,
-      input,
-      textarea,
-      select,
+      /* === 隐藏纯UI元素 === */
+      button:not(.copy-button),
+      input[type="button"],
+      input[type="submit"],
       .theme-toggle,
-      .copy-button,
-      [data-theme="dark"] {
+      [data-theme-toggle],
+      .dark-mode-toggle,
+      .sidebar-toggle,
+      .mobile-menu {
         display: none !important;
       }
 
-      /* === 表格样式 === */
-      table {
-        width: 100% !important;
-        border-collapse: collapse !important;
-        margin: 1em 0 !important;
-        font-size: 12px !important;
+      /* === 强制显示折叠内容 === */
+      details {
+        open: true !important;
       }
 
-      th, td {
-        border: 1px solid #d1d5db !important;
-        padding: 8px !important;
-        text-align: left !important;
+      details > summary {
+        display: none !important;
       }
 
-      th {
-        background-color: #f9fafb !important;
-        font-weight: bold !important;
+      details[open] > *:not(summary) {
+        display: block !important;
       }
 
-      /* === 全局强制换行样式 - 覆盖所有可能的代码容器 === */
-      * [class*="code"], * [class*="highlight"], * [class*="language"],
-      * [class*="hljs"], * [class*="token"], * [class*="pre"],
-      div[class*="code"], div[class*="highlight"], div[class*="language"],
-      span[class*="code"], span[class*="highlight"], span[class*="language"] {
-        white-space: pre-wrap !important;
-        word-wrap: break-word !important;
-        word-break: break-all !important;
-        overflow-wrap: break-word !important;
-        overflow: visible !important;
-        max-width: 100% !important;
+      /* === 标签页内容全部显示 === */
+      [role="tabpanel"],
+      .tab-content > .tab-pane {
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
       }
-      
-      /* === 响应式代码块 === */
+
+      /* === Kindle优化 - 改善阅读体验 === */
       @media print {
-        body {
-          font-size: 12px !important;
-        }
-        
-        /* 打印时特别强制换行 */
+        /* 确保在小屏设备上代码能正确换行 */
         pre, code, 
         pre *, code *,
-        [class*="language-"], [class*="hljs"], [class*="highlight"],
-        .code-block, .CodeMirror {
+        [class*="language-"], [class*="hljs"], [class*="highlight"] {
           white-space: pre-wrap !important;
           word-wrap: break-word !important;
-          word-break: break-all !important;
           overflow-wrap: break-word !important;
           overflow: visible !important;
           max-width: 100% !important;
-          width: 100% !important;
-          box-sizing: border-box !important;
         }
         
+        /* 图片适配 */
         img {
           max-width: 100% !important;
           height: auto !important;
+        }
+        
+        /* 表格适配 */
+        table {
+          width: 100% !important;
+          font-size: 0.9em !important;
         }
       }
     `;
@@ -370,38 +285,44 @@ export class PDFStyleService {
         document.body.removeAttribute('data-theme');
         document.documentElement.setAttribute('data-theme', 'light');
         
-        // === 强制所有代码元素启用换行 ===
+        // === 最小干预：仅添加换行支持，保留原始样式 ===
         const codeElements = document.querySelectorAll(`
-          pre, pre *, 
-          code, code *,
-          [class*="language-"], [class*="language-"] *,
-          [class*="hljs"], [class*="hljs"] *,
-          .highlight, .highlight *,
-          .code-block, .code-block *,
-          .CodeMirror, .CodeMirror *
+          pre, 
+          pre[class*="language-"],
+          pre[class*="hljs"],
+          .highlight,
+          .code-block,
+          .CodeMirror
         `);
         
         codeElements.forEach(el => {
-          // 强制设置换行相关样式
+          // 仅添加换行支持，不改变原始样式
           el.style.setProperty('white-space', 'pre-wrap', 'important');
           el.style.setProperty('word-wrap', 'break-word', 'important');
-          el.style.setProperty('word-break', 'break-all', 'important');
           el.style.setProperty('overflow-wrap', 'break-word', 'important');
           el.style.setProperty('overflow', 'visible', 'important');
           el.style.setProperty('overflow-x', 'visible', 'important');
           el.style.setProperty('max-width', '100%', 'important');
-          el.style.setProperty('width', '100%', 'important');
           el.style.setProperty('box-sizing', 'border-box', 'important');
-          
-          // 移除可能阻止换行的属性
-          el.style.removeProperty('white-space');
+        });
+        
+        // === 确保代码块内元素也支持换行 ===
+        const codeChildren = document.querySelectorAll(`
+          pre *, 
+          pre[class*="language-"] *,
+          pre[class*="hljs"] *,
+          .highlight *,
+          .code-block *,
+          .CodeMirror *
+        `);
+        
+        codeChildren.forEach(el => {
+          // 仅添加换行支持，保留原始颜色和样式
           el.style.setProperty('white-space', 'pre-wrap', 'important');
-          
-          // 移除固定宽度
-          if (el.style.width && el.style.width !== '100%') {
-            el.style.removeProperty('width');
-            el.style.setProperty('width', '100%', 'important');
-          }
+          el.style.setProperty('word-wrap', 'break-word', 'important');
+          el.style.setProperty('overflow-wrap', 'break-word', 'important');
+          el.style.setProperty('overflow', 'visible', 'important');
+          el.style.setProperty('max-width', '100%', 'important');
         });
 
         // 替换body内容（保持所有原始样式）
@@ -439,22 +360,23 @@ export class PDFStyleService {
   }
 
   /**
-   * 获取优化的PDF生成选项
+   * 获取优化的PDF生成选项 - 针对Kindle等设备优化
    */
   getPDFOptions() {
     return {
       format: 'A4',
       margin: {
-        top: '1cm',
-        right: '1cm',
-        bottom: '1cm',
-        left: '1cm'
+        top: '1.5cm',
+        right: '1.5cm', 
+        bottom: '1.5cm',
+        left: '1.5cm'
       },
       printBackground: true,
-      preferCSSPageSize: false,
+      preferCSSPageSize: true,  // 使用CSS页面设置
       displayHeaderFooter: false,
-      // 确保样式正确打印
-      scale: 1
+      scale: 1,
+      // 优化文本渲染
+      tagged: true,  // 生成带标签的PDF，改善屏幕阅读器体验
     };
   }
 
