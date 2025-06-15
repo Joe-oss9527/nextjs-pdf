@@ -26,6 +26,7 @@ The project uses a modular dependency injection architecture with 8 layers:
 - **Main Application** (`src/app.js`) - Orchestrates scraping and PDF merge workflow
 - **Dual-Engine PDF System** (`src/core/scraper.js`) - Supports Puppeteer, Pandoc, or both engines
 - **Configuration System** - External `config.json` with validation via Joi schemas
+- **Intelligent PDF Styling** (`src/services/pdfStyleService.js`) - Minimal intervention approach to preserve original web design
 
 ## Common Commands
 
@@ -88,8 +89,18 @@ pip install -r requirements.txt
 - All services are registered in `src/core/setup.js` with proper dependency injection
 - Services should have dispose/cleanup methods for graceful shutdown
 - Use the container to resolve dependencies rather than direct imports
-- **PDFStyleService** - Handles PDF styling, theme detection, and content optimization
-- **PandocPDFService** - Handles Pandoc+weasyprint PDF generation with high-quality output
+
+#### PDF Styling Strategy
+- **PDFStyleService** - Implements minimal intervention approach for PDF styling
+  - **Design Philosophy**: "Fix the function, preserve the form"
+  - **Original Style Preservation**: Maintains source website's fonts, colors, and layout design
+  - **Code Wrapping Fix**: Ensures long code lines wrap properly without changing visual appearance
+  - **Smart Theme Handling**: Only converts dark themes to light for print readability
+  - **Kindle Optimization**: 确保在Kindle等设备上有良好的阅读体验，同时不会"过度优化"而破坏原始网页的设计美感
+  - **E-reader Compatibility**: Tagged PDF generation for improved accessibility
+
+#### Engine-Specific Services
+- **PandocPDFService** - Handles Pandoc+weasyprint PDF generation with enhanced style preservation
 
 ### Configuration Management
 - Main config in `config.json` - validated with Joi schemas in `src/config/schema.js`
@@ -239,3 +250,27 @@ weasyprint --version
 - **Pandoc**: Slower but higher quality, good for final output
 - **Dual Engine**: Twice the generation time, use for quality comparison
 - **Concurrent Processing**: Adjust `concurrency` setting based on system resources
+
+### PDF Styling Best Practices
+
+#### Minimal Intervention Strategy
+The system follows a **"Fix the function, preserve the form"** philosophy:
+
+- **✅ DO**: Preserve original website design, fonts, colors, and layouts
+- **✅ DO**: Only fix critical functional issues (code wrapping, dark theme conversion)
+- **✅ DO**: Ensure excellent Kindle and e-reader compatibility
+- **❌ DON'T**: Override original styles unless absolutely necessary
+- **❌ DON'T**: Add custom borders, padding, or visual changes that alter the original design
+
+#### Code Block Handling
+- **Problem Solved**: Long code lines now wrap properly without visual design changes
+- **Style Preservation**: Original syntax highlighting and color schemes are maintained
+- **Multi-border Fix**: Eliminated nested border issues that created "box-in-box" effects
+- **Responsive Design**: Code blocks adapt to different screen sizes while maintaining readability
+
+#### E-reader Optimization
+- **Kindle Compatibility**: 确保在Kindle等设备上有良好的阅读体验，同时不会"过度优化"而破坏原始网页的设计美感
+- **Tagged PDFs**: Generated PDFs include proper tagging for screen readers and accessibility
+- **Flexible Layouts**: Content adapts to various screen sizes without losing original design intent
+- **Print Quality**: Optimized margins and sizing for physical printing and digital reading
+
