@@ -138,7 +138,7 @@ class PDFMerger:
 
         return article_titles
 
-    def _get_pdf_files(self, directory_path: str) -> List[str]:
+    def _get_pdf_files(self, directory_path: str, engine_filter: str = None) -> List[str]:
         """
         获取目录中的PDF文件列表（智能排序）
 
@@ -146,6 +146,11 @@ class PDFMerger:
         1. 数字前缀文件（000-xxx.pdf, 001-xxx.pdf）- 按数字排序
         2. 哈希前缀文件（676cb9dd-xxx.pdf）- 按文件创建时间排序
         3. 混合情况 - 数字文件优先，然后哈希文件
+        4. 引擎过滤：只获取特定引擎生成的PDF文件
+
+        Args:
+            directory_path: 目录路径
+            engine_filter: 引擎过滤器，可选值：'puppeteer', 'pandoc', None(所有文件)
         """
         try:
             if not os.path.exists(directory_path):
@@ -160,15 +165,34 @@ class PDFMerger:
                 if f.endswith('.pdf') and os.path.isfile(os.path.join(directory_path, f))
             ]
 
+            # 🔥 新增：根据引擎过滤PDF文件
+            if engine_filter:
+                if engine_filter == 'puppeteer':
+                    # 只要包含_puppeteer的文件
+                    files = [f for f in files if '_puppeteer.pdf' in f]
+                elif engine_filter == 'pandoc':
+                    # 只要包含_pandoc的文件
+                    files = [f for f in files if '_pandoc.pdf' in f]
+                elif engine_filter == 'single':
+                    # 只要不包含_puppeteer和_pandoc的文件（单引擎模式的文件）
+                    files = [f for f in files if '_puppeteer.pdf' not in f and '_pandoc.pdf' not in f]
+
             if not files:
                 return []
 
-            self.logger.debug(f"过滤后的PDF文件: {files}")
+            self.logger.debug(f"过滤后的PDF文件 (engine_filter={engine_filter}): {files}")
 
             # 🔥 智能排序逻辑：支持数字前缀和哈希前缀
             def get_sort_key(filename: str) -> tuple:
                 try:
-                    parts = filename.split('-', 1)  # 只分割第一个连字符
+                    # 对于双引擎文件，需要去掉_puppeteer或_pandoc后缀来获取前缀
+                    name_for_sorting = filename
+                    if '_puppeteer.pdf' in filename:
+                        name_for_sorting = filename.replace('_puppeteer.pdf', '.pdf')
+                    elif '_pandoc.pdf' in filename:
+                        name_for_sorting = filename.replace('_pandoc.pdf', '.pdf')
+
+                    parts = name_for_sorting.split('-', 1)  # 只分割第一个连字符
                     if len(parts) == 0:
                         return (999999, 0, filename)
 
@@ -215,7 +239,14 @@ class PDFMerger:
             other_files = []
 
             for f in files:
-                prefix = f.split('-')[0] if '-' in f else ''
+                # 对于双引擎文件，需要去掉引擎后缀来获取前缀
+                name_for_analysis = f
+                if '_puppeteer.pdf' in f:
+                    name_for_analysis = f.replace('_puppeteer.pdf', '.pdf')
+                elif '_pandoc.pdf' in f:
+                    name_for_analysis = f.replace('_pandoc.pdf', '.pdf')
+
+                prefix = name_for_analysis.split('-')[0] if '-' in name_for_analysis else ''
                 if prefix.isdigit() or (prefix.startswith('0') and prefix.isdigit()):
                     numeric_files.append(f)
                 elif len(prefix) == 8 and all(c in '0123456789abcdef' for c in prefix.lower()):
@@ -224,7 +255,8 @@ class PDFMerger:
                     other_files.append(f)
 
             # 输出排序信息
-            self.logger.info(f"找到 {len(files)} 个PDF文件在 {directory_path}")
+            engine_info = f" ({engine_filter}引擎)" if engine_filter else ""
+            self.logger.info(f"找到 {len(files)} 个PDF文件在 {directory_path}{engine_info}")
             if numeric_files:
                 self.logger.info(f"  ✓ {len(numeric_files)} 个数字前缀文件 (按索引顺序)")
             if hash_files:
@@ -313,11 +345,12 @@ class PDFMerger:
         self,
         directory_path: str,
         output_path: str,
-        progress_callback: Optional[Callable[[int, int], None]] = None
+        progress_callback: Optional[Callable[[int, int], None]] = None,
+        engine_filter: str = None
     ) -> bool:
         """流式合并PDF文件"""
         try:
-            files = self._get_pdf_files(directory_path)
+            files = self._get_pdf_files(directory_path, engine_filter)
             if not files:
                 self.logger.warning(f"目录中没有PDF文件: {directory_path}")
                 return False
@@ -431,6 +464,19 @@ class PDFMerger:
             self.logger.error(f"错误详情: {traceback.format_exc()}")
             return False
 
+    def _detect_dual_engine_mode(self, directory_path: str) -> bool:
+        """检测是否为双引擎模式（包含_puppeteer和_pandoc文件）"""
+        try:
+            files = os.listdir(directory_path)
+            pdf_files = [f for f in files if f.endswith('.pdf')]
+            
+            has_puppeteer = any('_puppeteer.pdf' in f for f in pdf_files)
+            has_pandoc = any('_pandoc.pdf' in f for f in pdf_files)
+            
+            return has_puppeteer and has_pandoc
+        except Exception:
+            return False
+
     def merge_directory(self, directory_name: Optional[str] = None) -> List[str]:
         """合并指定目录或所有子目录的PDF文件"""
         try:
@@ -451,24 +497,69 @@ class PDFMerger:
                 # 合并指定目录
                 directory_path = os.path.join(self.pdf_dir, directory_name)
                 if os.path.isdir(directory_path):
-                    output_path = os.path.join(
-                        self.final_pdf_dir,
-                        f"{directory_name}_{current_date}.pdf"
-                    )
-
-                    if self.merge_pdfs_stream(directory_path, output_path):
-                        merged_files.append(output_path)
+                    # 检测是否为双引擎模式
+                    is_dual_engine = self._detect_dual_engine_mode(directory_path)
+                    
+                    if is_dual_engine:
+                        # 双引擎模式：分别合并两种类型的PDF
+                        self.logger.info(f"检测到双引擎模式，将生成两个合并PDF文件")
+                        
+                        # 合并Puppeteer版本
+                        puppeteer_output = os.path.join(
+                            self.final_pdf_dir,
+                            f"{directory_name}_puppeteer_{current_date}.pdf"
+                        )
+                        if self.merge_pdfs_stream(directory_path, puppeteer_output, engine_filter='puppeteer'):
+                            merged_files.append(puppeteer_output)
+                            
+                        # 合并Pandoc版本
+                        pandoc_output = os.path.join(
+                            self.final_pdf_dir,
+                            f"{directory_name}_pandoc_{current_date}.pdf"
+                        )
+                        if self.merge_pdfs_stream(directory_path, pandoc_output, engine_filter='pandoc'):
+                            merged_files.append(pandoc_output)
+                    else:
+                        # 单引擎模式：正常合并
+                        output_path = os.path.join(
+                            self.final_pdf_dir,
+                            f"{directory_name}_{current_date}.pdf"
+                        )
+                        if self.merge_pdfs_stream(directory_path, output_path):
+                            merged_files.append(output_path)
                 else:
                     self.logger.warning(f"指定目录不存在: {directory_path}")
             else:
                 # 首先合并根目录
-                root_output_path = os.path.join(
-                    self.final_pdf_dir,
-                    f"{domain}_{current_date}.pdf"
-                )
-
-                if self.merge_pdfs_stream(self.pdf_dir, root_output_path):
-                    merged_files.append(root_output_path)
+                is_dual_engine = self._detect_dual_engine_mode(self.pdf_dir)
+                
+                if is_dual_engine:
+                    # 双引擎模式：分别合并两种类型的PDF
+                    self.logger.info(f"检测到双引擎模式，将生成两个合并PDF文件")
+                    
+                    # 合并Puppeteer版本
+                    puppeteer_output = os.path.join(
+                        self.final_pdf_dir,
+                        f"{domain}_puppeteer_{current_date}.pdf"
+                    )
+                    if self.merge_pdfs_stream(self.pdf_dir, puppeteer_output, engine_filter='puppeteer'):
+                        merged_files.append(puppeteer_output)
+                        
+                    # 合并Pandoc版本
+                    pandoc_output = os.path.join(
+                        self.final_pdf_dir,
+                        f"{domain}_pandoc_{current_date}.pdf"
+                    )
+                    if self.merge_pdfs_stream(self.pdf_dir, pandoc_output, engine_filter='pandoc'):
+                        merged_files.append(pandoc_output)
+                else:
+                    # 单引擎模式：正常合并
+                    root_output_path = os.path.join(
+                        self.final_pdf_dir,
+                        f"{domain}_{current_date}.pdf"
+                    )
+                    if self.merge_pdfs_stream(self.pdf_dir, root_output_path):
+                        merged_files.append(root_output_path)
 
                 # 然后合并所有子目录
                 try:
@@ -485,14 +576,35 @@ class PDFMerger:
                                 continue
 
                             self.logger.info(f"处理子目录: {item}")
-
-                            output_path = os.path.join(
-                                self.final_pdf_dir,
-                                f"{item}_{current_date}.pdf"
-                            )
-
-                            if self.merge_pdfs_stream(item_path, output_path):
-                                merged_files.append(output_path)
+                            
+                            # 检测子目录是否为双引擎模式
+                            is_dual_engine_subdir = self._detect_dual_engine_mode(item_path)
+                            
+                            if is_dual_engine_subdir:
+                                # 双引擎模式：分别合并两种类型的PDF
+                                # 合并Puppeteer版本
+                                puppeteer_output = os.path.join(
+                                    self.final_pdf_dir,
+                                    f"{item}_puppeteer_{current_date}.pdf"
+                                )
+                                if self.merge_pdfs_stream(item_path, puppeteer_output, engine_filter='puppeteer'):
+                                    merged_files.append(puppeteer_output)
+                                    
+                                # 合并Pandoc版本
+                                pandoc_output = os.path.join(
+                                    self.final_pdf_dir,
+                                    f"{item}_pandoc_{current_date}.pdf"
+                                )
+                                if self.merge_pdfs_stream(item_path, pandoc_output, engine_filter='pandoc'):
+                                    merged_files.append(pandoc_output)
+                            else:
+                                # 单引擎模式：正常合并
+                                output_path = os.path.join(
+                                    self.final_pdf_dir,
+                                    f"{item}_{current_date}.pdf"
+                                )
+                                if self.merge_pdfs_stream(item_path, output_path):
+                                    merged_files.append(output_path)
 
                         except Exception as e:
                             self.logger.error(f"处理子目录 {item} 时出错: {e}")

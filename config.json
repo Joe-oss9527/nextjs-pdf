@@ -27,7 +27,7 @@
     "tempDirectory": ".temp"
   },
   "pdf": {
-    "engine": "pandoc",
+    "engine": "both",
     "theme": "light",
     "preserveCodeHighlighting": true,
     "enableCodeWrap": true,
