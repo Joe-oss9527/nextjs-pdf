@@ -275,18 +275,34 @@ class PDFMerger:
     def _create_bookmark_title(self, filename: str, article_titles: Dict[str, str]) -> str:
         """
         创建书签标题（改进版）
+        
+        🔧 修复：双引擎模式下正确处理引擎后缀，避免标题中出现"Puppeteer"或"Pandoc"
 
         优先级：
         1. 文章标题映射
-        2. 清理后的文件名
+        2. 清理后的文件名（移除引擎后缀）
+        
+        支持的文件名格式：
+        - 001-page-name.pdf → "Page Name"
+        - 001-page-name_puppeteer.pdf → "Page Name" (移除引擎后缀)
+        - 001-page-name_pandoc.pdf → "Page Name" (移除引擎后缀)
         """
         try:
             self.logger.debug(f"为文件创建书签标题: {filename}")
 
+            # 🔥 首先移除引擎后缀（_puppeteer 或 _pandoc）
+            cleaned_filename = filename
+            if '_puppeteer.pdf' in filename:
+                cleaned_filename = filename.replace('_puppeteer.pdf', '.pdf')
+                self.logger.debug(f"移除Puppeteer引擎后缀: {filename} -> {cleaned_filename}")
+            elif '_pandoc.pdf' in filename:
+                cleaned_filename = filename.replace('_pandoc.pdf', '.pdf')
+                self.logger.debug(f"移除Pandoc引擎后缀: {filename} -> {cleaned_filename}")
+
             # 提取前缀和文件名部分
-            parts = filename.split('-', 1)  # 只分割第一个连字符
+            parts = cleaned_filename.split('-', 1)  # 只分割第一个连字符
             if len(parts) < 2:
-                title = os.path.splitext(filename)[0]
+                title = os.path.splitext(cleaned_filename)[0]
                 self.logger.debug(f"无前缀文件，使用文件名作为标题: {title}")
                 return title
 
