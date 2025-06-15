@@ -61,6 +61,13 @@ export class ImageLoadError extends ScraperError {
   }
 }
 
+export class ProcessingError extends ScraperError {
+  constructor(message, details) {
+    super(message, 'PROCESSING_ERROR', details);
+    Object.setPrototypeOf(this, ProcessingError.prototype);
+  }
+}
+
 // 错误分类枚举
 export const ErrorCategory = {
   RETRYABLE_NETWORK: 'retryable_network',      // 可重试的网络错误

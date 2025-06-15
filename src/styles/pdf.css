@@ -1,0 +1,482 @@
+/* 
+ * PDF样式文件 - 专门为Pandoc + weasyprint优化
+ * 提供专业级PDF排版和阅读体验
+ */
+
+/* === 页面设置 === */
+@page {
+  size: A4;
+  margin: 2.5cm 2cm;
+  
+  @top-center {
+    content: "Next.js Documentation";
+    font-size: 9pt;
+    color: #64748b;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  
+  @bottom-center {
+    content: "Page " counter(page) " of " counter(pages);
+    font-size: 9pt;
+    color: #64748b;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+}
+
+/* === 基础文档样式 === */
+html {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 11pt;
+  line-height: 1.6;
+  color: #1e293b;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #ffffff;
+}
+
+/* === 标题层级样式 === */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  line-height: 1.25;
+  margin-top: 2em;
+  margin-bottom: 0.75em;
+  page-break-after: avoid;
+  color: #0f172a;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+h1 {
+  font-size: 2em;
+  border-bottom: 3px solid #3b82f6;
+  padding-bottom: 0.5em;
+  margin-bottom: 1em;
+  page-break-before: always;
+  color: #1e40af;
+}
+
+h1:first-child {
+  page-break-before: auto;
+}
+
+h2 {
+  font-size: 1.6em;
+  color: #1e40af;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 0.3em;
+}
+
+h3 {
+  font-size: 1.3em;
+  color: #2563eb;
+}
+
+h4 {
+  font-size: 1.15em;
+  color: #3b82f6;
+}
+
+h5 {
+  font-size: 1.05em;
+  color: #6366f1;
+}
+
+h6 {
+  font-size: 1em;
+  color: #8b5cf6;
+  font-weight: 500;
+}
+
+/* === 段落和文本 === */
+p {
+  margin: 1em 0;
+  text-align: justify;
+  orphans: 3;
+  widows: 3;
+  word-wrap: break-word;
+}
+
+/* === 代码块样式 - 核心优化 === */
+pre {
+  background-color: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-left: 4px solid #3b82f6 !important;
+  border-radius: 8px;
+  padding: 1.2em !important;
+  margin: 1.5em 0 !important;
+  font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', 'Courier New', monospace !important;
+  font-size: 9.5pt !important;
+  line-height: 1.45 !important;
+  color: #1e293b !important;
+  white-space: pre-wrap !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  page-break-inside: avoid;
+  max-width: 100%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+code {
+  font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', 'Courier New', monospace !important;
+  font-size: 9.5pt !important;
+  background-color: #f1f5f9 !important;
+  color: #475569 !important;
+  padding: 0.2em 0.4em !important;
+  border-radius: 4px !important;
+  border: 1px solid #e2e8f0 !important;
+  word-wrap: break-word;
+}
+
+pre code {
+  background-color: transparent !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  color: inherit !important;
+  font-size: inherit !important;
+}
+
+/* === 语法高亮 - 专业配色 === */
+.sourceCode .kw { color: #7c3aed; font-weight: 600; } /* 关键字 - 紫色 */
+.sourceCode .dt { color: #dc2626; font-weight: 500; } /* 数据类型 - 红色 */
+.sourceCode .dv { color: #059669; } /* 数字 - 绿色 */
+.sourceCode .bn { color: #059669; } /* 基数 */
+.sourceCode .fl { color: #059669; } /* 浮点数 */
+.sourceCode .ch { color: #0891b2; } /* 字符 - 青色 */
+.sourceCode .st { color: #0891b2; } /* 字符串 - 青色 */
+.sourceCode .co { color: #64748b; font-style: italic; } /* 注释 - 灰色斜体 */
+.sourceCode .ot { color: #7c3aed; } /* 其他 */
+.sourceCode .al { color: #dc2626; font-weight: bold; } /* 警告 */
+.sourceCode .fu { color: #1d4ed8; font-weight: 500; } /* 函数 - 蓝色 */
+.sourceCode .er { color: #dc2626; font-weight: bold; } /* 错误 */
+.sourceCode .va { color: #374151; } /* 变量 */
+.sourceCode .cf { color: #7c3aed; font-weight: 600; } /* 控制流 */
+.sourceCode .op { color: #6b7280; } /* 操作符 */
+.sourceCode .bu { color: #1d4ed8; } /* 内建函数 */
+.sourceCode .ex { color: #374151; } /* 扩展 */
+.sourceCode .pp { color: #dc2626; } /* 预处理器 */
+.sourceCode .at { color: #059669; } /* 属性 */
+.sourceCode .do { color: #64748b; } /* 文档 */
+.sourceCode .an { color: #64748b; } /* 注解 */
+.sourceCode .cv { color: #64748b; } /* 注释变量 */
+.sourceCode .in { color: #64748b; } /* 信息 */
+
+/* === 引用块样式 === */
+blockquote {
+  margin: 1.5em 0;
+  padding: 1em 1.5em;
+  border-left: 5px solid #3b82f6;
+  background: linear-gradient(to right, #dbeafe, #f8fafc);
+  color: #1e40af;
+  font-style: italic;
+  page-break-inside: avoid;
+  border-radius: 0 8px 8px 0;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+}
+
+blockquote p {
+  margin: 0.5em 0;
+}
+
+blockquote p:first-child {
+  margin-top: 0;
+}
+
+blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* === 列表样式 === */
+ul, ol {
+  margin: 1.2em 0;
+  padding-left: 1.8em;
+}
+
+li {
+  margin: 0.4em 0;
+  line-height: 1.6;
+}
+
+ul li {
+  list-style-type: disc;
+}
+
+ul ul li {
+  list-style-type: circle;
+}
+
+ul ul ul li {
+  list-style-type: square;
+}
+
+ol {
+  counter-reset: item;
+}
+
+ol li {
+  list-style-type: decimal;
+}
+
+/* === 表格样式 - 专业设计 === */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5em 0;
+  font-size: 10pt;
+  page-break-inside: avoid;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+th, td {
+  border: 1px solid #d1d5db;
+  padding: 0.75em 1em;
+  text-align: left;
+  word-wrap: break-word;
+  vertical-align: top;
+}
+
+th {
+  background: linear-gradient(to bottom, #f8fafc, #f1f5f9);
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 2px solid #3b82f6;
+}
+
+tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+tr:hover {
+  background-color: #f3f4f6;
+}
+
+/* === 链接样式 === */
+a {
+  color: #2563eb;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+a:hover {
+  border-bottom-color: #2563eb;
+}
+
+/* === 图片样式 === */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1.5em auto;
+  border-radius: 8px;
+  page-break-inside: avoid;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* === 分隔线 === */
+hr {
+  border: none;
+  height: 2px;
+  background: linear-gradient(to right, #e2e8f0, #3b82f6, #e2e8f0);
+  margin: 2.5em 0;
+}
+
+/* === 强调文本 === */
+strong, b {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+em, i {
+  font-style: italic;
+  color: #475569;
+}
+
+/* === 内联代码特殊处理 === */
+p code, li code, td code, th code {
+  white-space: nowrap;
+  overflow-wrap: break-word;
+}
+
+/* === 避免页面分割的类 === */
+.keep-together {
+  page-break-inside: avoid;
+}
+
+.page-break-before {
+  page-break-before: always;
+}
+
+.page-break-after {
+  page-break-after: always;
+}
+
+/* === 目录样式 === */
+.toc {
+  page-break-after: always;
+  margin-bottom: 2em;
+  background-color: #f8fafc;
+  padding: 1.5em;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.toc h2 {
+  margin-top: 0;
+  color: #1e40af;
+  border-bottom: 2px solid #3b82f6;
+  padding-bottom: 0.5em;
+}
+
+.toc ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.toc li {
+  margin: 0.3em 0;
+}
+
+.toc a {
+  text-decoration: none;
+  color: #374151;
+  display: block;
+  padding: 0.2em 0;
+}
+
+.toc a:hover {
+  color: #2563eb;
+  background-color: #dbeafe;
+  padding-left: 0.5em;
+  border-radius: 4px;
+}
+
+/* === 代码块标题 === */
+.code-title {
+  background-color: #1e293b;
+  color: #f1f5f9;
+  padding: 0.5em 1em;
+  font-size: 9pt;
+  font-weight: 500;
+  margin: 1.5em 0 0 0;
+  border-radius: 8px 8px 0 0;
+  font-family: 'SF Mono', 'Monaco', monospace;
+}
+
+.code-title + pre {
+  margin-top: 0;
+  border-radius: 0 0 8px 8px;
+  border-top: none;
+}
+
+/* === 响应式处理 === */
+@media print {
+  body {
+    font-size: 10pt;
+  }
+  
+  h1 {
+    font-size: 1.8em;
+  }
+  
+  h2 {
+    font-size: 1.4em;
+  }
+  
+  h3 {
+    font-size: 1.2em;
+  }
+  
+  pre, code {
+    white-space: pre-wrap !important;
+    word-wrap: break-word !important;
+    overflow: visible !important;
+  }
+  
+  img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+  
+  table {
+    font-size: 9pt;
+  }
+  
+  th, td {
+    padding: 0.5em 0.7em;
+  }
+}
+
+/* === 特殊内容样式 === */
+.note, .tip, .warning, .danger {
+  margin: 1.5em 0;
+  padding: 1em 1.5em;
+  border-radius: 8px;
+  page-break-inside: avoid;
+}
+
+.note {
+  background-color: #dbeafe;
+  border-left: 5px solid #3b82f6;
+  color: #1e40af;
+}
+
+.tip {
+  background-color: #dcfce7;
+  border-left: 5px solid #22c55e;
+  color: #166534;
+}
+
+.warning {
+  background-color: #fef3c7;
+  border-left: 5px solid #f59e0b;
+  color: #92400e;
+}
+
+.danger {
+  background-color: #fee2e2;
+  border-left: 5px solid #ef4444;
+  color: #b91c1c;
+}
+
+/* === 脚注样式 === */
+.footnotes {
+  margin-top: 3em;
+  padding-top: 1em;
+  border-top: 1px solid #e2e8f0;
+  font-size: 9pt;
+  color: #64748b;
+}
+
+.footnotes ol {
+  padding-left: 1.5em;
+}
+
+.footnotes li {
+  margin: 0.5em 0;
+}
+
+/* === 高亮文本 === */
+mark {
+  background-color: #fef08a;
+  padding: 0.1em 0.2em;
+  border-radius: 2px;
+}
+
+/* === 键盘按键样式 === */
+kbd {
+  background-color: #374151;
+  color: #f9fafb;
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-family: 'SF Mono', 'Monaco', monospace;
+  font-size: 9pt;
+  border: 1px solid #6b7280;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}

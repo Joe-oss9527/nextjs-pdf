@@ -3,3 +3,4 @@ psutil>=5.9.0
 jsonschema>=4.17.0
 pathlib2>=2.3.7
 typing-extensions>=4.5.0
+weasyprint>=62.0
