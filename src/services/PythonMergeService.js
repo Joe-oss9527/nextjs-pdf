@@ -61,8 +61,8 @@ export class PythonMergeService extends EventEmitter {
         
         // Python环境配置
         this.pythonConfig = {
-            executable: config.pythonExecutable || 'python3',
-            timeout: config.pythonTimeout || 300000, // 5分钟超时
+            executable: config.python?.executable || config.pythonExecutable || 'python3',
+            timeout: config.python?.timeout || config.pythonTimeout || 300000, // 5分钟超时
             maxBuffer: config.maxBuffer || 1024 * 1024 * 10, // 10MB缓冲区
             encoding: 'utf-8'
         };
