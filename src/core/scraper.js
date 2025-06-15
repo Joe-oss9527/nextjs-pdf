@@ -818,11 +818,11 @@ export class Scraper extends EventEmitter {
   }
 
   /**
-   * 使用Pandoc引擎生成PDF
+   * 使用Pandoc引擎生成PDF - 增强版本，保留原始样式
    */
   async generatePDFWithPandoc(page, pdfPath) {
     try {
-      this.logger.info('使用Pandoc生成PDF', { pdfPath });
+      this.logger.info('使用Pandoc增强引擎生成PDF', { pdfPath });
       
       // 检查pandocPDFService是否可用
       if (!this.pandocPDFService) {
@@ -835,21 +835,34 @@ export class Scraper extends EventEmitter {
         throw new Error(`Pandoc依赖不可用: ${JSON.stringify(status.dependencies)}`);
       }
       
-      // 获取页面HTML内容
-      const htmlContent = await page.content();
-      this.logger.debug('获取页面HTML内容', { length: htmlContent.length });
+      // 获取页面内容（仅获取内容区域的HTML）
+      const htmlContent = await page.evaluate((selector) => {
+        const contentElement = document.querySelector(selector);
+        if (!contentElement) {
+          throw new Error(`内容选择器未找到: ${selector}`);
+        }
+        return contentElement.outerHTML;
+      }, this.config.contentSelector);
       
-      // 使用PandocPDFService生成PDF
-      const result = await this.pandocPDFService.generatePDF(htmlContent, pdfPath);
+      this.logger.debug('获取页面内容HTML', { 
+        length: htmlContent.length,
+        selector: this.config.contentSelector 
+      });
+      
+      // 使用增强版PDF生成方法（保留原始样式）
+      const result = await this.pandocPDFService.generatePDFFromPage(page, htmlContent, pdfPath);
       
       if (!result.success) {
-        throw new Error(`Pandoc PDF生成失败: ${result.error}`);
+        throw new Error(`Pandoc增强PDF生成失败: ${result.error}`);
       }
       
-      this.logger.info(`Pandoc PDF生成成功: ${pdfPath}`);
+      this.logger.info(`Pandoc增强PDF生成成功: ${pdfPath}`, {
+        fileSize: `${(result.fileSize / 1024 / 1024).toFixed(2)}MB`,
+        engine: result.engine
+      });
       
     } catch (error) {
-      this.logger.error('Pandoc PDF生成失败', {
+      this.logger.error('Pandoc增强PDF生成失败', {
         pdfPath,
         error: error.message
       });
@@ -881,11 +894,23 @@ export class Scraper extends EventEmitter {
           return { engine: 'puppeteer', path: puppeteerPath };
         })(),
         
-        // Pandoc版本
+        // Pandoc增强版本 - 保留原始样式
         (async () => {
-          const htmlContent = await page.content();
-          await this.pandocPDFService.generatePDF(htmlContent, pandocPath);
-          return { engine: 'pandoc', path: pandocPath };
+          const htmlContent = await page.evaluate((selector) => {
+            const contentElement = document.querySelector(selector);
+            if (!contentElement) {
+              throw new Error(`内容选择器未找到: ${selector}`);
+            }
+            return contentElement.outerHTML;
+          }, this.config.contentSelector);
+          
+          const result = await this.pandocPDFService.generatePDFFromPage(page, htmlContent, pandocPath);
+          return { 
+            engine: 'pandoc', 
+            path: pandocPath, 
+            fileSize: result.fileSize,
+            enhanced: true 
+          };
         })()
       ]);
 
