@@ -6,6 +6,9 @@ const configSchema = Joi.object({
   rootURL: Joi.string().uri().required()
     .description('Root URL to start scraping from'),
   
+  baseUrl: Joi.string().uri().optional()
+    .description('Base URL prefix - only crawl URLs under this path'),
+  
   pdfDir: Joi.string().required()
     .description('Directory to save PDF files'),
   

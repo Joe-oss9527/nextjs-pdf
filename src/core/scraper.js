@@ -288,6 +288,14 @@ export class Scraper extends EventEmitter {
         return false;
       }
 
+      // 检查baseUrl前缀过滤
+      if (this.config.baseUrl) {
+        if (!url.startsWith(this.config.baseUrl)) {
+          this.logger.debug('URL被baseUrl过滤', { url, baseUrl: this.config.baseUrl });
+          return false;
+        }
+      }
+
       return true;
 
     } catch (error) {
