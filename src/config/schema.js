@@ -3,6 +3,8 @@ import Joi from 'joi';
 
 export const configSchema = Joi.object({
   rootURL: Joi.string().uri().required(),
+  baseUrl: Joi.string().uri().optional()
+    .description('Base URL prefix - only crawl URLs under this path'),
   pdfDir: Joi.string().required(),
   concurrency: Joi.number().integer().min(1).max(10).default(5),
   screenshotDelay: Joi.number().integer().min(0).default(500),

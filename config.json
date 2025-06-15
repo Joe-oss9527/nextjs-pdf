@@ -1,5 +1,6 @@
 {
-  "rootURL": "https://docs.anthropic.com/en/docs/claude-code/overview",
+  "rootURL": "https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering",
+  "baseUrl": "https://docs.anthropic.com/en/docs/build-with-claude/",
   "pdfDir": "pdfs",
   "concurrency": 5,
   "screenshotDelay": 500,

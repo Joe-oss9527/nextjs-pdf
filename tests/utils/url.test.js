@@ -1,5 +1,5 @@
 // tests/utils/url.test.js
-import { normalizeUrl, getUrlHash, validateUrl } from '../../src/utils/url.js';
+import { normalizeUrl, getUrlHash, validateUrl, extractSubfolder } from '../../src/utils/url.js';
 
 describe('URL工具函数', () => {
   describe('normalizeUrl', () => {
@@ -9,8 +9,8 @@ describe('URL工具函数', () => {
     });
 
     test('应该排序查询参数', () => {
-      expect(normalizeUrl('https://example.com?b=2&a=1'))
-        .toBe('https://example.com?a=1&b=2');
+      expect(normalizeUrl('https://example.com/?b=2&a=1'))
+        .toBe('https://example.com/?a=1&b=2');
     });
 
     test('应该移除hash', () => {
@@ -50,6 +50,23 @@ describe('URL工具函数', () => {
     test('处理无效URL', () => {
       expect(validateUrl('invalid-url', ['example.com']))
         .toBe(false);
+    });
+  });
+
+  describe('extractSubfolder', () => {
+    test('应该提取app路径', () => {
+      expect(extractSubfolder('https://example.com/app/dashboard/'))
+        .toEqual({ type: 'app', name: 'dashboard' });
+    });
+
+    test('应该提取pages路径', () => {
+      expect(extractSubfolder('https://example.com/pages/api/'))
+        .toEqual({ type: 'pages', name: 'api' });
+    });
+
+    test('对不匹配的URL返回null', () => {
+      expect(extractSubfolder('https://example.com/docs/'))
+        .toBeNull();
     });
   });
 });
