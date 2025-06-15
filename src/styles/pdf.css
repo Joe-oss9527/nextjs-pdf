@@ -46,19 +46,35 @@ body[data-theme="dark"] {
   color: #1f2937 !important;
 }
 
-/* === 基础文档样式增强 - 保持原有字体但确保可读性 === */
+/* === 强制所有元素移除深色背景 === */
+[data-theme="dark"] *,
+.dark *,
+.dark-mode *,
+.theme-dark * {
+  background-color: transparent !important;
+}
+
+/* === 确保主要内容区域为白色背景 === */
+body, html, main, article, section, div {
+  background-color: #ffffff !important;
+}
+
+/* === 基础文档样式增强 - Kindle阅读器优化 === */
 html {
-  /* 保持原有字体栈，只确保基础可读性 */
-  font-size: 11pt !important;
-  line-height: 1.6 !important;
+  /* Kindle友好字体大小和行距 */
+  font-size: 12pt !important;
+  line-height: 1.5 !important;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  /* 确保打印时背景为白色 */
+  /* 确保白色背景和高对比度文本 */
   background-color: #ffffff !important;
-  color: #1f2937 !important;
+  color: #111827 !important;
+  
+  /* Kindle优化字体 */
+  font-family: Georgia, 'Times New Roman', Times, serif !important;
 }
 
 /* === 标题样式优化 - 保持原始样式但添加分页控制 === */
@@ -119,47 +135,54 @@ p {
   word-wrap: break-word;
 }
 
-/* === 代码块样式优化 - 保留原始高亮，增强打印效果 === */
+/* === 代码块样式优化 - Kindle友好的浅色打印版本 === */
 pre, 
 pre[class*="language-"], 
 pre[class*="hljs"],
+.highlight,
 .highlight pre,
 .code-block,
 .CodeMirror {
-  /* 保持浅色背景以便打印，但不完全覆盖原始样式 */
+  /* 强制浅色背景，确保在所有设备上都清晰可读 */
   background-color: #f8fafc !important;
   color: #1e293b !important;
   
-  /* 增强打印边框和布局 */
-  border: 1px solid #e2e8f0 !important;
-  border-left: 4px solid #3b82f6 !important;
-  border-radius: 8px !important;
-  padding: 1.2em !important;
-  margin: 1.5em 0 !important;
+  /* Kindle优化边框和布局 */
+  border: 1px solid #d1d5db !important;
+  border-left: 3px solid #3b82f6 !important;
+  border-radius: 6px !important;
+  padding: 1em !important;
+  margin: 1.2em 0 !important;
   
-  /* 改善字体和换行，但保持原始字体栈的优先级 */
-  font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', 'Courier New', monospace !important;
-  font-size: 9.5pt !important;
-  line-height: 1.45 !important;
+  /* Kindle友好字体和大小 */
+  font-family: 'Courier New', 'SF Mono', 'Monaco', 'Consolas', monospace !important;
+  font-size: 10pt !important;
+  line-height: 1.4 !important;
   
-  /* 防止代码溢出 */
+  /* 防止代码溢出，优化换行 */
   white-space: pre-wrap !important;
   word-wrap: break-word !important;
   overflow-wrap: break-word !important;
+  word-break: break-word !important;
   page-break-inside: avoid !important;
   max-width: 100% !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: visible !important;
+  
+  /* 去除阴影，优化Kindle显示 */
+  box-shadow: none !important;
 }
 
+/* === 内联代码优化 - Kindle友好版本 === */
 code {
-  font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', 'Courier New', monospace !important;
-  font-size: 9.5pt !important;
+  font-family: 'Courier New', 'SF Mono', 'Monaco', 'Consolas', monospace !important;
+  font-size: 10pt !important;
   background-color: #f1f5f9 !important;
-  color: #475569 !important;
-  padding: 0.2em 0.4em !important;
-  border-radius: 4px !important;
-  border: 1px solid #e2e8f0 !important;
-  word-wrap: break-word;
+  color: #1e293b !important;
+  padding: 0.15em 0.3em !important;
+  border-radius: 3px !important;
+  border: 1px solid #d1d5db !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
 }
 
 pre code {
@@ -184,14 +207,102 @@ pre code {
   color: #1e293b !important;
 }
 
-/* === 确保所有代码元素在深色主题下也是浅色 === */
-[data-theme="dark"] pre *,
-[data-theme="dark"] code *,
-.dark pre *,
-.dark code *,
-.theme-dark pre *,
-.theme-dark code * {
-  background-color: transparent !important;
+/* === 强制所有代码块及子元素转为浅色 - Kindle优化 === */
+pre, pre *,
+code, code *,
+pre[class*="language-"], pre[class*="language-"] *,
+pre[class*="hljs"], pre[class*="hljs"] *,
+.highlight, .highlight *,
+.code-block, .code-block *,
+.CodeMirror, .CodeMirror *,
+[data-theme="dark"] pre, [data-theme="dark"] pre *,
+[data-theme="dark"] code, [data-theme="dark"] code *,
+.dark pre, .dark pre *,
+.dark code, .dark code *,
+.theme-dark pre, .theme-dark pre *,
+.theme-dark code, .theme-dark code * {
+  background-color: #f8fafc !important;
+  color: #1e293b !important;
+}
+
+/* === 语法高亮颜色重置为打印友好版本 === */
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata,
+.hljs-comment {
+  color: #6b7280 !important;
+  font-style: italic !important;
+}
+
+.token.punctuation,
+.hljs-punctuation {
+  color: #374151 !important;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted,
+.hljs-number,
+.hljs-literal {
+  color: #dc2626 !important;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted,
+.hljs-string,
+.hljs-selector-tag {
+  color: #059669 !important;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string,
+.hljs-operator {
+  color: #0891b2 !important;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword,
+.hljs-keyword,
+.hljs-built_in {
+  color: #7c3aed !important;
+  font-weight: 600 !important;
+}
+
+.token.function,
+.token.class-name,
+.hljs-function,
+.hljs-class {
+  color: #1d4ed8 !important;
+  font-weight: 500 !important;
+}
+
+.token.regex,
+.token.important,
+.token.variable,
+.hljs-variable {
+  color: #d97706 !important;
+}
+
+/* === 确保所有白色或浅色文本转为深色 === */
+.token.plain,
+[style*="color: white"],
+[style*="color: #fff"],
+[style*="color: #ffffff"],
+[style*="color: rgb(255, 255, 255)"] {
+  color: #1e293b !important;
 }
 
 /* === 语法高亮 - 专业配色 === */

@@ -274,3 +274,56 @@ The system follows a **"Fix the function, preserve the form"** philosophy:
 - **Flexible Layouts**: Content adapts to various screen sizes without losing original design intent
 - **Print Quality**: Optimized margins and sizing for physical printing and digital reading
 
+#### Critical Style Issues Fixed (June 2025)
+
+##### Problem: White Text Invisible in Code Blocks
+**Issue**: 深色主题的代码块在PDF中保留了深色背景，但白色语法高亮文本变得不可见，特别在Kindle等设备上无法阅读。
+
+**Root Cause**: 
+1. 代码块强制深色背景但未处理内部元素的颜色
+2. 语法高亮token颜色未针对打印优化
+3. 深色主题检测不完整，部分元素仍保持深色样式
+
+**Solution Applied**:
+```javascript
+// 1. 强制所有代码块及子元素转为浅色
+pre, pre *,
+code, code *,
+pre[class*="language-"], pre[class*="language-"] *,
+pre[class*="hljs"], pre[class*="hljs"] * {
+  background-color: #f8fafc !important;
+  color: #1e293b !important;
+}
+
+// 2. 语法高亮颜色重置为打印友好版本
+.token.comment { color: #6b7280 !important; }
+.token.keyword { color: #7c3aed !important; font-weight: 600 !important; }
+.token.string { color: #059669 !important; }
+// ... 完整的语法高亮配色方案
+
+// 3. 智能检测并移除深色主题
+document.querySelectorAll('*').forEach(el => {
+  el.classList.remove('dark', 'dark-mode', 'theme-dark');
+  if (el.hasAttribute('data-theme')) {
+    el.removeAttribute('data-theme');
+  }
+});
+```
+
+**Files Modified**:
+- `src/services/pdfStyleService.js` - 添加强制样式转换和智能主题检测
+- `src/styles/pdf.css` - 完整的语法高亮重置和Kindle优化
+
+**Testing Verification**:
+- ✅ 双引擎PDF生成正常：Puppeteer + Pandoc
+- ✅ 代码块白色文本已转为深色，完全可读
+- ✅ 深色背景已转为浅色，适合Kindle阅读
+- ✅ 语法高亮保持清晰对比度
+- ✅ 原始网页设计美感得到保留
+
+**Prevention Guidelines**:
+1. **必须测试Kindle兼容性**: 所有PDF样式修改后都要验证在电子阅读器上的显示效果
+2. **强制主题转换**: 对于打印文档，必须将深色主题转换为浅色，不能依赖用户设备设置
+3. **语法高亮验证**: 确保所有语法高亮token在白色背景下有足够对比度
+4. **全面元素检查**: 不仅检查容器元素，还要检查所有子元素的颜色设置
+
