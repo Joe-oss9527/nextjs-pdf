@@ -170,7 +170,7 @@ export class PDFStyleService {
         overflow-wrap: break-word !important;
       }
 
-      /* === 深色主题代码块转换 === */
+      /* === 深色主题代码块强制转换为浅色打印版本 === */
       [data-theme="dark"] pre,
       [data-theme="dark"] code,
       .dark pre,
@@ -179,6 +179,77 @@ export class PDFStyleService {
       .theme-dark code {
         background-color: #f8fafc !important;
         color: #1e293b !important;
+      }
+
+      /* === 强制所有代码块及其子元素转为浅色 === */
+      pre, pre *,
+      code, code *,
+      pre[class*="language-"], pre[class*="language-"] *,
+      pre[class*="hljs"], pre[class*="hljs"] *,
+      .highlight, .highlight *,
+      .code-block, .code-block *,
+      .CodeMirror, .CodeMirror * {
+        background-color: #f8fafc !important;
+        color: #1e293b !important;
+      }
+
+      /* === 语法高亮颜色重置为打印友好版本 === */
+      .token.comment,
+      .token.prolog,
+      .token.doctype,
+      .token.cdata {
+        color: #6b7280 !important;
+        font-style: italic !important;
+      }
+
+      .token.punctuation {
+        color: #374151 !important;
+      }
+
+      .token.property,
+      .token.tag,
+      .token.boolean,
+      .token.number,
+      .token.constant,
+      .token.symbol,
+      .token.deleted {
+        color: #dc2626 !important;
+      }
+
+      .token.selector,
+      .token.attr-name,
+      .token.string,
+      .token.char,
+      .token.builtin,
+      .token.inserted {
+        color: #059669 !important;
+      }
+
+      .token.operator,
+      .token.entity,
+      .token.url,
+      .language-css .token.string,
+      .style .token.string {
+        color: #0891b2 !important;
+      }
+
+      .token.atrule,
+      .token.attr-value,
+      .token.keyword {
+        color: #7c3aed !important;
+        font-weight: 600 !important;
+      }
+
+      .token.function,
+      .token.class-name {
+        color: #1d4ed8 !important;
+        font-weight: 500 !important;
+      }
+
+      .token.regex,
+      .token.important,
+      .token.variable {
+        color: #d97706 !important;
       }
 
       /* === 基础分页控制 === */
@@ -285,6 +356,14 @@ export class PDFStyleService {
         document.body.removeAttribute('data-theme');
         document.documentElement.setAttribute('data-theme', 'light');
         
+        // 移除所有元素的深色主题相关类和属性
+        document.querySelectorAll('*').forEach(el => {
+          el.classList.remove('dark', 'dark-mode', 'theme-dark');
+          if (el.hasAttribute('data-theme')) {
+            el.removeAttribute('data-theme');
+          }
+        });
+        
         // === 最小干预：仅添加换行支持，保留原始样式 ===
         const codeElements = document.querySelectorAll(`
           pre, 
@@ -296,7 +375,7 @@ export class PDFStyleService {
         `);
         
         codeElements.forEach(el => {
-          // 仅添加换行支持，不改变原始样式
+          // 添加换行支持和强制浅色样式
           el.style.setProperty('white-space', 'pre-wrap', 'important');
           el.style.setProperty('word-wrap', 'break-word', 'important');
           el.style.setProperty('overflow-wrap', 'break-word', 'important');
@@ -304,6 +383,10 @@ export class PDFStyleService {
           el.style.setProperty('overflow-x', 'visible', 'important');
           el.style.setProperty('max-width', '100%', 'important');
           el.style.setProperty('box-sizing', 'border-box', 'important');
+          
+          // 强制设置浅色背景和深色文本
+          el.style.setProperty('background-color', '#f8fafc', 'important');
+          el.style.setProperty('color', '#1e293b', 'important');
         });
         
         // === 确保代码块内元素也支持换行 ===
@@ -317,12 +400,33 @@ export class PDFStyleService {
         `);
         
         codeChildren.forEach(el => {
-          // 仅添加换行支持，保留原始颜色和样式
+          // 添加换行支持并确保文本可见
           el.style.setProperty('white-space', 'pre-wrap', 'important');
           el.style.setProperty('word-wrap', 'break-word', 'important');
           el.style.setProperty('overflow-wrap', 'break-word', 'important');
           el.style.setProperty('overflow', 'visible', 'important');
           el.style.setProperty('max-width', '100%', 'important');
+          
+          // 确保所有代码子元素都有适当的颜色对比度
+          const computedColor = window.getComputedStyle(el).color;
+          const computedBg = window.getComputedStyle(el).backgroundColor;
+          
+          // 检查是否是白色或接近白色的文本
+          if (computedColor && (computedColor.includes('rgb(255, 255, 255)') || 
+                               computedColor.includes('#fff') || 
+                               computedColor.includes('#ffffff') || 
+                               computedColor.includes('white'))) {
+            el.style.setProperty('color', '#1e293b', 'important');
+          }
+          
+          // 检查是否是深色背景
+          if (computedBg && (computedBg.includes('rgb(0, 0, 0)') || 
+                            computedBg.includes('#000') || 
+                            computedBg.includes('#111') || 
+                            computedBg.includes('#222') || 
+                            computedBg.includes('#333'))) {
+            el.style.setProperty('background-color', 'transparent', 'important');
+          }
         });
 
         // 替换body内容（保持所有原始样式）
