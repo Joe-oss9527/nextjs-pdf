@@ -76,8 +76,6 @@ class PDFMerger:
         # 加载文章标题
         self.article_titles = self._load_article_titles()
 
-        self.logger.info(f"PDF合并器初始化完成 - PDF目录: {self.pdf_dir}")
-
     def _setup_logger(self) -> logging.Logger:
         """设置默认日志记录器"""
         logger = logging.getLogger('PDFMerger')
@@ -88,7 +86,7 @@ class PDFMerger:
             )
             handler.setFormatter(formatter)
             logger.addHandler(handler)
-            logger.setLevel(logging.INFO)
+            logger.setLevel(logging.WARNING)  # Only show warnings and errors
         return logger
 
     def _load_config(self, config_path: str) -> Dict[str, Any]:
@@ -123,7 +121,7 @@ class PDFMerger:
             if os.path.exists(metadata_file):
                 with open(metadata_file, 'r', encoding='utf-8') as f:
                     article_titles = json.load(f)
-                    self.logger.info(f"从元数据目录加载了 {len(article_titles)} 个文章标题")
+                    pass  # Loaded article titles from metadata
 
             # 回退到PDF目录
             if not article_titles:
@@ -131,7 +129,7 @@ class PDFMerger:
                 if os.path.exists(fallback_file):
                     with open(fallback_file, 'r', encoding='utf-8') as f:
                         article_titles = json.load(f)
-                        self.logger.info(f"从PDF目录加载了 {len(article_titles)} 个文章标题")
+                        pass  # Loaded article titles from PDF directory
 
         except Exception as e:
             self.logger.warning(f"加载文章标题失败: {e}")
@@ -154,7 +152,6 @@ class PDFMerger:
         """
         try:
             if not os.path.exists(directory_path):
-                self.logger.warning(f"目录不存在: {directory_path}")
                 return []
 
             all_files = os.listdir(directory_path)
@@ -247,15 +244,10 @@ class PDFMerger:
                 else:
                     other_files.append(f)
 
-            # 输出排序信息
-            engine_info = f" ({engine_filter}引擎)" if engine_filter else ""
-            self.logger.info(f"找到 {len(files)} 个PDF文件在 {directory_path}{engine_info}")
-            if numeric_files:
-                self.logger.info(f"  ✓ {len(numeric_files)} 个数字前缀文件 (按索引顺序)")
-            if hash_files:
-                self.logger.info(f"  ✓ {len(hash_files)} 个哈希前缀文件 (按时间顺序)")
-            if other_files:
-                self.logger.info(f"  ✓ {len(other_files)} 个其他文件 (按名称顺序)")
+            # Only log if there are significant numbers of files
+            if len(files) > 10:
+                engine_info = f" ({engine_filter} engine)" if engine_filter else ""
+                self.logger.info(f"Found {len(files)} PDF files in {directory_path}{engine_info}")
 
             self.logger.debug(f"排序后文件列表前5个: {files[:5]}")
             return files
@@ -358,7 +350,6 @@ class PDFMerger:
         try:
             files = self._get_pdf_files(directory_path, engine_filter)
             if not files:
-                self.logger.warning(f"目录中没有PDF文件: {directory_path}")
                 return False
 
             merged_pdf = None
@@ -371,7 +362,7 @@ class PDFMerger:
                 merged_pdf = fitz.open()  # 创建空的PDF文档
                 toc = []  # 目录结构
 
-                self.logger.info(f"开始合并 {len(files)} 个PDF文件到 {output_path}")
+                # Starting merge operation (logging reduced for cleaner output)
 
                 for i, filename in enumerate(files):
                     try:
@@ -440,11 +431,9 @@ class PDFMerger:
                 # 设置目录结构
                 if toc:
                     merged_pdf.set_toc(toc)
-                    self.logger.info(f"设置了 {len(toc)} 个书签")
 
                 # 保存合并后的PDF
                 merged_pdf.save(output_path)
-                self.logger.info(f"PDF合并完成: {output_path}")
 
                 return True
 
@@ -528,7 +517,7 @@ class PDFMerger:
                                 self.logger.debug(f"跳过项目: {item} (非目录或特殊目录)")
                                 continue
 
-                            self.logger.info(f"处理子目录: {item}")
+                            pass  # Processing subdirectory silently
                             
                             # 单引擎模式：正常合并
                             output_path = os.path.join(
@@ -581,7 +570,6 @@ class PDFMerger:
     def run(self) -> Dict[str, Any]:
         """运行PDF合并任务"""
         self.stats['start_time'] = time.time()
-        self.logger.info("开始PDF合并任务（智能排序版本）")
 
         try:
             # 执行合并
@@ -596,9 +584,7 @@ class PDFMerger:
                 'statistics': stats
             }
 
-            self.logger.info(f"PDF合并任务完成: 处理了 {stats['files_processed']} 个文件, "
-                           f"共 {stats['total_pages']} 页, "
-                           f"用时 {stats['elapsed_time']:.1f} 秒")
+            # Task completed successfully (detailed stats printed separately)
 
             return result
 
@@ -618,18 +604,18 @@ def main():
     import sys
     import argparse
 
-    parser = argparse.ArgumentParser(description='智能PDF合并工具')
-    parser.add_argument('--config', default='config.json', help='配置文件路径')
-    parser.add_argument('--directory', help='指定要合并的目录名')
-    parser.add_argument('--verbose', '-v', action='store_true', help='详细输出')
+    parser = argparse.ArgumentParser(description='Smart PDF Merger Tool')
+    parser.add_argument('--config', default='config.json', help='Configuration file path')
+    parser.add_argument('--directory', help='Specify directory name to merge')
+    parser.add_argument('--verbose', '-v', action='store_true', help='Verbose output')
 
     args = parser.parse_args()
 
     # 设置日志级别
     if args.verbose:
-        logging.basicConfig(level=logging.DEBUG)
-    else:
         logging.basicConfig(level=logging.INFO)
+    else:
+        logging.basicConfig(level=logging.WARNING)
 
     try:
         # 创建PDF合并器
@@ -642,27 +628,27 @@ def main():
             result = merger.run()
             merged_files = result.get('merged_files', [])
 
-        # 输出结果
-        print(f"\n✅ 合并完成! 生成了 {len(merged_files)} 个PDF文件:")
+        # Output results  
+        print(f"\n✅ Merge completed! Generated {len(merged_files)} PDF file(s):")
         for file_path in merged_files:
             print(f"  📄 {file_path}")
 
-        # 输出统计信息
+        # Output statistics
         stats = merger.get_statistics()
-        print(f"\n📊 统计信息:")
-        print(f"  - 处理文件数: {stats['files_processed']}")
-        print(f"  - 总页数: {stats['total_pages']}")
-        print(f"  - 用时: {stats['elapsed_time']:.1f} 秒")
-        print(f"  - 内存峰值: {stats['memory_peak_mb']:.1f} MB")
+        print(f"\n📊 Statistics:")
+        print(f"  - Files processed: {stats['files_processed']}")
+        print(f"  - Total pages: {stats['total_pages']}")
+        print(f"  - Duration: {stats['elapsed_time']:.1f} seconds")
+        print(f"  - Memory peak: {stats['memory_peak_mb']:.1f} MB")
 
         if stats['errors_count'] > 0:
-            print(f"  ⚠️  错误数: {stats['errors_count']}")
+            print(f"  ⚠️  Errors: {stats['errors_count']}")
 
         return 0
 
     except Exception as e:
-        print(f"❌ 执行失败: {e}", file=sys.stderr)
-        print(f"错误详情: {traceback.format_exc()}", file=sys.stderr)
+        print(f"❌ Execution failed: {e}", file=sys.stderr)
+        print(f"Error details: {traceback.format_exc()}", file=sys.stderr)
         return 1
 
 if __name__ == '__main__':
