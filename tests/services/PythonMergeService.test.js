@@ -216,7 +216,23 @@ describe('PythonMergeService', () => {
           this.emit('progress', { current: 5, total: 10, percentage: 50 });
         }, 10);
         
-        return mockSpawn(args);
+        const result = await mockSpawn(args);
+        
+        // Mimic the real implementation behavior - reject on non-zero exit code
+        if (result.exitCode !== 0) {
+          const error = new Error(`Python脚本执行失败: 退出码 ${result.exitCode}`);
+          error.name = 'PythonMergeError';
+          error.code = 'PYTHON_SCRIPT_FAILED';
+          error.details = {
+            exitCode: result.exitCode,
+            stdout: result.stdout.trim(),
+            stderr: result.stderr.trim(),
+            args
+          };
+          throw error;
+        }
+        
+        return result;
       }
 
       _parseResult(result) {
@@ -420,8 +436,11 @@ describe('PythonMergeService', () => {
 
     it('should handle partial failures', async () => {
       const directories = ['./pdfs1', './pdfs2'];
+      
+      // Clear the default mock and set up specific responses
+      mockSpawn.mockReset();
       mockSpawn
-        .mockResolvedValueOnce({ exitCode: 0, stdout: '{"success": true}', stderr: '' })
+        .mockResolvedValueOnce({ exitCode: 0, stdout: '{"success": true, "filesProcessed": 5, "totalPages": 25}', stderr: '' })
         .mockResolvedValueOnce({ exitCode: 1, stdout: '', stderr: 'Error' });
 
       const result = await pythonMergeService.mergeBatch(directories);
@@ -431,6 +450,8 @@ describe('PythonMergeService', () => {
         successful: 1,
         failed: 1
       });
+      expect(result.errors).toHaveLength(1);
+      expect(result.errors[0].directory).toBe('./pdfs2');
     });
   });
 
