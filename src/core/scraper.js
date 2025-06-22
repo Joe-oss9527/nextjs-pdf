@@ -266,12 +266,12 @@ export class Scraper extends EventEmitter {
    */
   validateUrl(url) {
     try {
-      // 基础URL验证
-      if (!utilValidateUrl(url, this.config.allowedDomains)) {
+      const parsedUrl = new URL(url);
+
+      // 检查协议
+      if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
         return false;
       }
-
-      const parsedUrl = new URL(url);
 
       // 检查允许的域名
       if (this.config.allowedDomains && this.config.allowedDomains.length > 0) {
@@ -281,11 +281,6 @@ export class Scraper extends EventEmitter {
         if (!isAllowed) {
           return false;
         }
-      }
-
-      // 检查协议
-      if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-        return false;
       }
 
       // 检查baseUrl前缀过滤

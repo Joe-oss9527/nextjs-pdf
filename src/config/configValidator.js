@@ -343,15 +343,38 @@ function validatePartialConfig(partialConfig, requiredFields = []) {
   const logger = createLogger('ConfigValidator');
   
   try {
-    // 创建只包含指定字段的模式
-    const partialSchema = Joi.object().keys(
-      Object.fromEntries(
-        Object.entries(configSchema.describe().keys)
-          .filter(([key]) => requiredFields.length === 0 || requiredFields.includes(key))
-      )
-    );
+    // 简单的部分验证：验证提供的字段，不要求所有字段都存在
+    let validationResult;
     
-    const { error, value } = partialSchema.validate(partialConfig, {
+    if (requiredFields.length > 0) {
+      // 检查必需字段是否存在
+      const missingFields = requiredFields.filter(field => !(field in partialConfig));
+      if (missingFields.length > 0) {
+        return {
+          valid: false,
+          config: null,
+          errors: missingFields.map(field => ({
+            message: `"${field}" is required`,
+            path: [field],
+            type: 'any.required'
+          })),
+          warnings: []
+        };
+      }
+    }
+    
+    // 对提供的字段进行验证，使用完整schema但允许未知字段
+    const fullConfig = {
+      // 提供必需的占位符值
+      rootURL: partialConfig.rootURL || 'https://example.com',
+      pdfDir: partialConfig.pdfDir || './pdfs',
+      navLinksSelector: partialConfig.navLinksSelector || 'nav a',
+      contentSelector: partialConfig.contentSelector || 'main',
+      // 合并实际的部分配置
+      ...partialConfig
+    };
+    
+    const { error, value } = configSchema.validate(fullConfig, {
       allowUnknown: true,
       stripUnknown: false
     });
@@ -371,11 +394,17 @@ function validatePartialConfig(partialConfig, requiredFields = []) {
       };
     }
     
+    // 只返回原始提供的字段
+    const resultConfig = {};
+    Object.keys(partialConfig).forEach(key => {
+      resultConfig[key] = value[key];
+    });
+    
     logger.debug('Partial configuration validation passed');
     
     return {
       valid: true,
-      config: value,
+      config: resultConfig,
       errors: [],
       warnings: []
     };
@@ -399,10 +428,25 @@ function getConfigSchema() {
  * @returns {Object} 默认配置
  */
 function getDefaultConfig() {
-  const { value } = configSchema.validate({}, { 
+  // 提供最小必需的配置来生成默认值
+  const minimalConfig = {
+    rootURL: 'https://example.com',
+    pdfDir: './pdfs',
+    navLinksSelector: 'nav a',
+    contentSelector: 'main'
+  };
+  
+  const { value } = configSchema.validate(minimalConfig, { 
     allowUnknown: false,
     stripUnknown: true 
   });
+  
+  // 清除我们添加的占位符值，只保留默认值
+  delete value.rootURL;
+  delete value.pdfDir;
+  delete value.navLinksSelector;
+  delete value.contentSelector;
+  
   return value;
 }
 
