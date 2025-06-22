@@ -353,9 +353,15 @@ describe('ImageService', () => {
     });
 
     it('should retry if images dont load', async () => {
+      // Override the triggerLazyLoading mock for this test
+      imageService.triggerLazyLoading.mockResolvedValueOnce({
+        totalLazyImages: 3,
+        triggered: 3,
+        allImagesLoaded: false  // This triggers the retry logic
+      });
+
       imageService.waitForImages
         .mockResolvedValueOnce(true) // Initial wait
-        .mockResolvedValueOnce(false) // After lazy loading
         .mockResolvedValueOnce(false) // First retry
         .mockResolvedValueOnce(true); // Second retry
 

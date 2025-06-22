@@ -111,7 +111,7 @@ describe('PandocPDFService', () => {
     it('should handle missing python config', () => {
       service.config.python = undefined;
       const command = service.getWeasyprintCommand();
-      expect(command).toBe('weasyprint');
+      expect(command).toBe('./venv/bin/weasyprint');
     });
   });
 

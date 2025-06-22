@@ -460,7 +460,7 @@ export class ImageService extends EventEmitter {
 
       // 多次尝试确保所有图片都加载
       let attempts = 0;
-      let allLoaded = false;
+      let allLoaded = lazyResult.allImagesLoaded;
 
       while (attempts < config.maxScrollAttempts && !allLoaded) {
         await this.scrollPage(page);
@@ -521,7 +521,8 @@ export class ImageService extends EventEmitter {
       }
 
       // 执行页面相关的清理
-      return this.cleanupPage(page);
+      await this.cleanupPage(page);
+      return;
 
     } catch (error) {
       this.logger?.warn('清理图片服务资源时发生错误', { error: error.message });
@@ -574,12 +575,14 @@ export class ImageService extends EventEmitter {
     try {
       this.logger?.debug('开始清理图片服务（全局清理）...');
 
+      // 先触发事件，确保监听器能够接收到
+      this.emit('dispose-complete');
+
       // 全局清理，不依赖页面对象
       this.resetStats();
       this.removeAllListeners();
 
       this.logger?.debug('图片服务全局清理完成');
-      this.emit('dispose-complete');
 
     } catch (error) {
       this.logger?.error('图片服务全局清理失败', { error: error.message });

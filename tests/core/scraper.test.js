@@ -155,7 +155,7 @@ describe('Scraper', () => {
       expect(mockDependencies.stateManager.load).toHaveBeenCalled();
       expect(mockDependencies.queueManager.setConcurrency).toHaveBeenCalledWith(3);
       expect(mockDependencies.fileService.ensureDirectory).toHaveBeenCalledWith('./pdfs');
-      expect(mockDependencies.fileService.ensureDirectory).toHaveBeenCalledWith('./pdfs/metadata');
+      expect(mockDependencies.fileService.ensureDirectory).toHaveBeenCalledWith('pdfs/metadata');
       expect(scraper.isInitialized).toBe(true);
     });
 

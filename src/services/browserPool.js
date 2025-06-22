@@ -416,9 +416,10 @@ export class BrowserPool extends EventEmitter {
     if (invalidBrowsers.length > 0) {
       this.logger?.info(`清理 ${invalidBrowsers.length} 个无效浏览器实例`);
       
-      invalidBrowsers.forEach(browser => {
-        this.handleBrowserDisconnect(browser);
-      });
+      // Use Promise.all to wait for all disconnect handlers
+      await Promise.all(
+        invalidBrowsers.map(browser => this.handleBrowserDisconnect(browser))
+      );
     }
   }
 
