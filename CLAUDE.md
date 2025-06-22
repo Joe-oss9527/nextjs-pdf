@@ -4,7 +4,7 @@ This file provides guidance to Claude Code when working with this repository.
 
 ## Project Overview
 
-Documentation PDF scraper with dual-engine PDF generation (Puppeteer + Pandoc). Scrapes documentation pages and converts them to PDF using dependency injection architecture.
+Documentation PDF scraper with Puppeteer PDF generation. Scrapes documentation pages and converts them to PDF using dependency injection architecture.
 
 ## Quick Start
 
@@ -35,18 +35,14 @@ make lint
 Key options in `config.json`:
 - `rootURL` - Starting point for scraping
 - `baseUrl` - URL prefix filter (optional)
-- `engine` - PDF engine: `"puppeteer"`, `"pandoc"`, or `"both"`
+- `engine` - PDF engine: `"puppeteer"` (only option)
 - `concurrency` - Parallel scrapers
 
-## PDF Engines
+## PDF Engine
 
-1. **Puppeteer** - Fast, good for development
-2. **Pandoc** - High quality, better typography
-3. **Both** - Compare output quality (slower)
+**Puppeteer** - Fast, reliable PDF generation with good typography and styling
 
-File naming:
-- Single: `001-page.pdf`
-- Dual: `001-page_puppeteer.pdf`, `001-page_pandoc.pdf`
+File naming: `001-page.pdf`
 
 ## Development Guidelines
 
@@ -81,12 +77,11 @@ npm run test:watch  # Watch mode
 # Check Python environment
 make python-info
 
-# Test engines individually
-# Set config.json "engine": "puppeteer" or "pandoc"
+# Test PDF generation
+# Config is automatically set to "puppeteer"
 
-# Verify dependencies
+# Verify Python dependencies (for merging)
 ./venv/bin/python -c "import fitz; print('PyMuPDF OK')"
-pandoc --version
 ```
 
 ## Common Issues
@@ -101,7 +96,7 @@ pandoc --version
 
 **Dark theme code blocks**: Dark backgrounds with white text become unreadable in PDFs.
 - **Solution**: Force light backgrounds and dark text for all code elements
-- **Files**: `src/services/pdfStyleService.js`, `src/styles/pdf.css`
+- **Files**: `src/services/pdfStyleService.js`
 
 **Syntax highlighting broken**: Code loses readability when themes are converted.
 - **Solution**: Reset all syntax highlighting tokens to print-friendly colors

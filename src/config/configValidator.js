@@ -123,7 +123,7 @@ const configSchema = Joi.object({
   // PDF生成配置
   pdf: Joi.object({
     // PDF引擎选择
-    engine: Joi.string().valid('puppeteer', 'pandoc', 'both').default('puppeteer')
+    engine: Joi.string().valid('puppeteer').default('puppeteer')
       .description('PDF generation engine'),
     
     // 主题配置
@@ -172,19 +172,7 @@ const configSchema = Joi.object({
       .description('Generate PDF bookmarks'),
     
     maxMemoryMB: Joi.number().integer().min(100).max(2000).default(500)
-      .description('Maximum memory usage for PDF operations (MB)'),
-    
-    // Pandoc专用配置
-    pandoc: Joi.object({
-      pdfEngine: Joi.string().valid('weasyprint', 'prince', 'wkhtmltopdf', 'pagedjs-cli').default('weasyprint')
-        .description('Pandoc PDF engine'),
-      
-      cssFile: Joi.string().default('src/styles/pdf.css')
-        .description('CSS file path for Pandoc styling'),
-      
-      options: Joi.array().items(Joi.string()).default(['--standalone', '--self-contained'])
-        .description('Additional Pandoc command options')
-    }).default().description('Pandoc-specific configuration')
+      .description('Maximum memory usage for PDF operations (MB)')
   }).default().description('PDF generation settings'),
 
   // Python集成配置
@@ -344,7 +332,6 @@ function validatePartialConfig(partialConfig, requiredFields = []) {
   
   try {
     // 简单的部分验证：验证提供的字段，不要求所有字段都存在
-    let validationResult;
     
     if (requiredFields.length > 0) {
       // 检查必需字段是否存在

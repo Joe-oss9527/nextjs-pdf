@@ -111,17 +111,6 @@ describe('Scraper', () => {
           printBackground: true
         })
       },
-      pandocPDFService: {
-        getStatus: jest.fn().mockResolvedValue({
-          status: 'ready',
-          dependencies: { pandoc: true, wkhtmltopdf: true }
-        }),
-        generatePDFFromPage: jest.fn().mockResolvedValue({
-          success: true,
-          fileSize: 1024 * 1024,
-          engine: 'pandoc'
-        })
-      }
     };
 
     scraper = new Scraper(mockDependencies);
@@ -309,23 +298,7 @@ describe('Scraper', () => {
       expect(mockPage.goto).not.toHaveBeenCalled();
     });
 
-    it('should use Pandoc engine when configured', async () => {
-      scraper.config.pdf.engine = 'pandoc';
 
-      await scraper.scrapePage(testUrl, testIndex);
-
-      expect(mockDependencies.pandocPDFService.generatePDFFromPage).toHaveBeenCalled();
-      expect(mockPage.pdf).not.toHaveBeenCalled();
-    });
-
-    it('should generate both PDF versions when configured', async () => {
-      scraper.config.pdf.engine = 'both';
-
-      await scraper.scrapePage(testUrl, testIndex);
-
-      expect(mockPage.pdf).toHaveBeenCalled();
-      expect(mockDependencies.pandocPDFService.generatePDFFromPage).toHaveBeenCalled();
-    });
 
     it('should handle page navigation errors', async () => {
       mockPage.goto.mockRejectedValue(new Error('Navigation timeout'));

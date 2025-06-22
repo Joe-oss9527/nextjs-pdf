@@ -36,7 +36,7 @@ export const configSchema = Joi.object({
   }).default(),
   
   pdf: Joi.object({
-    engine: Joi.string().valid('puppeteer', 'pandoc', 'both').default('puppeteer'),
+    engine: Joi.string().valid('puppeteer').default('puppeteer'),
     theme: Joi.string().valid('light', 'dark').default('light'),
     preserveCodeHighlighting: Joi.boolean().default(true),
     enableCodeWrap: Joi.boolean().default(true),
@@ -46,12 +46,7 @@ export const configSchema = Joi.object({
     quality: Joi.string().valid('low', 'medium', 'high').default('high'),
     compression: Joi.boolean().default(true),
     bookmarks: Joi.boolean().default(true),
-    maxMemoryMB: Joi.number().integer().min(100).max(2000).default(500),
-    pandoc: Joi.object({
-      pdfEngine: Joi.string().valid('weasyprint', 'prince', 'wkhtmltopdf', 'pagedjs-cli').default('weasyprint'),
-      cssFile: Joi.string().default('src/styles/pdf.css'),
-      options: Joi.array().items(Joi.string()).default(['--standalone', '--self-contained'])
-    }).default()
+    maxMemoryMB: Joi.number().integer().min(100).max(2000).default(500)
   }).default(),
   
   // Python服务配置
