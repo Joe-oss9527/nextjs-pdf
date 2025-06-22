@@ -14,7 +14,6 @@ import { BrowserPool } from '../services/browserPool.js';
 import { PageManager } from '../services/pageManager.js';
 import { ImageService } from '../services/imageService.js';
 import { PDFStyleService } from '../services/pdfStyleService.js';
-import { PandocPDFService } from '../services/PandocPDFService.js';
 import { Scraper } from './scraper.js';
 import { PythonMergeService } from '../services/PythonMergeService.js';
 
@@ -180,14 +179,6 @@ async function setupContainer() {
             lifecycle: 'singleton'
         });
 
-        // Pandoc PDF服务
-        container.register('pandocPDFService', (config, fileService, pathService) => {
-            return new PandocPDFService(config, fileService, pathService);
-        }, {
-            singleton: true,
-            dependencies: ['config', 'fileService', 'pathService'],
-            lifecycle: 'singleton'
-        });
 
         // 7. 注册核心爬虫服务
 
@@ -204,8 +195,7 @@ async function setupContainer() {
             progressTracker,
             queueManager,
             imageService,
-            pdfStyleService,    // 添加 pdfStyleService
-            pandocPDFService    // 添加 pandocPDFService
+            pdfStyleService     // 添加 pdfStyleService
         ) => {
             const scraper = new Scraper({
                 config,
@@ -219,8 +209,7 @@ async function setupContainer() {
                 progressTracker,
                 queueManager,
                 imageService,
-                pdfStyleService,    // 传递 pdfStyleService
-                pandocPDFService    // 传递 pandocPDFService
+                pdfStyleService     // 传递 pdfStyleService
             });
 
             await scraper.initialize();
@@ -239,8 +228,7 @@ async function setupContainer() {
                 'progressTracker',
                 'queueManager',
                 'imageService',
-                'pdfStyleService',  // 添加依赖
-                'pandocPDFService'  // 添加依赖
+                'pdfStyleService'   // 添加依赖
             ],
             lifecycle: 'singleton'
         });

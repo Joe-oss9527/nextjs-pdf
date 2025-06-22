@@ -1,15 +1,13 @@
 # Next.js PDF Documentation Scraper
 
-## 🚀 Dual-Engine PDF Generation System
+## 🚀 Puppeteer PDF Generation System
 
-A modern, enterprise-ready web scraper that converts documentation pages into high-quality PDF files. Features **dual-engine PDF generation** with intelligent merging, modular dependency injection architecture, and comprehensive monitoring capabilities.
+A modern, enterprise-ready web scraper that converts documentation pages into high-quality PDF files. Features **Puppeteer PDF generation** with intelligent merging, modular dependency injection architecture, and comprehensive monitoring capabilities.
 
 ## ✨ Key Features
 
-### 🎯 Dual-Engine PDF Generation
+### 🎯 PDF Generation
 - **Puppeteer Engine** - Fast Chrome/Chromium-based PDF generation
-- **Pandoc + Weasyprint Engine** - High-quality typography and print optimization
-- **Intelligent Comparison** - Generate both versions simultaneously for quality comparison
 - **Smart Styling** - Minimal intervention approach preserving original web design
 - **E-reader Optimization** - Kindle-compatible PDFs with proper tagging
 
@@ -25,7 +23,7 @@ A modern, enterprise-ready web scraper that converts documentation pages into hi
 - **State Management** - Incremental scraping with resume capability
 - **Browser Pool Management** - Efficient Puppeteer instance handling
 - **Queue Management** - Concurrent processing with rate limiting
-- **Python Integration** - Seamless PDF merging with dual-engine detection
+- **Python Integration** - Seamless PDF merging
 - **Real-time Monitoring** - Health checks and performance metrics
 
 ## 🚀 Quick Start
@@ -81,11 +79,10 @@ npm run start:clean     # Clean output and run
 npm test               # Run integration tests
 ```
 
-## 🎨 PDF Generation Modes
+## 🎨 PDF Generation
 
-Configure the PDF generation engine in `config.json`:
+PDF generation uses Puppeteer engine configured in `config.json`:
 
-### 1. Puppeteer Only
 ```json
 {
   "pdf": {
@@ -95,31 +92,7 @@ Configure the PDF generation engine in `config.json`:
 ```
 - **Output**: `001-page-name.pdf`, `002-page-name.pdf`
 - **Final**: `domain_date.pdf`
-- **Best for**: Fast generation, development
-
-### 2. Pandoc Only
-```json
-{
-  "pdf": {
-    "engine": "pandoc"
-  }
-}
-```
-- **Output**: `001-page-name.pdf`, `002-page-name.pdf`
-- **Final**: `domain_date.pdf`
-- **Best for**: High-quality typography, final output
-
-### 3. Dual Engine (Recommended)
-```json
-{
-  "pdf": {
-    "engine": "both"
-  }
-}
-```
-- **Output**: `001-page-name_puppeteer.pdf`, `001-page-name_pandoc.pdf`
-- **Final**: `domain_puppeteer_date.pdf`, `domain_pandoc_date.pdf`
-- **Best for**: Quality comparison, comprehensive output
+- **Best for**: Fast generation, consistent quality
 
 ## 📁 Project Structure
 
@@ -145,18 +118,15 @@ nextjs-pdf/
 │   │   ├── pageManager.js       # Page lifecycle management
 │   │   ├── imageService.js      # Image processing
 │   │   ├── pdfStyleService.js   # PDF styling optimization
-│   │   ├── pandocPDFService.js  # Pandoc PDF generation
 │   │   └── pythonMergeService.js # PDF merging service
 │   ├── utils/
 │   │   ├── logger.js            # Structured logging
 │   │   ├── errors.js            # Custom error classes
 │   │   ├── common.js            # Common utilities
 │   │   └── url.js              # URL processing
-│   ├── python/
-│   │   ├── pdf_merger.py        # Dual-engine PDF merger
-│   │   └── config_manager.py    # Python config handler
-│   └── styles/
-│       └── pdf.css             # PDF styling and Kindle optimization
+│   └── python/
+│       ├── pdf_merger.py        # PDF merger
+│       └── config_manager.py    # Python config handler
 ├── tests/                       # Test suites
 ├── Makefile                    # Build automation
 ├── config.json                 # Application configuration
@@ -175,18 +145,13 @@ nextjs-pdf/
   "pdfDir": "pdfs",
   "concurrency": 5,
   "pdf": {
-    "engine": "both",
+    "engine": "puppeteer",
     "theme": "light",
     "preserveCodeHighlighting": true,
     "enableCodeWrap": true,
     "fontSize": "14px",
     "fontFamily": "system-ui, sans-serif",
-    "codeFont": "SFMono-Regular, Consolas, monospace",
-    "pandoc": {
-      "pdfEngine": "weasyprint",
-      "cssFile": "src/styles/pdf.css",
-      "options": ["--standalone", "--self-contained"]
-    }
+    "codeFont": "SFMono-Regular, Consolas, monospace"
   },
   "python": {
     "executable": "./venv/bin/python",
@@ -233,10 +198,10 @@ npm run lint:fix
 
 ### Test Coverage
 
-- ✅ **Dual-Engine PDF Generation** - Both Puppeteer and Pandoc engines
+- ✅ **PDF Generation** - Puppeteer engine
 - ✅ **Dependency Injection** - Container and service resolution
 - ✅ **Configuration System** - Loading and validation
-- ✅ **Python Integration** - Script execution and dual-engine merging
+- ✅ **Python Integration** - Script execution and PDF merging
 - ✅ **Browser Management** - Pool and page lifecycle
 - ✅ **Error Handling** - Exception management and recovery
 - ✅ **PDF Styling** - Code wrapping and theme conversion
@@ -281,16 +246,13 @@ container.register('myService', (config, logger) => {
 ### Testing Different PDF Engines
 
 1. **Clean State**: Always run `make clean` before testing
-2. **Test Engines**: 
+2. **Test PDF Generation**: 
    ```bash
-   # Test individual engines
-   # Set config.json "engine": "puppeteer" and run
-   # Set config.json "engine": "pandoc" and run
-   
-   # Test dual engine
-   # Set config.json "engine": "both" and run
+   # Test PDF generation
+   # Run with Puppeteer engine (default)
+   make clean && make run
    ```
-3. **Compare Output**: Dual engine mode creates separate PDFs for comparison
+3. **Verify Output**: Check generated PDFs in the output directory
 
 ## 🚨 Troubleshooting
 
@@ -311,7 +273,6 @@ make python-info
 make clean && make run
 
 # Check dependencies
-pandoc --version
 ./venv/bin/python -c "import fitz; print('PyMuPDF OK')"
 ```
 
@@ -331,8 +292,6 @@ pandoc --version
 
 ### Python Dependencies
 - **PyMuPDF** - PDF processing and merging
-- **Pandoc** - Document conversion
-- **Weasyprint** - HTML to PDF conversion
 
 ## 🏆 Performance
 
@@ -340,7 +299,7 @@ pandoc --version
 - **Container Creation**: ~0.4ms average
 - **Concurrent Processing**: Up to 10 parallel scrapers
 - **Memory Optimization**: Automatic cleanup and resource management
-- **Dual-Engine Generation**: Intelligent parallel processing
+- **Optimized PDF Generation**: Efficient Puppeteer-based processing
 
 ## 📜 License
 
@@ -349,7 +308,7 @@ This project is licensed under the ISC License.
 ## 🙏 Acknowledgments
 
 - **Puppeteer Team** - Browser automation excellence
-- **Pandoc/Weasyprint** - High-quality document conversion
+- **PyMuPDF** - Powerful PDF processing
 - **Winston** - Structured logging
 - **Joi** - Configuration validation
 - **PyMuPDF** - Powerful PDF processing

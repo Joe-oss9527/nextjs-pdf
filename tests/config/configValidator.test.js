@@ -117,7 +117,7 @@ describe('ConfigValidator', () => {
         navLinksSelector: 'nav a',
         contentSelector: 'main',
         pdf: {
-          engine: 'pandoc',
+          engine: 'puppeteer',
           format: 'A3',
           margin: {
             top: '2cm',
@@ -129,7 +129,7 @@ describe('ConfigValidator', () => {
 
       const result = validateConfig(config);
 
-      expect(result.config.pdf.engine).toBe('pandoc');
+      expect(result.config.pdf.engine).toBe('puppeteer');
       expect(result.config.pdf.format).toBe('A3');
       expect(result.config.pdf.margin.top).toBe('2cm');
       expect(result.config.pdf.quality).toBe('high');
@@ -147,6 +147,21 @@ describe('ConfigValidator', () => {
       };
 
       expect(() => validateConfig(config)).toThrow(ValidationError);
+    });
+
+    test('应该只接受puppeteer作为PDF引擎', () => {
+      const config = {
+        rootURL: 'https://example.com',
+        pdfDir: './pdfs',
+        navLinksSelector: 'nav a',
+        contentSelector: 'main',
+        pdf: {
+          engine: 'puppeteer'
+        }
+      };
+
+      const result = validateConfig(config);
+      expect(result.config.pdf.engine).toBe('puppeteer');
     });
 
     test('应该验证Python配置', () => {
@@ -423,7 +438,7 @@ describe('ConfigValidator', () => {
           userAgent: 'Mozilla/5.0 PDF Scraper'
         },
         pdf: {
-          engine: 'both',
+          engine: 'puppeteer',
           format: 'A4',
           margin: { top: '2cm', right: '2cm', bottom: '2cm', left: '2cm' },
           printBackground: true,
@@ -443,7 +458,7 @@ describe('ConfigValidator', () => {
 
       expect(result.valid).toBe(true);
       expect(result.config.concurrency).toBe(8);
-      expect(result.config.pdf.engine).toBe('both');
+      expect(result.config.pdf.engine).toBe('puppeteer');
       expect(result.config.browser.userAgent).toBe('Mozilla/5.0 PDF Scraper');
     });
 

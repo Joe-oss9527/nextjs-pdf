@@ -4,7 +4,6 @@
  */
 
 import { createLogger } from '../utils/logger.js';
-import { delay } from '../utils/common.js';
 
 export class PDFStyleService {
   constructor(config = {}) {

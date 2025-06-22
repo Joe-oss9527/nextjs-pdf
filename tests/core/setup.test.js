@@ -62,9 +62,6 @@ jest.mock('../../src/services/imageService.js', () => ({
 jest.mock('../../src/services/pdfStyleService.js', () => ({
   PDFStyleService: jest.fn()
 }));
-jest.mock('../../src/services/PandocPDFService.js', () => ({
-  PandocPDFService: jest.fn()
-}));
 jest.mock('../../src/core/scraper.js', () => ({
   Scraper: jest.fn().mockImplementation(() => ({
     initialize: jest.fn().mockResolvedValue()
@@ -181,11 +178,6 @@ describe('setup', () => {
         lifecycle: 'singleton'
       }));
 
-      expect(mockContainer.register).toHaveBeenCalledWith('pandocPDFService', expect.any(Function), expect.objectContaining({
-        singleton: true,
-        dependencies: ['config', 'fileService', 'pathService'],
-        lifecycle: 'singleton'
-      }));
 
       expect(mockContainer.register).toHaveBeenCalledWith('scraper', expect.any(Function), expect.objectContaining({
         singleton: true,
@@ -201,8 +193,7 @@ describe('setup', () => {
           'progressTracker',
           'queueManager',
           'imageService',
-          'pdfStyleService',
-          'pandocPDFService'
+          'pdfStyleService'
         ],
         lifecycle: 'singleton'
       }));
@@ -214,7 +205,7 @@ describe('setup', () => {
       }));
 
       // Verify total number of services registered
-      expect(mockContainer.register).toHaveBeenCalledTimes(15);
+      expect(mockContainer.register).toHaveBeenCalledTimes(14);
 
       // Verify validation and preloading
       expect(mockContainer.validateDependencies).toHaveBeenCalled();
@@ -362,8 +353,7 @@ describe('setup', () => {
         'progressTracker',
         'queueManager',
         'imageService',
-        'pdfStyleService',
-        'pandocPDFService'
+        'pdfStyleService'
       ];
       
       await scraperFactory(...services);
@@ -379,8 +369,7 @@ describe('setup', () => {
         progressTracker: 'progressTracker',
         queueManager: 'queueManager',
         imageService: 'imageService',
-        pdfStyleService: 'pdfStyleService',
-        pandocPDFService: 'pandocPDFService'
+        pdfStyleService: 'pdfStyleService'
       });
     });
   });
