@@ -8,4 +8,6 @@
 module.exports = {
     // Changes the cache location for Puppeteer.
     downloadBaseUrl:"https://cdn.npmmirror.com/binaries/chrome-for-testing",
+    // Use latest stable Chrome version
+    browserRevision: "latest",
 };
