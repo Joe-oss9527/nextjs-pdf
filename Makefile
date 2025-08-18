@@ -6,7 +6,7 @@ VENV_PYTHON = $(VENV_DIR)/bin/python
 VENV_PIP = $(VENV_DIR)/bin/pip
 NODE_MODULES = node_modules
 
-.PHONY: help install install-python install-node venv clean-venv clean clean-all run test lint
+.PHONY: help install install-python install-node venv clean-venv clean clean-all run test lint kindle7 kindle-paperwhite kindle-oasis kindle-scribe kindle-all reset-config list-configs clean-kindle
 
 help:
 	@echo "Available commands:"
@@ -21,6 +21,16 @@ help:
 	@echo "  lint          - Run linter"
 	@echo "  clean         - Clean generated PDFs and metadata"
 	@echo "  clean-all     - Clean everything including dependencies"
+	@echo ""
+	@echo "Kindle PDF optimization:"
+	@echo "  kindle7           - Generate PDFs for Kindle 7-inch"
+	@echo "  kindle-paperwhite - Generate PDFs for Kindle Paperwhite"
+	@echo "  kindle-oasis      - Generate PDFs for Kindle Oasis"
+	@echo "  kindle-scribe     - Generate PDFs for Kindle Scribe"
+	@echo "  kindle-all        - Generate PDFs for all Kindle devices"
+	@echo "  reset-config      - Reset to base configuration"
+	@echo "  list-configs      - List all available configurations"
+	@echo "  clean-kindle      - Clean Kindle PDF files"
 
 # Create Python virtual environment with enhanced checking
 venv:
@@ -131,3 +141,81 @@ python-info: check-venv
 	@echo "Pip version: $$($(VENV_PIP) --version)"
 	@echo "Installed packages:"
 	@$(VENV_PIP) list
+
+# Kindle PDF optimization commands
+CONFIG_SCRIPT = scripts/use-kindle-config.js
+
+# Generate PDFs for Kindle 7-inch
+kindle7:
+	@echo "🔧 切换到Kindle 7英寸配置..."
+	@node $(CONFIG_SCRIPT) use kindle7
+	@echo "🧹 清理旧文件..."
+	@rm -rf pdfs/finalPdf-kindle7
+	@echo "📄 生成Kindle 7英寸优化PDF..."
+	@node src/app.js
+	@echo "✅ Kindle 7英寸PDF生成完成"
+	@echo "📍 PDF位置: pdfs/finalPdf-kindle7/"
+
+# Generate PDFs for Kindle Paperwhite
+kindle-paperwhite:
+	@echo "🔧 切换到Kindle Paperwhite配置..."
+	@node $(CONFIG_SCRIPT) use paperwhite
+	@echo "🧹 清理旧文件..."
+	@rm -rf pdfs/finalPdf-paperwhite
+	@echo "📄 生成Kindle Paperwhite优化PDF..."
+	@node src/app.js
+	@echo "✅ Kindle Paperwhite PDF生成完成"
+	@echo "📍 PDF位置: pdfs/finalPdf-paperwhite/"
+
+# Generate PDFs for Kindle Oasis
+kindle-oasis:
+	@echo "🔧 切换到Kindle Oasis配置..."
+	@node $(CONFIG_SCRIPT) use oasis
+	@echo "🧹 清理旧文件..."
+	@rm -rf pdfs/finalPdf-oasis
+	@echo "📄 生成Kindle Oasis优化PDF..."
+	@node src/app.js
+	@echo "✅ Kindle Oasis PDF生成完成"
+	@echo "📍 PDF位置: pdfs/finalPdf-oasis/"
+
+# Generate PDFs for Kindle Scribe
+kindle-scribe:
+	@echo "🔧 切换到Kindle Scribe配置..."
+	@node $(CONFIG_SCRIPT) use scribe
+	@echo "🧹 清理旧文件..."
+	@rm -rf pdfs/finalPdf-scribe
+	@echo "📄 生成Kindle Scribe优化PDF..."
+	@node src/app.js
+	@echo "✅ Kindle Scribe PDF生成完成"
+	@echo "📍 PDF位置: pdfs/finalPdf-scribe/"
+
+# Generate PDFs for all Kindle devices
+kindle-all: kindle7 kindle-paperwhite kindle-oasis kindle-scribe
+	@echo "🎉 所有Kindle设备PDF生成完成！"
+	@echo ""
+	@echo "生成的PDF文件："
+	@echo "  - pdfs/finalPdf-kindle7/"
+	@echo "  - pdfs/finalPdf-paperwhite/"
+	@echo "  - pdfs/finalPdf-oasis/"
+	@echo "  - pdfs/finalPdf-scribe/"
+	@echo ""
+	@echo "请将这些PDF传输到相应设备进行验证"
+
+# Reset to base configuration
+reset-config:
+	@echo "🔄 重置为基础配置..."
+	@node $(CONFIG_SCRIPT) reset
+	@echo "✅ 配置已重置"
+
+# List all configurations
+list-configs:
+	@node $(CONFIG_SCRIPT) list
+
+# Clean Kindle PDF files
+clean-kindle:
+	@echo "🧹 清理所有Kindle PDF文件..."
+	@rm -rf pdfs/finalPdf-kindle7
+	@rm -rf pdfs/finalPdf-paperwhite
+	@rm -rf pdfs/finalPdf-oasis
+	@rm -rf pdfs/finalPdf-scribe
+	@echo "✅ 清理完成"

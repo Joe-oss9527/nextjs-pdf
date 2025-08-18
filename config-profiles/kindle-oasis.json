@@ -1,0 +1,18 @@
+{
+  "output": {
+    "finalPdfDirectory": "finalPdf-oasis"
+  },
+  "pdf": {
+    "deviceProfile": "oasis",
+    "fontSize": "17px",
+    "lineHeight": "1.65",
+    "codeFontSize": "14px",
+    "maxCodeLineLength": 80,
+    "margin": {
+      "top": "0.6in",
+      "right": "0.4in",
+      "bottom": "0.6in",
+      "left": "0.4in"
+    }
+  }
+}

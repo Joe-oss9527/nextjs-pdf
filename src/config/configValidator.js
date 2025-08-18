@@ -145,22 +145,55 @@ const configSchema = Joi.object({
     codeFont: Joi.string().default('SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace')
       .description('Font family for code blocks'),
     
+    // Kindle特定优化选项
+    kindleOptimized: Joi.boolean().default(false)
+      .description('Enable Kindle-specific optimizations'),
+    
+    deviceProfile: Joi.string().valid('default', 'kindle7', 'paperwhite', 'oasis', 'scribe').default('default')
+      .description('Device profile for optimized PDF generation'),
+    
+    codeFontSize: Joi.string().default('13px')
+      .description('Font size specifically for code blocks'),
+    
+    lineHeight: Joi.string().default('1.5')
+      .description('Line height for improved readability'),
+    
+    maxCodeLineLength: Joi.number().integer().min(40).max(120).default(80)
+      .description('Maximum character length for code lines before wrapping'),
+    
     // Puppeteer PDF配置
-    format: Joi.string().valid('A4', 'A3', 'Letter', 'Legal').default('A4')
+    format: Joi.string().valid('A4', 'A3', 'Letter', 'Legal', 'Tabloid').default('A4')
       .description('PDF page format'),
     
-    margin: Joi.object({
-      top: Joi.string().default('1cm'),
-      right: Joi.string().default('1cm'),
-      bottom: Joi.string().default('1cm'),
-      left: Joi.string().default('1cm')
-    }).default().description('PDF margins'),
+    pageFormat: Joi.string().valid('A4', 'A3', 'Letter', 'Legal', 'Tabloid').optional()
+      .description('Alternative page format specification'),
+    
+    margin: Joi.alternatives().try(
+      Joi.object({
+        top: Joi.string().default('1cm'),
+        right: Joi.string().default('1cm'),
+        bottom: Joi.string().default('1cm'),
+        left: Joi.string().default('1cm')
+      }),
+      Joi.string().valid('narrow', 'normal', 'wide')
+    ).default({
+      top: '1cm',
+      right: '1cm',
+      bottom: '1cm',
+      left: '1cm'
+    }).description('PDF margins'),
     
     printBackground: Joi.boolean().default(true)
       .description('Include background graphics in PDF'),
     
     displayHeaderFooter: Joi.boolean().default(false)
       .description('Display header and footer in PDF'),
+    
+    preferCSSPageSize: Joi.boolean().default(false)
+      .description('Use CSS-defined page size over format'),
+    
+    tagged: Joi.boolean().default(false)
+      .description('Generate tagged PDF for better accessibility'),
     
     quality: Joi.string().valid('low', 'medium', 'high').default('high')
       .description('PDF generation quality'),
