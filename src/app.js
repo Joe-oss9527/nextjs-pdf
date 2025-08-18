@@ -149,8 +149,35 @@ class Application {
 
             const pythonMergeService = await this.container.get('pythonMergeService');
 
+            // 动态获取PDF目录
+            const fs = await import('fs/promises');
+            const path = await import('path');
+            const config = await this.container.get('config');
+            const pdfDir = config.pdfDir || 'pdfs';
+            
+            // 查找PDF源目录（排除finalPdf和metadata）
+            let targetDirectory = null;
+            try {
+                const items = await fs.readdir(pdfDir);
+                for (const item of items) {
+                    const itemPath = path.join(pdfDir, item);
+                    const stat = await fs.stat(itemPath);
+                    if (stat.isDirectory() && 
+                        !item.startsWith('finalPdf') && 
+                        item !== 'metadata' && 
+                        item !== '.temp') {
+                        targetDirectory = item;
+                        break;
+                    }
+                }
+            } catch (error) {
+                this.logger.warn('无法读取PDF目录，使用默认合并方式', { error: error.message });
+            }
+
             // 使用新的Python合并服务
-            const result = await pythonMergeService.mergePDFs();
+            const result = await pythonMergeService.mergePDFs(
+                targetDirectory ? { directory: targetDirectory } : {}
+            );
 
             const mergeTime = Date.now() - mergeStartTime;
 

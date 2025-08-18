@@ -216,10 +216,10 @@ describe('PDFStyleService', () => {
           left: '1.5cm'
         },
         printBackground: true,
-        preferCSSPageSize: true,
+        preferCSSPageSize: false,
         displayHeaderFooter: false,
         scale: 1,
-        tagged: true
+        tagged: false
       });
     });
   });

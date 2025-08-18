@@ -1,0 +1,20 @@
+{
+  "output": {
+    "finalPdfDirectory": "finalPdf-scribe"
+  },
+  "pdf": {
+    "deviceProfile": "scribe",
+    "fontSize": "18px",
+    "lineHeight": "1.7",
+    "codeFontSize": "15px",
+    "maxCodeLineLength": 90,
+    "format": "A4",
+    "pageFormat": "A4",
+    "margin": {
+      "top": "1cm",
+      "right": "1cm",
+      "bottom": "1cm",
+      "left": "1cm"
+    }
+  }
+}

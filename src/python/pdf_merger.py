@@ -339,6 +339,46 @@ class PDFMerger:
         except Exception:
             pass  # 内存监控失败不应影响主流程
 
+    def _generate_friendly_filename(self, directory_name: str, current_date: str) -> str:
+        """
+        生成用户友好的PDF文件名
+        
+        转换规则：
+        - docs.anthropic.com-docs -> Claude-Code-Docs
+        - github.com-docs -> GitHub-Docs  
+        - example.com-api -> Example-API
+        """
+        try:
+            # 移除常见的域名后缀和前缀
+            clean_name = directory_name
+            
+            # 处理 docs.anthropic.com-docs 格式
+            if 'anthropic.com' in clean_name:
+                clean_name = 'Claude-Code-Docs'
+            elif 'github.com' in clean_name:
+                clean_name = 'GitHub-Docs'
+            else:
+                # 通用处理：移除域名部分，只保留内容类型
+                if '-' in clean_name:
+                    parts = clean_name.split('-')
+                    # 取最后一部分作为内容类型
+                    content_type = parts[-1]
+                    if '.' in parts[0]:
+                        # 提取域名的主要部分
+                        domain_parts = parts[0].split('.')
+                        main_domain = domain_parts[-2] if len(domain_parts) > 1 else domain_parts[0]
+                        clean_name = f"{main_domain.title()}-{content_type.title()}"
+                    else:
+                        clean_name = content_type.title()
+                else:
+                    clean_name = clean_name.replace('.', '-').title()
+            
+            return f"{clean_name}_{current_date}.pdf"
+            
+        except Exception as e:
+            self.logger.warning(f"文件名优化失败，使用原始名称: {e}")
+            return f"{directory_name}_{current_date}.pdf"
+
     def merge_pdfs_stream(
         self,
         directory_path: str,
@@ -428,9 +468,13 @@ class PDFMerger:
                         # 继续处理下一个文件
                         continue
 
-                # 设置目录结构
-                if toc:
+                # 设置目录结构（如果启用了书签功能）
+                bookmarks_enabled = self.config.get('pdf', {}).get('bookmarks', True)
+                if bookmarks_enabled and toc:
                     merged_pdf.set_toc(toc)
+                    self.logger.info(f"已创建PDF目录，包含 {len(toc)} 个书签")
+                elif not bookmarks_enabled:
+                    self.logger.info("书签功能已禁用，跳过目录创建")
 
                 # 保存合并后的PDF
                 merged_pdf.save(output_path)
@@ -473,10 +517,10 @@ class PDFMerger:
             # 确保输出目录存在
             os.makedirs(self.final_pdf_dir, exist_ok=True)
 
-            # 获取域名和日期
+            # 获取域名和时间戳（包含秒）
             url = urlparse(self.config['rootURL'])
             domain = url.hostname.replace('.', '_') if url.hostname else 'unknown'
-            current_date = datetime.now().strftime('%Y%m%d')
+            current_date = datetime.now().strftime('%Y%m%d_%H%M%S')
 
             merged_files = []
 
@@ -485,9 +529,10 @@ class PDFMerger:
                 directory_path = os.path.join(self.pdf_dir, directory_name)
                 if os.path.isdir(directory_path):
                     # 单引擎模式：正常合并
+                    friendly_filename = self._generate_friendly_filename(directory_name, current_date)
                     output_path = os.path.join(
                         self.final_pdf_dir,
-                        f"{directory_name}_{current_date}.pdf"
+                        friendly_filename
                     )
                     if self.merge_pdfs_stream(directory_path, output_path):
                         merged_files.append(output_path)

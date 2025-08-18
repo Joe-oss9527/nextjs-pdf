@@ -18,10 +18,60 @@ export class PDFStyleService {
       maxCodeLineLength: 80,
       fontSize: '14px',
       fontFamily: 'system-ui, -apple-system, sans-serif',
-      codeFont: 'Monaco, Consolas, "Liberation Mono", "Courier New", monospace'
+      codeFont: 'Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+      codeFontSize: '13px',
+      lineHeight: '1.5',
+      kindleOptimized: false,
+      deviceProfile: 'default'
     };
     
     this.settings = { ...this.defaults, ...config };
+    
+    // 设备配置预设
+    this.deviceProfiles = {
+      default: {},
+      kindle7: {
+        fontSize: '16px',
+        codeFontSize: '13px',
+        lineHeight: '1.6',
+        maxCodeLineLength: 70,
+        format: 'Letter',
+        margin: { top: '0.8in', right: '0.5in', bottom: '0.8in', left: '0.5in' }
+      },
+      paperwhite: {
+        fontSize: '16px',
+        codeFontSize: '14px',
+        lineHeight: '1.6',
+        maxCodeLineLength: 75,
+        format: 'Letter',
+        margin: { top: '0.7in', right: '0.5in', bottom: '0.7in', left: '0.5in' }
+      },
+      oasis: {
+        fontSize: '17px',
+        codeFontSize: '14px',
+        lineHeight: '1.65',
+        maxCodeLineLength: 80,
+        format: 'Letter',
+        margin: { top: '0.6in', right: '0.4in', bottom: '0.6in', left: '0.4in' }
+      },
+      scribe: {
+        fontSize: '18px',
+        codeFontSize: '15px',
+        lineHeight: '1.7',
+        maxCodeLineLength: 90,
+        format: 'A4',
+        margin: { top: '1cm', right: '1cm', bottom: '1cm', left: '1cm' }
+      }
+    };
+    
+    // 应用设备配置
+    if (this.settings.deviceProfile && this.settings.deviceProfile !== 'default') {
+      const profile = this.deviceProfiles[this.settings.deviceProfile];
+      if (profile) {
+        this.settings = { ...this.settings, ...profile };
+        this.logger.info('应用设备配置文件', { profile: this.settings.deviceProfile });
+      }
+    }
   }
 
   /**
@@ -103,6 +153,55 @@ export class PDFStyleService {
    * 获取最小干预的PDF优化CSS - 保留原始样式，仅解决关键问题
    */
   getPDFOptimizedCSS() {
+    const fontSize = this.settings.fontSize || '14px';
+    const codeFontSize = this.settings.codeFontSize || '13px';
+    const lineHeight = this.settings.lineHeight || '1.5';
+    const maxCodeLength = this.settings.maxCodeLineLength || 80;
+    const fontFamily = this.settings.fontFamily || 'system-ui, -apple-system, sans-serif';
+    const codeFont = this.settings.codeFont || 'Consolas, Monaco, monospace';
+    
+    // Kindle优化的特殊样式
+    const kindleStyles = this.settings.kindleOptimized ? `
+      /* === Kindle特定优化 === */
+      body {
+        font-size: ${fontSize} !important;
+        line-height: ${lineHeight} !important;
+        font-family: ${fontFamily} !important;
+      }
+      
+      p, li, td, th {
+        font-size: ${fontSize} !important;
+        line-height: ${lineHeight} !important;
+      }
+      
+      /* 优化代码块在小屏幕上的显示 */
+      pre, code {
+        font-size: ${codeFontSize} !important;
+        font-family: ${codeFont} !important;
+        max-width: ${maxCodeLength}ch !important;
+      }
+      
+      /* 确保图片适应Kindle屏幕 */
+      img {
+        max-width: 100% !important;
+        height: auto !important;
+        page-break-inside: avoid !important;
+      }
+      
+      /* 优化表格显示 */
+      table {
+        font-size: calc(${fontSize} * 0.9) !important;
+        width: 100% !important;
+        border-collapse: collapse !important;
+      }
+      
+      /* 减少标题大小差异，提高一致性 */
+      h1 { font-size: calc(${fontSize} * 1.5) !important; }
+      h2 { font-size: calc(${fontSize} * 1.3) !important; }
+      h3 { font-size: calc(${fontSize} * 1.15) !important; }
+      h4, h5, h6 { font-size: ${fontSize} !important; }
+    ` : '';
+    
     return `
       /* === 基础打印优化 - 保持原始样式基础 === */
       * {
@@ -293,6 +392,8 @@ export class PDFStyleService {
         visibility: visible !important;
       }
 
+      ${kindleStyles}
+      
       /* === Kindle优化 - 改善阅读体验 === */
       @media print {
         /* 确保在小屏设备上代码能正确换行 */
@@ -466,21 +567,59 @@ export class PDFStyleService {
    * 获取优化的PDF生成选项 - 针对Kindle等设备优化
    */
   getPDFOptions() {
-    return {
-      format: 'A4',
-      margin: {
-        top: '1.5cm',
-        right: '1.5cm', 
-        bottom: '1.5cm',
-        left: '1.5cm'
-      },
+    // 基础选项
+    let options = {
+      format: this.settings.format || 'A4',
       printBackground: true,
-      preferCSSPageSize: true,  // 使用CSS页面设置
+      preferCSSPageSize: this.settings.preferCSSPageSize || false,
       displayHeaderFooter: false,
       scale: 1,
-      // 优化文本渲染
-      tagged: true,  // 生成带标签的PDF，改善屏幕阅读器体验
+      tagged: this.settings.tagged || false
     };
+    
+    // 处理页边距
+    if (this.settings.margin) {
+      if (typeof this.settings.margin === 'string') {
+        // 预设页边距
+        const marginPresets = {
+          narrow: { top: '0.5in', right: '0.5in', bottom: '0.5in', left: '0.5in' },
+          normal: { top: '1in', right: '1in', bottom: '1in', left: '1in' },
+          wide: { top: '1.5in', right: '1.5in', bottom: '1.5in', left: '1.5in' }
+        };
+        options.margin = marginPresets[this.settings.margin] || marginPresets.normal;
+      } else {
+        options.margin = this.settings.margin;
+      }
+    } else {
+      options.margin = {
+        top: '1.5cm',
+        right: '1.5cm',
+        bottom: '1.5cm',
+        left: '1.5cm'
+      };
+    }
+    
+    // Kindle优化
+    if (this.settings.kindleOptimized) {
+      options = {
+        ...options,
+        format: this.settings.pageFormat || this.settings.format || 'Letter',
+        tagged: true,  // 提高可访问性
+        preferCSSPageSize: true,
+        // 针对Kindle的特殊设置
+        ...(this.settings.deviceProfile === 'kindle7' ? {
+          scale: 0.95  // 稍微缩小以适应7英寸屏幕
+        } : {})
+      };
+      
+      this.logger.debug('应用Kindle优化的PDF选项', { 
+        deviceProfile: this.settings.deviceProfile,
+        format: options.format,
+        margin: options.margin 
+      });
+    }
+    
+    return options;
   }
 
   /**

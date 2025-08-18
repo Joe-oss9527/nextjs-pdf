@@ -1,0 +1,18 @@
+{
+  "output": {
+    "finalPdfDirectory": "finalPdf-paperwhite"
+  },
+  "pdf": {
+    "deviceProfile": "paperwhite",
+    "fontSize": "16px",
+    "lineHeight": "1.6",
+    "codeFontSize": "14px",
+    "maxCodeLineLength": 75,
+    "margin": {
+      "top": "0.7in",
+      "right": "0.5in",
+      "bottom": "0.7in",
+      "left": "0.5in"
+    }
+  }
+}

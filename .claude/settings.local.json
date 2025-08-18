@@ -3,7 +3,12 @@
     "allow": [
       "Bash(find:*)",
       "WebFetch(domain:stackoverflow.com)",
-      "WebFetch(domain:pptr.dev)"
+      "WebFetch(domain:pptr.dev)",
+      "WebSearch",
+      "Bash(pdfinfo:*)",
+      "Bash(rm:*)",
+      "Bash(node:*)",
+      "WebFetch(domain:docs.anthropic.com)"
     ],
     "deny": []
   }

@@ -1,103 +1,131 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code when working with this repository.
+Project-specific instructions for efficient development and maintenance.
 
-## Project Overview
+## Project Context
 
-Documentation PDF scraper with Puppeteer PDF generation. Scrapes documentation pages and converts them to PDF using dependency injection architecture.
+- **Purpose**: Documentation PDF scraper with Puppeteer-based PDF generation
+- **Architecture**: Dependency injection with modular services
+- **Target**: Kindle-optimized PDFs from web documentation
+- **Current Status**: Production-ready with comprehensive test coverage (556 tests)
 
-## Quick Start
+## Essential Commands
 
 ```bash
+# Complete workflow (most common)
+make clean && make run
+
 # Setup (run once)
 make install
 
-# Daily workflow
-make clean && make run
+# Quality assurance (always run before commits)
+make test && make lint
 
-# Development
-make test
-make lint
+# Kindle device profiles
+make kindle-oasis    # Single device
+make kindle-all      # All devices
 ```
-
-## Architecture
-
-- **Application**: `src/app.js` - Main entry point
-- **Core**: `src/core/` - Container, scraper, setup
-- **Services**: `src/services/` - Modular services with dependency injection
-- **Config**: `src/config/` - Configuration loading and validation
-- **Python**: `src/python/` - PDF merging scripts
-
-## Configuration
-
-⚠️ **Important**: Add new config options to `src/config/configValidator.js`, not `schema.js`.
-
-Key options in `config.json`:
-- `rootURL` - Starting point for scraping
-- `baseUrl` - URL prefix filter (optional)
-- `engine` - PDF engine: `"puppeteer"` (only option)
-- `concurrency` - Parallel scrapers
-
-## PDF Engine
-
-**Puppeteer** - Fast, reliable PDF generation with good typography and styling
-
-File naming: `001-page.pdf`
 
 ## Development Guidelines
 
-### Service Architecture
-- Services registered in `src/core/setup.js`
-- Use dependency injection container
-- Implement cleanup methods
+### Code Standards
+- **Indentation**: 2 spaces (JavaScript), 4 spaces (Python)
+- **Testing**: Write tests for all new features - maintain 556+ passing tests
+- **Error Handling**: Use custom error classes from `src/utils/errors.js`
+- **Logging**: Use `createLogger('ServiceName')` with levels: error, warn, info, debug
 
-### Configuration
-- Access via `await container.get('config')`
-- Validate with Joi schemas
+### Architecture Patterns
+- **Services**: Register in `src/core/setup.js` with dependency injection
+- **Configuration**: Always validate new options in `src/config/configValidator.js`
+- **State Management**: Use `stateManager` for persistence, not direct file operations
+- **PDF Processing**: Puppeteer for generation, PyMuPDF for merging
 
-### Logging
-- Use `createLogger('ServiceName')`
-- Levels: error, warn, info, debug
+## Configuration Management
 
-### Testing
+### Critical Rules
+- **New config options**: Add to `src/config/configValidator.js` first, never just `schema.js`
+- **Device profiles**: Store only overrides in `config-profiles/*.json`
+- **Security**: All paths validated through `validateSafePath()` function
+
+### Key Settings
+- `rootURL`: Starting point for scraping
+- `concurrency`: Parallel scrapers (default: 5)
+- `pdf.bookmarks`: Enable TOC generation (required: true)
+- `pdf.kindleOptimized`: Device-specific optimizations (required: true)
+
+### Workflow Efficiency
+
+**Preferred**: Use Makefile commands (handles config automatically)
 ```bash
-npm test        # Run tests
-npm run test:watch  # Watch mode
+make kindle-oasis    # Switches config + runs generation
+make kindle-all      # All device profiles
 ```
 
-### PDF Styling
-- Philosophy: "Fix function, preserve form"
-- Minimal intervention approach
-- Preserve original website design
-- Convert dark themes for print readability
-
-## Debugging
-
+**Manual**: For debugging config issues only
 ```bash
-# Check Python environment
-make python-info
-
-# Test PDF generation
-# Config is automatically set to "puppeteer"
-
-# Verify Python dependencies (for merging)
-./venv/bin/python -c "import fitz; print('PyMuPDF OK')"
+node scripts/use-kindle-config.js current  # Check status
+node scripts/use-kindle-config.js use oasis
 ```
 
-## Common Issues
+Available profiles: `kindle7`, `paperwhite`, `oasis`, `scribe`
 
-### Configuration
-**Config options not working**: Verify you added them to `configValidator.js`, not just `schema.js`.
+## PDF Generation Process
 
-### Testing
-**Clean before testing**: Always run `make clean` before testing to avoid stale files.
+### Critical Workflow Order
+1. **Scrape first**: Always run scraping to collect page titles
+2. **Then merge**: PDF merger requires `articleTitles.json` for proper TOC
+3. **Never skip scraping**: Empty title mapping causes generic "Docs YYYYMMDD" TOC entries
 
-### PDF Styling Issues
+### File Naming Convention
+- Individual PDFs: `001-page-name.pdf` (zero-padded index)
+- Final merged: `docs.example.com_YYYYMMDD.pdf`
 
-**Dark theme code blocks**: Dark backgrounds with white text become unreadable in PDFs.
-- **Solution**: Force light backgrounds and dark text for all code elements
-- **Files**: `src/services/pdfStyleService.js`
+## Testing & Quality
 
-**Syntax highlighting broken**: Code loses readability when themes are converted.
-- **Solution**: Reset all syntax highlighting tokens to print-friendly colors
-- **Prevention**: Test all code blocks in generated PDFs, especially on e-readers
+### Test Requirements
+- **Before any commit**: Run `make test` (must show 556+ tests passing)
+- **New features**: Write corresponding tests
+- **Clean state**: Always `make clean` before testing
+
+### PDF Styling Philosophy
+- **"Fix function, preserve form"**: Minimal intervention approach
+- **Dark theme handling**: Convert to print-friendly colors in `pdfStyleService.js`
+- **Code blocks**: Force light backgrounds, dark text for readability
+- **E-reader optimization**: Test on actual devices when possible
+
+## Troubleshooting Guide
+
+### Environment Issues
+```bash
+make python-info                    # Check Python setup
+./venv/bin/python -c "import fitz"  # Verify PyMuPDF
+make clean-venv                     # Recreate Python environment
+```
+
+### PDF TOC Problems
+- **Generic titles**: Run scraping first to populate `pdfs/metadata/articleTitles.json`
+- **Missing bookmarks**: Ensure `pdf.bookmarks: true` in config
+- **Wrong order**: Check file naming uses zero-padded indices
+
+### Configuration Debugging
+```bash
+node scripts/use-kindle-config.js current  # Show active config
+make list-configs                           # Available profiles
+```
+
+## Security & Best Practices
+
+### Security Requirements
+- **Path validation**: All file operations use `validateSafePath()`
+- **Input sanitization**: Configuration scripts validate all inputs
+- **No secrets**: Never commit API keys or credentials
+
+### Performance Guidelines
+- **Memory monitoring**: PDF merger tracks peak usage
+- **Concurrent limits**: Respect `concurrency` setting for scraping
+- **Cleanup**: Services implement proper `dispose()` methods
+
+### Common Pitfalls
+- **Config validation**: New options MUST be added to `configValidator.js`
+- **Circular references**: Deep merge functions handle circular objects safely
+- **Test isolation**: Clean state between test runs prevents false positives

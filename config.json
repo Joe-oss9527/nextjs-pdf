@@ -6,14 +6,20 @@
   "screenshotDelay": 500,
   "navLinksSelector": "main #navigation-items #sidebar-group a[href]:not([href='#'])",
   "contentSelector": "#content-area",
-  "ignoreURLs": ["docs/pages", "docs/app/api-reference"],
+  "ignoreURLs": [
+    "docs/pages",
+    "docs/app/api-reference"
+  ],
   "maxRetries": 3,
   "retryDelay": 1000,
   "pageTimeout": 45000,
   "browserTimeout": 45000,
   "navigationRetries": 4,
   "imageTimeout": 10000,
-  "allowedDomains": ["docs.anthropic.com", "anthropic.com"],
+  "allowedDomains": [
+    "docs.anthropic.com",
+    "anthropic.com"
+  ],
   "logLevel": "info",
   "browser": {
     "headless": true,
@@ -24,7 +30,7 @@
     "directory": "metadata"
   },
   "output": {
-    "finalPdfDirectory": "finalPdf",
+    "finalPdfDirectory": "finalPdf-oasis",
     "tempDirectory": ".temp"
   },
   "pdf": {
@@ -32,9 +38,22 @@
     "theme": "light",
     "preserveCodeHighlighting": true,
     "enableCodeWrap": true,
-    "fontSize": "14px",
+    "fontSize": "17px",
     "fontFamily": "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-    "codeFont": "SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace"
+    "codeFont": "SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace",
+    "format": "A4",
+    "deviceProfile": "oasis",
+    "lineHeight": "1.65",
+    "codeFontSize": "14px",
+    "maxCodeLineLength": 80,
+    "kindleOptimized": true,
+    "bookmarks": true,
+    "margin": {
+      "top": "0.6in",
+      "right": "0.4in",
+      "bottom": "0.6in",
+      "left": "0.4in"
+    }
   },
   "python": {
     "executable": "./venv/bin/python",
