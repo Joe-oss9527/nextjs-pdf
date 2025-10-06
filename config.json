@@ -1,10 +1,10 @@
 {
-  "rootURL": "https://docs.anthropic.com/en/docs/claude-code/overview",
-  "baseUrl": "https://docs.anthropic.com/en/docs/claude-code/",
+  "rootURL": "https://docs.claude.com/en/docs/claude-code/overview",
+  "baseUrl": "https://docs.claude.com/en/docs/claude-code/",
   "pdfDir": "pdfs",
   "concurrency": 5,
   "screenshotDelay": 500,
-  "navLinksSelector": "main #navigation-items #sidebar-group a[href]:not([href='#'])",
+  "navLinksSelector": "#sidebar a[href]",
   "contentSelector": "#content-area",
   "ignoreURLs": [
     "docs/pages",
@@ -17,8 +17,8 @@
   "navigationRetries": 4,
   "imageTimeout": 10000,
   "allowedDomains": [
-    "docs.anthropic.com",
-    "anthropic.com"
+    "docs.claude.com",
+    "claude.com"
   ],
   "logLevel": "info",
   "browser": {
