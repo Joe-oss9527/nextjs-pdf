@@ -372,16 +372,51 @@ export class PDFStyleService {
       }
 
       /* === 强制显示折叠内容 === */
-      details {
-        open: true !important;
+      details,
+      details[open] {
+        display: block !important;
       }
 
+      /* 保留 summary 标题文本，但移除交互性 */
       details > summary {
+        display: block !important;
+        cursor: default !important;
+        list-style: none !important;
+        pointer-events: none !important;
+        margin-bottom: 0.5em !important;
+        font-weight: 600 !important;
+        font-size: 1.1em !important;
+      }
+
+      /* 隐藏 webkit details 标记（箭头/折叠符号） */
+      details > summary::-webkit-details-marker {
         display: none !important;
       }
 
+      /* 隐藏自定义折叠图标 */
+      details > summary [data-component-part*="caret"],
+      details > summary [data-component-part*="arrow"],
+      details > summary svg {
+        display: none !important;
+      }
+
+      /* 移除悬停效果 */
+      details > summary:hover {
+        background: none !important;
+      }
+
+      details > *:not(summary),
       details[open] > *:not(summary) {
         display: block !important;
+        visibility: visible !important;
+      }
+
+      /* 强制显示 aria-expanded 控制的内容 */
+      [role="region"],
+      [aria-expanded="true"] + [role="region"] {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
       }
 
       /* === 标签页内容全部显示 === */
@@ -627,7 +662,7 @@ export class PDFStyleService {
    */
   async processSpecialContent(page) {
     try {
-      await page.evaluate(() => {
+      const expandedCount = await page.evaluate(() => {
         // 处理Mermaid图表
         document.querySelectorAll('.mermaid').forEach(el => {
           if (el.querySelector('svg')) {
@@ -642,18 +677,39 @@ export class PDFStyleService {
           el.style.whiteSpace = 'pre-wrap';
         });
 
-        // 处理折叠内容
+        // 处理折叠内容 - 增强版本，支持 aria-expanded 和 role="region"
+        let expandedElementsCount = 0;
         document.querySelectorAll('details').forEach(details => {
-          details.open = true; // 展开所有折叠内容
+          // 1. 设置原生 open 属性
+          details.open = true;
+          expandedElementsCount++;
+
+          // 2. 同步 aria-expanded 属性到 summary 元素
+          const summary = details.querySelector('summary[aria-expanded]');
+          if (summary) {
+            summary.setAttribute('aria-expanded', 'true');
+          }
+
+          // 3. 强制显示内容容器（处理自定义 CSS 隐藏）
+          const content = details.querySelector('[role="region"]');
+          if (content) {
+            content.style.setProperty('display', 'block', 'important');
+            content.style.setProperty('visibility', 'visible', 'important');
+            content.style.setProperty('opacity', '1', 'important');
+          }
         });
 
         // 处理标签页内容
         document.querySelectorAll('[role="tabpanel"]').forEach(panel => {
           panel.style.display = 'block'; // 显示所有标签页内容
         });
+
+        return expandedElementsCount;
       });
 
-      this.logger.debug('特殊内容处理完成');
+      this.logger.debug('特殊内容处理完成', {
+        expandedCollapsibles: expandedCount
+      });
     } catch (error) {
       this.logger.warn('特殊内容处理失败', { error: error.message });
     }
