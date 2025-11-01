@@ -1,7 +1,11 @@
 // src/services/browserPool.js
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import { EventEmitter } from 'events';
 import { NetworkError } from '../utils/errors.js';
+
+// 配置 stealth plugin 以绕过反爬虫检测
+puppeteer.use(StealthPlugin());
 
 /**
  * 浏览器池管理服务
@@ -102,8 +106,15 @@ export class BrowserPool extends EventEmitter {
           '--no-zygote',
           '--disable-gpu',
           '--disable-web-security',
-          '--disable-features=VizDisplayCompositor'
+          '--disable-features=VizDisplayCompositor',
+          '--disable-blink-features=AutomationControlled',
+          '--disable-infobars',
+          '--window-size=1920,1080',
+          '--start-maximized',
+          '--disable-notifications',
+          '--disable-popup-blocking'
         ],
+        ignoreDefaultArgs: ['--enable-automation'],
         ...this.options.launchOptions
       };
 
