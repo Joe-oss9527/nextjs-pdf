@@ -443,11 +443,23 @@ export class Scraper extends EventEmitter {
         await this.metadataService.logImageLoadFailure(url, index);
       }
 
-      // 应用PDF样式优化
-      await this.pdfStyleService.applyPDFStyles(page, this.config.contentSelector);
-      
-      // 处理特殊内容类型
-      await this.pdfStyleService.processSpecialContent(page);
+      // 应用PDF样式优化（添加错误处理）
+      try {
+        if (this.config.enablePDFStyleProcessing !== false) {
+          await this.pdfStyleService.applyPDFStyles(page, this.config.contentSelector);
+
+          // 处理特殊内容类型
+          await this.pdfStyleService.processSpecialContent(page);
+        } else {
+          this.logger.debug('跳过PDF样式处理（配置已禁用）');
+        }
+      } catch (styleError) {
+        this.logger.warn('PDF样式处理失败，跳过样式优化', {
+          url,
+          error: styleError.message
+        });
+        // 继续生成PDF，即使样式处理失败
+      }
 
       // 🔥 关键修改：生成PDF时使用数字索引而不是哈希
       const pdfPath = this.pathService.getPdfPath(url, {

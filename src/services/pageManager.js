@@ -147,21 +147,81 @@ export class PageManager extends EventEmitter {
         });
       }
 
-      // 设置额外的页面配置
+      // 设置额外的页面配置 - 增强反检测
       await page.evaluateOnNewDocument(() => {
         // 隐藏 webdriver 特征
         Object.defineProperty(navigator, 'webdriver', {
           get: () => undefined,
         });
 
-        // 覆盖 plugins 长度
+        // 覆盖自动化控制标志
+        delete navigator.__proto__.webdriver;
+
+        // 模拟真实浏览器的 plugins
         Object.defineProperty(navigator, 'plugins', {
-          get: () => [1, 2, 3, 4, 5],
+          get: () => [
+            {
+              0: {type: "application/x-google-chrome-pdf", suffixes: "pdf", description: "Portable Document Format"},
+              description: "Portable Document Format",
+              filename: "internal-pdf-viewer",
+              length: 1,
+              name: "Chrome PDF Plugin"
+            },
+            {
+              0: {type: "application/pdf", suffixes: "pdf", description: "Portable Document Format"},
+              description: "Portable Document Format",
+              filename: "mhjfbmdgcfjbbpaeojofohoefgiehjai",
+              length: 1,
+              name: "Chrome PDF Viewer"
+            }
+          ],
         });
 
-        // 覆盖 languages
+        // 设置更真实的语言列表
         Object.defineProperty(navigator, 'languages', {
-          get: () => ['zh-CN', 'zh', 'en'],
+          get: () => ['zh-CN', 'zh', 'en-US', 'en'],
+        });
+
+        // 覆盖 permissions
+        const originalQuery = window.navigator.permissions.query;
+        window.navigator.permissions.query = (parameters) => (
+          parameters.name === 'notifications' ?
+            Promise.resolve({ state: Notification.permission }) :
+            originalQuery(parameters)
+        );
+
+        // 伪装 Chrome 运行时
+        window.chrome = {
+          runtime: {}
+        };
+
+        // 覆盖 toString 以防止检测
+        const originalToString = Function.prototype.toString;
+        Function.prototype.toString = function() {
+          if (this === window.navigator.permissions.query) {
+            return 'function query() { [native code] }';
+          }
+          return originalToString.call(this);
+        };
+
+        // 模拟真实的 connection 属性
+        Object.defineProperty(navigator, 'connection', {
+          get: () => ({
+            effectiveType: '4g',
+            rtt: 50,
+            downlink: 10,
+            saveData: false
+          }),
+        });
+
+        // 伪装 hardwareConcurrency
+        Object.defineProperty(navigator, 'hardwareConcurrency', {
+          get: () => 8,
+        });
+
+        // 伪装 deviceMemory
+        Object.defineProperty(navigator, 'deviceMemory', {
+          get: () => 8,
         });
       });
 

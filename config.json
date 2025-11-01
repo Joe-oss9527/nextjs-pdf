@@ -1,11 +1,11 @@
 {
-  "rootURL": "https://docs.claude.com/en/docs/claude-code/overview",
-  "baseUrl": "https://docs.claude.com/en/docs/claude-code/",
+  "rootURL": "https://platform.openai.com/docs/guides/prompt-engineering",
+  "baseUrl": "https://platform.openai.com/docs",
   "pdfDir": "pdfs",
   "concurrency": 5,
   "screenshotDelay": 500,
-  "navLinksSelector": "#sidebar a[href]",
-  "contentSelector": "#content-area",
+  "navLinksSelector": "nav a[href], aside a[href], [role='navigation'] a[href], .sidebar a[href]",
+  "contentSelector": "main, article, [role='main'], .main-content",
   "ignoreURLs": [
     "docs/pages",
     "docs/app/api-reference"
@@ -17,10 +17,11 @@
   "navigationRetries": 4,
   "imageTimeout": 10000,
   "allowedDomains": [
-    "docs.claude.com",
-    "claude.com"
+    "platform.openai.com",
+    "openai.com"
   ],
   "logLevel": "info",
+  "enablePDFStyleProcessing": false,
   "browser": {
     "headless": true,
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
