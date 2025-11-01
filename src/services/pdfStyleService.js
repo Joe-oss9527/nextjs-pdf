@@ -662,7 +662,11 @@ export class PDFStyleService {
    */
   async processSpecialContent(page) {
     try {
-      const expandedCount = await page.evaluate(() => {
+      const stats = await page.evaluate(() => {
+        let expandedElementsCount = 0;
+        let ariaExpandedCount = 0;
+        let hiddenContentCount = 0;
+
         // 处理Mermaid图表
         document.querySelectorAll('.mermaid').forEach(el => {
           if (el.querySelector('svg')) {
@@ -677,20 +681,18 @@ export class PDFStyleService {
           el.style.whiteSpace = 'pre-wrap';
         });
 
-        // 处理折叠内容 - 增强版本，支持 aria-expanded 和 role="region"
-        let expandedElementsCount = 0;
+        // 1. 处理标准 <details> 元素
         document.querySelectorAll('details').forEach(details => {
-          // 1. 设置原生 open 属性
           details.open = true;
           expandedElementsCount++;
 
-          // 2. 同步 aria-expanded 属性到 summary 元素
+          // 同步 aria-expanded 属性
           const summary = details.querySelector('summary[aria-expanded]');
           if (summary) {
             summary.setAttribute('aria-expanded', 'true');
           }
 
-          // 3. 强制显示内容容器（处理自定义 CSS 隐藏）
+          // 强制显示内容容器
           const content = details.querySelector('[role="region"]');
           if (content) {
             content.style.setProperty('display', 'block', 'important');
@@ -699,17 +701,100 @@ export class PDFStyleService {
           }
         });
 
-        // 处理标签页内容
-        document.querySelectorAll('[role="tabpanel"]').forEach(panel => {
-          panel.style.display = 'block'; // 显示所有标签页内容
+        // 2. 处理 aria-expanded 控制的折叠元素（OpenAI 等网站）
+        document.querySelectorAll('[aria-expanded="false"]').forEach(trigger => {
+          // 设置为展开状态
+          trigger.setAttribute('aria-expanded', 'true');
+          ariaExpandedCount++;
+
+          // 查找关联的内容容器
+          // 方法 1: 检查 aria-controls 属性
+          const controlsId = trigger.getAttribute('aria-controls');
+          if (controlsId) {
+            const content = document.getElementById(controlsId);
+            if (content) {
+              content.style.setProperty('display', 'block', 'important');
+              content.style.setProperty('visibility', 'visible', 'important');
+              content.style.setProperty('opacity', '1', 'important');
+              content.style.setProperty('height', 'auto', 'important');
+              content.classList.remove('hidden', 'collapsed');
+            }
+          }
+
+          // 方法 2: 检查下一个兄弟元素（常见模式）
+          const nextSibling = trigger.nextElementSibling;
+          if (nextSibling) {
+            // 移除可能的隐藏类
+            nextSibling.classList.remove('hidden', 'collapsed', 'collapse');
+
+            // 强制显示
+            nextSibling.style.setProperty('display', 'block', 'important');
+            nextSibling.style.setProperty('visibility', 'visible', 'important');
+            nextSibling.style.setProperty('opacity', '1', 'important');
+            nextSibling.style.setProperty('height', 'auto', 'important');
+            nextSibling.style.setProperty('max-height', 'none', 'important');
+          }
+
+          // 方法 3: 检查父元素的子元素（用于某些嵌套结构）
+          const parent = trigger.parentElement;
+          if (parent) {
+            const contentSibling = parent.querySelector('.expn-content, [class*="content"], [class*="body"]');
+            if (contentSibling && contentSibling !== trigger) {
+              contentSibling.classList.remove('hidden', 'collapsed');
+              contentSibling.style.setProperty('display', 'block', 'important');
+              contentSibling.style.setProperty('visibility', 'visible', 'important');
+              contentSibling.style.setProperty('opacity', '1', 'important');
+              contentSibling.style.setProperty('height', 'auto', 'important');
+            }
+          }
         });
 
-        return expandedElementsCount;
+        // 3. 强制显示所有带有 hidden 类的内容区域
+        document.querySelectorAll('.hidden, .collapsed, [hidden]').forEach(el => {
+          // 跳过代码块切换器（语言选择器）
+          if (el.classList.contains('code-block')) {
+            return;
+          }
+
+          // 移除隐藏类和属性
+          el.classList.remove('hidden', 'collapsed');
+          el.removeAttribute('hidden');
+
+          // 强制显示
+          el.style.setProperty('display', 'block', 'important');
+          el.style.setProperty('visibility', 'visible', 'important');
+          el.style.setProperty('opacity', '1', 'important');
+          el.style.setProperty('height', 'auto', 'important');
+          el.style.setProperty('max-height', 'none', 'important');
+
+          hiddenContentCount++;
+        });
+
+        // 4. 处理折叠面板（accordion）
+        document.querySelectorAll('.accordion-item, [class*="accordion"]').forEach(item => {
+          const content = item.querySelector('.accordion-content, [class*="content"]');
+          if (content) {
+            content.style.setProperty('display', 'block', 'important');
+            content.style.setProperty('visibility', 'visible', 'important');
+            content.style.setProperty('max-height', 'none', 'important');
+          }
+        });
+
+        // 5. 处理标签页内容（显示所有 tab panels）
+        document.querySelectorAll('[role="tabpanel"]').forEach(panel => {
+          panel.style.setProperty('display', 'block', 'important');
+          panel.style.setProperty('visibility', 'visible', 'important');
+          panel.setAttribute('aria-hidden', 'false');
+        });
+
+        return {
+          detailsExpanded: expandedElementsCount,
+          ariaExpandedFixed: ariaExpandedCount,
+          hiddenContentRevealed: hiddenContentCount
+        };
       });
 
-      this.logger.debug('特殊内容处理完成', {
-        expandedCollapsibles: expandedCount
-      });
+      this.logger.info('特殊内容处理完成', stats);
     } catch (error) {
       this.logger.warn('特殊内容处理失败', { error: error.message });
     }
