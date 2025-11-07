@@ -69,7 +69,8 @@ class ConfigManager:
         'navLinksSelector': str,
         'contentSelector': str,
         'ignoreURLs': list,
-        'allowedDomains': list
+        'allowedDomains': list,
+        'sectionEntryPoints': list
     }
     
     def __init__(self, config_path: str = 'config.json', logger: Optional[logging.Logger] = None):
@@ -188,6 +189,7 @@ class ConfigManager:
         
         # 验证URL格式
         self._validate_url(self._config['rootURL'])
+        self._validate_section_entry_points()
         
         # 验证数字范围
         self._validate_numeric_ranges()
@@ -258,6 +260,20 @@ class ConfigManager:
             for domain in domains:
                 if not isinstance(domain, str) or not domain.strip():
                     raise ConfigValidationError(f"无效的域名: {domain}")
+    
+    def _validate_section_entry_points(self) -> None:
+        """验证额外章节入口URL"""
+        entries = self._config.get('sectionEntryPoints')
+        if entries is None:
+            return
+        
+        if not isinstance(entries, list):
+            raise ConfigValidationError("sectionEntryPoints 必须是数组")
+        
+        for entry in entries:
+            if not isinstance(entry, str) or not entry.strip():
+                raise ConfigValidationError(f"无效的章节入口: {entry}")
+            self._validate_url(entry)
     
     def _process_environment_variables(self) -> None:
         """处理环境变量替换"""

@@ -23,6 +23,7 @@ describe('Scraper', () => {
         navLinksSelector: 'a',
         contentSelector: '.content',
         allowedDomains: ['example.com'],
+        sectionEntryPoints: [],
         concurrency: 3,
         pdfDir: './pdfs',
         maxRetries: 3,
@@ -183,7 +184,8 @@ describe('Scraper', () => {
 
       const urls = await scraper.collectUrls();
 
-      expect(urls).toHaveLength(2);
+      expect(urls).toHaveLength(3);
+      expect(urls).toContain('https://example.com/');
       expect(urls).toContain('https://example.com/page1');
       expect(urls).toContain('https://example.com/page2');
       expect(mockDependencies.pageManager.createPage).toHaveBeenCalledWith('url-collector');
@@ -199,14 +201,19 @@ describe('Scraper', () => {
       const navError = new Error('Navigation failed');
       mockPage.goto.mockRejectedValue(navError);
 
-      await expect(scraper.collectUrls()).rejects.toThrow(NetworkError);
-      expect(mockDependencies.logger.error).toHaveBeenCalledWith('URL收集失败', expect.any(Object));
+      const result = await scraper.collectUrls();
+      expect(result).toEqual([]);
+      expect(mockDependencies.logger.error).toHaveBeenCalledWith('入口URL收集失败，将跳过该入口', {
+        entryUrl: 'https://example.com',
+        error: 'Navigation failed'
+      });
     }, 10000);
 
     it('should clean up resources on error', async () => {
       mockPage.evaluate.mockRejectedValue(new Error('Evaluation failed'));
 
-      await expect(scraper.collectUrls()).rejects.toThrow();
+      const result = await scraper.collectUrls();
+      expect(result).toEqual([]);
       expect(mockDependencies.imageService.cleanupPage).toHaveBeenCalledWith(mockPage);
       expect(mockDependencies.pageManager.closePage).toHaveBeenCalledWith('url-collector');
     });
@@ -264,6 +271,7 @@ describe('Scraper', () => {
     });
 
     it('should scrape page successfully with Puppeteer', async () => {
+      scraper.config.enablePDFStyleProcessing = true;
       const result = await scraper.scrapePage(testUrl, testIndex);
 
       expect(result).toEqual({
@@ -528,7 +536,7 @@ describe('Scraper', () => {
       await scraper.collectUrls();
       
       expect(listener).toHaveBeenCalledWith({
-        totalUrls: 1,
+        totalUrls: 2,
         duplicates: 0
       });
     });
