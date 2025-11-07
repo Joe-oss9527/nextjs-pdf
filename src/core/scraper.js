@@ -755,6 +755,50 @@ export class Scraper extends EventEmitter {
   }
 
   /**
+   * 清理标题：移除常见的网站名称后缀
+   * @param {string} title - 原始标题
+   * @returns {string} 清理后的标题
+   */
+  _cleanTitle(title) {
+    if (!title || typeof title !== 'string') {
+      return '';
+    }
+
+    let cleaned = title.trim();
+
+    // 移除常见的分隔符和网站名称后缀
+    const separators = [
+      ' | ',    // "Overview | Claude Code" -> "Overview"
+      ' - ',    // "Overview - Claude Code" -> "Overview"
+      ' – ',    // en dash
+      ' — ',    // em dash
+      ' :: ',   // "Overview :: Docs" -> "Overview"
+      ' • ',    // bullet
+      ' / '     // "Overview / Docs" -> "Overview"
+    ];
+
+    for (const sep of separators) {
+      if (cleaned.includes(sep)) {
+        const parts = cleaned.split(sep);
+        // 保留第一部分（通常是页面标题）
+        // 但要确保第一部分不为空且长度合理
+        const firstPart = parts[0].trim();
+        if (firstPart.length >= 2) {
+          cleaned = firstPart;
+          break;
+        }
+      }
+    }
+
+    // 如果清理后标题太短（可能是误删），返回原标题
+    if (cleaned.length < 2 && title.length >= 2) {
+      return title.trim();
+    }
+
+    return cleaned;
+  }
+
+  /**
    * 渐进式导航策略 - 从快到慢尝试不同的等待策略
    */
   async navigateWithFallback(page, url) {
@@ -873,18 +917,60 @@ export class Scraper extends EventEmitter {
         throw new ValidationError('页面内容未找到');
       }
 
-      // 提取页面标题
-      const title = await page.evaluate((selector) => {
-        const contentElement = document.querySelector(selector);
-        if (!contentElement) return '';
+      // 提取页面标题（多源回退策略）
+      const titleInfo = await page.evaluate((selector) => {
+        let title = '';
+        let source = 'none';
 
-        // 尝试多种标题提取方式
-        const h1 = contentElement.querySelector('h1');
-        const title = contentElement.querySelector('title, .title, .page-title');
-        const heading = contentElement.querySelector('h2, h3');
+        // 策略 1: 优先使用 document.title（最可靠，始终在 <head> 中）
+        const docTitle = document.title || '';
+        if (docTitle && docTitle.trim().length > 0) {
+          title = docTitle.trim();
+          source = 'document.title';
+        }
 
-        return (h1?.innerText || title?.innerText || heading?.innerText || '').trim();
+        // 策略 2: 如果 document.title 为空，从 contentSelector 内提取
+        if (!title) {
+          const contentElement = document.querySelector(selector);
+          if (contentElement) {
+            // 2a. 尝试 h1
+            const h1 = contentElement.querySelector('h1');
+            if (h1?.innerText?.trim()) {
+              title = h1.innerText.trim();
+              source = 'content-h1';
+            }
+            // 2b. 尝试 .title/.page-title 等
+            else {
+              const titleEl = contentElement.querySelector('title, .title, .page-title, [class*="page-title"], [class*="PageTitle"]');
+              if (titleEl?.innerText?.trim()) {
+                title = titleEl.innerText.trim();
+                source = 'content-title-class';
+              }
+              // 2c. 尝试 h2/h3
+              else {
+                const heading = contentElement.querySelector('h2, h3');
+                if (heading?.innerText?.trim()) {
+                  title = heading.innerText.trim();
+                  source = 'content-h2-h3';
+                }
+              }
+            }
+          }
+        }
+
+        // 策略 3: 如果 contentSelector 内没找到，尝试全局 h1（回退方案）
+        if (!title) {
+          const globalH1 = document.querySelector('h1');
+          if (globalH1?.innerText?.trim()) {
+            title = globalH1.innerText.trim();
+            source = 'global-h1';
+          }
+        }
+
+        return { title, source };
       }, this.config.contentSelector);
+
+      const title = titleInfo.title;
 
       // 处理懒加载图片
       let imagesLoaded = false;
@@ -965,10 +1051,30 @@ export class Scraper extends EventEmitter {
       this.stateManager.markProcessed(url, pdfPath);
       this.progressTracker.success(url);
 
-      // 如果有标题，保存标题映射（使用字符串索引以匹配Python期望）
-      if (title) {
-        await this.metadataService.saveArticleTitle(String(index), title);
-        this.logger.debug(`提取到标题 [${index}]: ${title}`);
+      // 清理并保存标题映射（使用字符串索引以匹配Python期望）
+      const cleanedTitle = this._cleanTitle(title);
+      if (cleanedTitle) {
+        await this.metadataService.saveArticleTitle(String(index), cleanedTitle);
+        this.logger.debug(`提取到标题 [${index}]: ${cleanedTitle}`, {
+          source: titleInfo.source,
+          original: title !== cleanedTitle ? title : undefined
+        });
+      } else {
+        // ⚠️ 警告：标题提取失败
+        this.logger.warn(`⚠️ 标题提取失败 [${index}/${this.urlQueue.length}]: ${url}`, {
+          contentSelector: this.config.contentSelector,
+          source: titleInfo.source,
+          titleInfo: titleInfo,
+          hint: 'PDF目录将显示文件名而非实际标题。请检查：' +
+                '\n  1. contentSelector 是否正确匹配页面结构' +
+                '\n  2. 页面是否完全加载（检查 navigationWaitUntil 配置）' +
+                '\n  3. 页面是否有 <title> 标签或 h1-h3 标题元素'
+        });
+
+        // 记录到元数据以便后续分析
+        await this.metadataService.logFailedLink(url, index,
+          new Error(`Title extraction failed: source=${titleInfo.source}`)
+        );
       }
 
       // 定期保存状态
