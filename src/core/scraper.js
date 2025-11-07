@@ -125,11 +125,11 @@ export class Scraper extends EventEmitter {
       // 创建页面
       page = await this.pageManager.createPage('url-collector');
 
-      // 🔥 新增：收集section信息
+      // 收集section信息（逐入口页面，保证使用各自侧边栏的顺序）
       const sections = [];
       const urlToSectionMap = new Map(); // URL -> section index
       const rawUrls = [];
-
+      
       for (let sectionIndex = 0; sectionIndex < entryPoints.length; sectionIndex++) {
         const entryUrl = entryPoints[sectionIndex];
 
@@ -137,7 +137,7 @@ export class Scraper extends EventEmitter {
           // 提取section标题
           const sectionTitle = await this._extractSectionTitle(page, entryUrl);
 
-          // 收集该section的URLs
+          // 收集该入口页面侧边栏的URLs（内部已过滤顶栏nav-tabs）
           const entryUrls = await this._collectUrlsFromEntryPoint(page, entryUrl);
 
           // 记录section信息
@@ -467,8 +467,8 @@ export class Scraper extends EventEmitter {
                 const targetDepth = targetPath.split('/').filter(Boolean).length;
                 const hrefDepth = hrefPath.split('/').filter(Boolean).length;
 
-                // 只匹配相同深度的路径（避免误匹配子路径）
-                if (targetDepth === hrefDepth && targetPath.startsWith(hrefPath)) {
+                // 只匹配相同深度且完全相等的路径（避免误匹配相似前缀，如 overview vs overview-advanced）
+                if (targetDepth === hrefDepth && targetPath === hrefPath) {
                   score = 500;
                 }
                 // 允许href比target短1级（用于section入口）
@@ -652,6 +652,27 @@ export class Scraper extends EventEmitter {
       extractedCount: urls.length
     });
 
+    return urls;
+  }
+
+  /**
+   * 收集全局导航链接（不强制包含入口URL），用于根据侧边栏顺序进行分段
+   */
+  async _collectGlobalNavLinks(page) {
+    const urls = await page.evaluate((selector) => {
+      // 过滤掉顶栏 tab（nav-tabs）里的链接，只保留侧边栏/正文导航
+      const all = Array.from(document.querySelectorAll(selector));
+      const elements = all.filter(el => !el.closest('.nav-tabs'));
+
+      return elements
+        .map(el => {
+          const href = el.href || el.getAttribute('href');
+          return href ? href.trim() : null;
+        })
+        .filter(href => href && !href.startsWith('#') && !href.startsWith('javascript:'));
+    }, this.config.navLinksSelector);
+
+    this.logger.debug('全局导航URL提取完成', { extractedCount: urls.length });
     return urls;
   }
 
