@@ -125,21 +125,67 @@ export class Scraper extends EventEmitter {
       // 创建页面
       page = await this.pageManager.createPage('url-collector');
 
+      // 🔥 新增：收集section信息
+      const sections = [];
+      const urlToSectionMap = new Map(); // URL -> section index
       const rawUrls = [];
 
-      for (const entryUrl of entryPoints) {
+      for (let sectionIndex = 0; sectionIndex < entryPoints.length; sectionIndex++) {
+        const entryUrl = entryPoints[sectionIndex];
+
         try {
+          // 提取section标题
+          const sectionTitle = await this._extractSectionTitle(page, entryUrl);
+
+          // 收集该section的URLs
           const entryUrls = await this._collectUrlsFromEntryPoint(page, entryUrl);
-          rawUrls.push(...entryUrls);
+
+          // 记录section信息
+          const sectionInfo = {
+            index: sectionIndex,
+            title: sectionTitle,
+            entryUrl: entryUrl,
+            pages: []
+          };
+
+          // 记录该section的所有URL及其顺序
+          entryUrls.forEach((url, orderInSection) => {
+            const startIndex = rawUrls.length;
+            rawUrls.push(url);
+
+            // 建立URL到section的映射
+            urlToSectionMap.set(url, {
+              sectionIndex,
+              orderInSection,
+              rawIndex: startIndex
+            });
+          });
+
+          sections.push(sectionInfo);
+
+          this.logger.info(`Section ${sectionIndex + 1}/${entryPoints.length} 收集完成`, {
+            title: sectionTitle,
+            entryUrl,
+            urlCount: entryUrls.length
+          });
+
         } catch (entryError) {
           this.logger.error('入口URL收集失败，将跳过该入口', {
             entryUrl,
             error: entryError.message
           });
+
+          // 即使失败也添加一个空section占位
+          sections.push({
+            index: sectionIndex,
+            title: `Section ${sectionIndex + 1}`,
+            entryUrl: entryUrl,
+            pages: []
+          });
         }
       }
 
-      this.logger.info(`提取到 ${rawUrls.length} 个原始URL`, {
+      this.logger.info(`提取到 ${rawUrls.length} 个原始URL，分属 ${sections.length} 个section`, {
         entryPointCount: entryPoints.length
       });
 
@@ -158,10 +204,15 @@ export class Scraper extends EventEmitter {
           }
 
           if (!this.isIgnored(normalized) && this.validateUrl(normalized)) {
+            // 保留section映射信息
+            const sectionMapping = urlToSectionMap.get(url);
+
             normalizedUrls.set(hash, {
               original: url,
               normalized: normalized,
-              index: index
+              index: index,
+              sectionIndex: sectionMapping?.sectionIndex,
+              orderInSection: sectionMapping?.orderInSection
             });
           }
         } catch (error) {
@@ -173,12 +224,58 @@ export class Scraper extends EventEmitter {
       this.urlQueue = Array.from(normalizedUrls.values()).map(item => item.normalized);
       this.urlQueue.forEach(url => this.urlSet.add(url));
 
+      // 🔥 新增：构建section结构并填充pages信息
+      const urlIndexMap = new Map(); // normalized URL -> final index
+      Array.from(normalizedUrls.values()).forEach((item, finalIndex) => {
+        urlIndexMap.set(item.normalized, finalIndex);
+
+        // 将URL添加到对应的section
+        if (item.sectionIndex !== undefined) {
+          const section = sections[item.sectionIndex];
+          if (section) {
+            section.pages.push({
+              index: String(finalIndex), // 转为字符串以匹配articleTitles的键格式
+              url: item.normalized,
+              order: item.orderInSection
+            });
+          }
+        }
+      });
+
+      // 按order排序每个section的pages
+      sections.forEach(section => {
+        section.pages.sort((a, b) => a.order - b.order);
+      });
+
+      // 构建urlToSection快速查找映射
+      const urlToSection = {};
+      sections.forEach(section => {
+        section.pages.forEach(page => {
+          urlToSection[page.url] = section.index;
+        });
+      });
+
+      // 🔥 新增：保存section结构到元数据
+      const sectionStructure = {
+        sections,
+        urlToSection
+      };
+
+      // 保存到元数据服务
+      await this.metadataService.saveSectionStructure(sectionStructure);
+
+      this.logger.info('Section结构已保存', {
+        sectionCount: sections.length,
+        totalPages: Object.keys(urlToSection).length
+      });
+
       // 记录统计信息
       this.logger.info('URL收集完成', {
         原始数量: rawUrls.length,
         去重后数量: this.urlQueue.length,
         重复数量: duplicates.size,
-        被忽略数量: rawUrls.length - normalizedUrls.size - duplicates.size
+        被忽略数量: rawUrls.length - normalizedUrls.size - duplicates.size,
+        section数量: sections.length
       });
 
       if (duplicates.size > 0) {
@@ -190,7 +287,8 @@ export class Scraper extends EventEmitter {
 
       this.emit('urlsCollected', {
         totalUrls: this.urlQueue.length,
-        duplicates: duplicates.size
+        duplicates: duplicates.size,
+        sections: sections.length
       });
 
       return this.urlQueue;
@@ -234,6 +332,113 @@ export class Scraper extends EventEmitter {
 
     // 去重保持顺序
     return Array.from(new Set(entryPoints));
+  }
+
+  /**
+   * 从导航菜单中提取section标题
+   * @param {import('puppeteer').Page} page
+   * @param {string} entryUrl - Section entry URL
+   * @returns {Promise<string|null>}
+   */
+  async _extractSectionTitle(page, entryUrl) {
+    try {
+      // 1. 优先使用配置中的手动映射
+      if (this.config.sectionTitles && this.config.sectionTitles[entryUrl]) {
+        this.logger.debug(`使用配置的section标题: ${this.config.sectionTitles[entryUrl]}`, { entryUrl });
+        return this.config.sectionTitles[entryUrl];
+      }
+
+      // 2. 从导航菜单中提取标题
+      const title = await page.evaluate((targetUrl, navSelector) => {
+        try {
+          // 规范化URL以便比较
+          const normalizeUrl = (url) => {
+            try {
+              const parsed = new URL(url, window.location.href);
+              return parsed.href.replace(/\/$/, ''); // 移除尾部斜杠
+            } catch {
+              return url;
+            }
+          };
+
+          const normalizedTarget = normalizeUrl(targetUrl);
+
+          // 查找所有导航链接
+          const navLinks = document.querySelectorAll(navSelector);
+
+          for (const link of navLinks) {
+            const href = link.href || link.getAttribute('href');
+            if (!href) continue;
+
+            const normalizedHref = normalizeUrl(href);
+
+            // 精确匹配或路径前缀匹配
+            if (normalizedHref === normalizedTarget || normalizedTarget.startsWith(normalizedHref + '/')) {
+              // 提取文本内容
+              let text = link.textContent?.trim();
+
+              // 如果链接本身没有文本，尝试找最近的父节点标题
+              if (!text || text.length < 2) {
+                let parent = link.parentElement;
+                let attempts = 0;
+                while (parent && attempts < 3) {
+                  const heading = parent.querySelector('h1, h2, h3, h4, h5, h6, [role="heading"]');
+                  if (heading) {
+                    text = heading.textContent?.trim();
+                    break;
+                  }
+                  parent = parent.parentElement;
+                  attempts++;
+                }
+              }
+
+              if (text && text.length >= 2) {
+                return text;
+              }
+            }
+          }
+
+          // 如果导航中没找到，尝试从页面主标题提取
+          const mainHeading = document.querySelector('h1, [role="heading"][aria-level="1"]');
+          if (mainHeading) {
+            return mainHeading.textContent?.trim();
+          }
+
+          return null;
+        } catch (e) {
+          console.error('提取section标题失败:', e);
+          return null;
+        }
+      }, entryUrl, this.config.navLinksSelector);
+
+      if (title) {
+        this.logger.debug(`从导航提取到section标题: ${title}`, { entryUrl });
+        return title;
+      }
+
+      // 3. 降级方案：从URL路径生成标题
+      const url = new URL(entryUrl);
+      const pathParts = url.pathname.split('/').filter(Boolean);
+      const lastPart = pathParts[pathParts.length - 1];
+      const fallbackTitle = lastPart
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+
+      this.logger.debug(`使用URL生成的fallback标题: ${fallbackTitle}`, { entryUrl });
+      return fallbackTitle;
+
+    } catch (error) {
+      this.logger.warn('提取section标题失败，使用fallback', {
+        entryUrl,
+        error: error.message
+      });
+
+      // 返回简单的fallback
+      const url = new URL(entryUrl);
+      const pathParts = url.pathname.split('/').filter(Boolean);
+      return pathParts[pathParts.length - 1] || 'Section';
+    }
   }
 
   /**
