@@ -25,5 +25,6 @@
     "https://code.claude.com/docs/en/cli-reference": "Reference",
     "https://code.claude.com/docs/en/legal-and-compliance": "Resources"
   },
-  "enablePDFStyleProcessing": true
+  "enablePDFStyleProcessing": true,
+  "navigationStrategy": "load"
 }
