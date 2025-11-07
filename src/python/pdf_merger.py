@@ -387,6 +387,15 @@ class PDFMerger:
             file_page_map[filename] = current_page
             current_page += page_counts.get(filename, 0)
 
+        # 🔥 性能优化：预先构建反向索引 (index -> filename) 以避免O(n²)嵌套循环
+        index_to_file = {}  # index -> filename
+        for filename in files:
+            file_index = file_to_index.get(filename)
+            if file_index:
+                index_to_file[file_index] = filename
+
+        self.logger.debug(f"构建索引映射: {len(index_to_file)} 个文件")
+
         # 遍历每个section
         for section in sections:
             section_title = section.get('title', 'Untitled Section')
@@ -405,13 +414,8 @@ class PDFMerger:
                 if not page_index:
                     continue
 
-                # 根据索引找到对应的文件
-                found_file = None
-                for filename in files:
-                    file_index = file_to_index.get(filename)
-                    if file_index == page_index:
-                        found_file = filename
-                        break
+                # 🔥 O(1) 查找而不是O(n)嵌套循环
+                found_file = index_to_file.get(page_index)
 
                 if found_file and found_file in file_page_map:
                     page_start = file_page_map[found_file]
