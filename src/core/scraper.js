@@ -571,7 +571,7 @@ export class Scraper extends EventEmitter {
     this.logger.info('处理入口页面', { entryUrl });
 
     const startTime = Date.now();
-    this.logger.info('开始导航到入口页面', { entryUrl, waitUntil: 'load' });
+    this.logger.info('开始导航到入口页面', { entryUrl, waitUntil: 'domcontentloaded' });
 
     await retry(
       async () => {
@@ -592,9 +592,15 @@ export class Scraper extends EventEmitter {
           status: response?.status()
         });
 
-        // 等待动态内容加载（JS执行、异步请求等）
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        this.logger.info('动态内容等待完成', { entryUrl });
+        // 优先等待侧边栏容器出现，减少全局等待
+        const sidebarSelector = '#sidebar-content #navigation-items a[href]';
+        try {
+          await page.waitForSelector(sidebarSelector, { timeout: 5000 });
+          this.logger.info('侧边栏容器已就绪', { selector: sidebarSelector });
+        } catch (_) {
+          // 容器未就绪时，不强制延时，后续会回退到通用选择器
+          this.logger.debug('侧边栏容器未在超时内出现，将尝试通用选择器');
+        }
 
         return response;
       },
@@ -611,38 +617,53 @@ export class Scraper extends EventEmitter {
       }
     );
 
-    this.logger.info('导航完成，开始等待选择器', {
-      entryUrl,
-      selector: this.config.navLinksSelector,
-      elapsed: Date.now() - startTime
-    });
-
+    // 等待更具体的侧边栏链接，失败则退回通用选择器
+    const sidebarSelector = '#sidebar-content #navigation-items a[href]';
+    let selectorUsed = sidebarSelector;
     try {
-      await page.waitForSelector(this.config.navLinksSelector, {
-        timeout: 10000
-      });
-      this.logger.info('选择器找到', {
-        selector: this.config.navLinksSelector,
+      await page.waitForSelector(sidebarSelector, { timeout: 5000 });
+      this.logger.info('选择器找到（侧边栏）', {
+        selector: sidebarSelector,
         elapsed: Date.now() - startTime
       });
-    } catch (error) {
-      this.logger.warn('导航链接选择器等待超时', {
-        selector: this.config.navLinksSelector,
-        entryUrl,
-        error: error.message,
-        elapsed: Date.now() - startTime
-      });
+    } catch (e1) {
+      selectorUsed = this.config.navLinksSelector;
+      this.logger.debug('侧边栏选择器未命中，回退到通用选择器', { fallback: selectorUsed });
+      try {
+        await page.waitForSelector(selectorUsed, { timeout: 10000 });
+        this.logger.info('选择器找到（通用）', {
+          selector: selectorUsed,
+          elapsed: Date.now() - startTime
+        });
+      } catch (error) {
+        this.logger.warn('导航链接选择器等待超时', {
+          selector: selectorUsed,
+          entryUrl,
+          error: error.message,
+          elapsed: Date.now() - startTime
+        });
+      }
     }
 
-    const urls = await page.evaluate((selector) => {
-      const elements = document.querySelectorAll(selector);
-      return Array.from(elements)
+    const urls = await page.evaluate((sidebarSelector, genericSelector) => {
+      // 优先从侧边栏容器采集链接
+      let elements = [];
+      const container = document.querySelector('#sidebar-content #navigation-items');
+      if (container) {
+        elements = Array.from(container.querySelectorAll('a[href]'));
+      } else {
+        // 回退到通用选择器，但排除顶栏 nav-tabs
+        const all = Array.from(document.querySelectorAll(genericSelector));
+        elements = all.filter(el => !el.closest('.nav-tabs'));
+      }
+
+      return elements
         .map(el => {
           const href = el.href || el.getAttribute('href');
           return href ? href.trim() : null;
         })
         .filter(href => href && !href.startsWith('#') && !href.startsWith('javascript:'));
-    }, this.config.navLinksSelector);
+    }, sidebarSelector, this.config.navLinksSelector);
 
     // 确保入口页面本身也被处理
     urls.unshift(entryUrl);
