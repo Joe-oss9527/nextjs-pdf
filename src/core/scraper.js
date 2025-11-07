@@ -800,9 +800,10 @@ export class Scraper extends EventEmitter {
 
   /**
    * 渐进式导航策略 - 从快到慢尝试不同的等待策略
+   * 支持通过 config.navigationStrategy 自定义首选策略
    */
   async navigateWithFallback(page, url) {
-    const strategies = [
+    let strategies = [
       // 1. 快速策略 - 适合简单页面
       {
         name: 'domcontentloaded',
@@ -824,6 +825,17 @@ export class Scraper extends EventEmitter {
         options: { waitUntil: 'load', timeout: 60000 }
       }
     ];
+
+    // 如果配置了首选策略（非 auto），将其移到首位
+    const preferredStrategy = this.config.navigationStrategy;
+    if (preferredStrategy && preferredStrategy !== 'auto') {
+      const preferred = strategies.find(s => s.name === preferredStrategy);
+      if (preferred) {
+        const others = strategies.filter(s => s.name !== preferredStrategy);
+        strategies = [preferred, ...others];
+        this.logger.debug(`使用首选导航策略: ${preferredStrategy}`, { url });
+      }
+    }
 
     let lastError = null;
 

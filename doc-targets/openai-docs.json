@@ -12,5 +12,6 @@
     "openai.com"
   ],
   "sectionEntryPoints": [],
-  "enablePDFStyleProcessing": false
+  "enablePDFStyleProcessing": false,
+  "navigationStrategy": "domcontentloaded"
 }

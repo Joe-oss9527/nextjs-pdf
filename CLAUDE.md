@@ -49,6 +49,17 @@
     - Removes navigation, sidebars, breadcrumbs, pagination
     - Applies code block wrapping and color fixes
 - `sectionEntryPoints`: Extra root URLs for multi-section docs (Claude Code has 7)
+- `navigationStrategy`: Preferred page load strategy (default: `auto`)
+  - `auto`: Try strategies in default order: `domcontentloaded` → `networkidle2` → `networkidle0` → `load`
+  - `load`: Best for Next.js/React SPAs (Claude Code) - wait for all resources, avoid 90s of failed retries
+  - `domcontentloaded`: Best for SSR/static sites (OpenAI docs) - fast, wait for HTML parsed only
+  - `networkidle2`: Fallback for sites with moderate background requests
+  - `networkidle0`: Avoid unless necessary - fails with analytics/websockets
+  - **Performance impact**: Specifying correct strategy can reduce scraping time by 2-3x (804s → 300s for 44 pages)
+  - **When to use**:
+    - SPA (code.claude.com): `"navigationStrategy": "load"` - avoids timeout retries
+    - SSR (platform.openai.com): `"navigationStrategy": "domcontentloaded"` - fastest
+    - Unknown: `"navigationStrategy": "auto"` - safe default with fallback
 
 **Page load strategies** (in `src/core/scraper.js:_collectUrlsFromEntryPoint()`):
 - `domcontentloaded` (recommended for SPAs): Wait for HTML parsed, 15s timeout + 2s delay for JS execution
@@ -204,7 +215,8 @@
   "allowedDomains": ["platform.openai.com", "openai.com"],
   "ignoreURLs": ["docs/pages", "docs/app/api-reference"],
   "sectionEntryPoints": [],
-  "enablePDFStyleProcessing": false
+  "enablePDFStyleProcessing": false,
+  "navigationStrategy": "domcontentloaded"
 }
 ```
 
@@ -225,10 +237,11 @@
     "https://code.claude.com/docs/en/cli-reference",
     "https://code.claude.com/docs/en/legal-and-compliance"
   ],
-  "enablePDFStyleProcessing": true
+  "enablePDFStyleProcessing": true,
+  "navigationStrategy": "load"
 }
 ```
-**Note**: Uses `true` to remove navigation/sidebars/floating UI from Next.js app
+**Note**: Uses `enablePDFStyleProcessing: true` to remove navigation/sidebars/floating UI from Next.js app, and `navigationStrategy: "load"` to avoid 90s of timeout retries per page
 
 **Generic template** (start broad, narrow after inspecting with `node scripts/test-openai-access.js`):
 ```json
@@ -239,6 +252,7 @@
   "contentSelector": "main, article, [role='main'], [class*='content']",
   "allowedDomains": ["example.com"],
   "enablePDFStyleProcessing": false,
+  "navigationStrategy": "auto",
   "concurrency": 3,
   "pageTimeout": 60000
 }

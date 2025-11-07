@@ -57,6 +57,11 @@ const configSchema = Joi.object({
   enablePDFStyleProcessing: Joi.boolean().default(false)
     .description('Enable PDF style processing (DOM manipulation) - false prevents printToPDF failures on some sites'),
 
+  navigationStrategy: Joi.string()
+    .valid('domcontentloaded', 'networkidle2', 'networkidle0', 'load', 'auto')
+    .default('auto')
+    .description('Preferred navigation wait strategy - "auto" uses default fallback order (domcontentloaded→networkidle2→networkidle0→load), specific strategy (e.g., "load") tries that first for better performance on SPAs'),
+
   // 浏览器配置
   browser: Joi.object({
     headless: Joi.boolean().default(true)
