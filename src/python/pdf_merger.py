@@ -165,6 +165,41 @@ class PDFMerger:
 
         return section_structure
 
+    def _validate_article_titles(self, pdf_file_count: int) -> bool:
+        """
+        验证 articleTitles.json 是否有效
+
+        Args:
+            pdf_file_count: PDF文件数量（用于比较）
+
+        Returns:
+            bool: 是否有效
+        """
+        if not self.article_titles:
+            self.logger.warning(
+                "⚠️  articleTitles.json 为空或不存在！\n"
+                "    PDF 目录将显示文件名（如 'Page 0', 'Page 1'）而非实际标题。\n"
+                "    可能原因：\n"
+                "      1. 标题提取失败（检查 contentSelector 配置）\n"
+                "      2. 页面加载不完整（检查 navigationWaitUntil 配置）\n"
+                "      3. 页面缺少标题元素（<title> 或 h1-h3）\n"
+                "    建议：重新运行爬取并检查日志中的标题提取警告"
+            )
+            return False
+
+        # 检查标题数量是否合理
+        title_count = len(self.article_titles)
+        if title_count < pdf_file_count * 0.5:
+            self.logger.warning(
+                f"⚠️  标题数量 ({title_count}) 远少于 PDF 文件数量 ({pdf_file_count})！\n"
+                f"    约 {pdf_file_count - title_count} 个页面的标题提取失败。\n"
+                f"    建议：检查爬取日志中的标题提取警告"
+            )
+            return False
+
+        self.logger.info(f"✓ articleTitles 验证通过: {title_count} 个标题")
+        return True
+
     def _get_pdf_files(self, directory_path: str, engine_filter: str = None) -> List[str]:
         """
         获取目录中的PDF文件列表（智能排序）
@@ -518,6 +553,9 @@ class PDFMerger:
             files = self._get_pdf_files(directory_path, engine_filter)
             if not files:
                 return False
+
+            # 验证 articleTitles.json
+            self._validate_article_titles(len(files))
 
             merged_pdf = None
             current_file_pdf = None

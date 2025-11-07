@@ -54,7 +54,9 @@ describe('Scraper', () => {
       },
       metadataService: {
         saveArticleTitle: jest.fn(),
-        logImageLoadFailure: jest.fn()
+        logImageLoadFailure: jest.fn(),
+        logFailedLink: jest.fn(),
+        saveSectionStructure: jest.fn()
       },
       stateManager: {
         on: jest.fn(),
@@ -107,6 +109,7 @@ describe('Scraper', () => {
       pdfStyleService: {
         applyPDFStyles: jest.fn(),
         processSpecialContent: jest.fn(),
+        removeDarkTheme: jest.fn(),
         getPDFOptions: jest.fn().mockReturnValue({
           format: 'A4',
           printBackground: true
@@ -201,19 +204,22 @@ describe('Scraper', () => {
       const navError = new Error('Navigation failed');
       mockPage.goto.mockRejectedValue(navError);
 
-      const result = await scraper.collectUrls();
-      expect(result).toEqual([]);
-      expect(mockDependencies.logger.error).toHaveBeenCalledWith('入口URL收集失败，将跳过该入口', {
-        entryUrl: 'https://example.com',
-        error: 'Navigation failed'
-      });
+      const urls = await scraper.collectUrls();
+      expect(urls).toEqual([]);
+      expect(mockDependencies.logger.error).toHaveBeenCalledWith(
+        '入口URL收集失败，将跳过该入口',
+        expect.objectContaining({
+          entryUrl: 'https://example.com',
+          error: 'Navigation failed'
+        })
+      );
     }, 10000);
 
     it('should clean up resources on error', async () => {
       mockPage.evaluate.mockRejectedValue(new Error('Evaluation failed'));
 
-      const result = await scraper.collectUrls();
-      expect(result).toEqual([]);
+      const urls = await scraper.collectUrls();
+      expect(urls).toEqual([]);
       expect(mockDependencies.imageService.cleanupPage).toHaveBeenCalledWith(mockPage);
       expect(mockDependencies.pageManager.closePage).toHaveBeenCalledWith('url-collector');
     });
@@ -267,7 +273,7 @@ describe('Scraper', () => {
     beforeEach(() => {
       mockPage.goto.mockResolvedValue({ status: () => 200, statusText: () => 'OK' });
       mockPage.waitForSelector.mockResolvedValue();
-      mockPage.evaluate.mockResolvedValue('Page Title');
+      mockPage.evaluate.mockResolvedValue({ title: 'Page Title', source: 'document.title' });
     });
 
     it('should scrape page successfully with Puppeteer', async () => {
@@ -373,7 +379,7 @@ describe('Scraper', () => {
       scraper.urlQueue = ['https://example.com/failed1'];
 
       mockPage.goto.mockResolvedValue({ status: () => 200 });
-      mockPage.evaluate.mockResolvedValue('Title');
+      mockPage.evaluate.mockResolvedValue({ title: 'Title', source: 'document.title' });
 
       await scraper.retryFailedUrls();
 
@@ -528,35 +534,142 @@ describe('Scraper', () => {
 
     it('should emit urlsCollected event', async () => {
       scraper.isInitialized = true;
-      mockPage.evaluate.mockResolvedValue(['https://example.com/page1']);
-      
+      mockPage.goto.mockResolvedValue({ status: () => 200 });
+      mockPage.waitForSelector.mockResolvedValue();
+
+      // Mock multiple evaluate calls: section title + URLs collection
+      mockPage.evaluate
+        .mockResolvedValueOnce('Section Title')  // _extractSectionTitle
+        .mockResolvedValueOnce(['https://example.com/page1']);  // _collectUrlsFromEntryPoint
+
       const listener = jest.fn();
       scraper.on('urlsCollected', listener);
-      
+
       await scraper.collectUrls();
-      
-      expect(listener).toHaveBeenCalledWith({
-        totalUrls: 2,
-        duplicates: 0
-      });
+
+      expect(listener).toHaveBeenCalledWith(expect.objectContaining({
+        totalUrls: expect.any(Number),
+        duplicates: expect.any(Number),
+        sections: expect.any(Number)
+      }));
     });
 
     it('should emit pageScraped event', async () => {
       mockPage.goto.mockResolvedValue({ status: () => 200 });
-      mockPage.evaluate.mockResolvedValue('Title');
-      
+      mockPage.evaluate.mockResolvedValue({ title: 'Title', source: 'document.title' });
+
       const listener = jest.fn();
       scraper.on('pageScraped', listener);
-      
+
       await scraper.scrapePage('https://example.com/page', 0);
-      
+
       expect(listener).toHaveBeenCalledWith(expect.objectContaining({
         url: 'https://example.com/page',
         index: 0,
-        title: 'Title',
         pdfPath: './pdfs/001-page.pdf',
         imagesLoaded: true
       }));
+    });
+  });
+
+  describe('_cleanTitle', () => {
+    it('should remove site name with pipe separator', () => {
+      expect(scraper._cleanTitle('Overview | Claude Code')).toBe('Overview');
+      expect(scraper._cleanTitle('Getting Started | Docs')).toBe('Getting Started');
+    });
+
+    it('should remove site name with dash separator', () => {
+      expect(scraper._cleanTitle('Overview - Claude Code')).toBe('Overview');
+      expect(scraper._cleanTitle('API Reference - Docs')).toBe('API Reference');
+    });
+
+    it('should remove site name with en dash', () => {
+      expect(scraper._cleanTitle('Overview – Claude Code')).toBe('Overview');
+    });
+
+    it('should remove site name with em dash', () => {
+      expect(scraper._cleanTitle('Overview — Claude Code')).toBe('Overview');
+    });
+
+    it('should remove site name with double colon', () => {
+      expect(scraper._cleanTitle('Overview :: Docs')).toBe('Overview');
+    });
+
+    it('should remove site name with bullet', () => {
+      expect(scraper._cleanTitle('Overview • Docs')).toBe('Overview');
+    });
+
+    it('should remove site name with slash', () => {
+      expect(scraper._cleanTitle('Overview / Docs')).toBe('Overview');
+    });
+
+    it('should handle titles without separators', () => {
+      expect(scraper._cleanTitle('Simple Title')).toBe('Simple Title');
+      expect(scraper._cleanTitle('No Separator Here')).toBe('No Separator Here');
+    });
+
+    it('should handle empty or invalid titles', () => {
+      expect(scraper._cleanTitle('')).toBe('');
+      expect(scraper._cleanTitle(null)).toBe('');
+      expect(scraper._cleanTitle(undefined)).toBe('');
+    });
+
+    it('should preserve original if cleaned title is too short', () => {
+      expect(scraper._cleanTitle('A | Very Long Site Name')).toBe('A | Very Long Site Name');
+    });
+
+    it('should handle multiple separators (use first)', () => {
+      expect(scraper._cleanTitle('Title | Site | More')).toBe('Title');
+    });
+
+    it('should trim whitespace', () => {
+      expect(scraper._cleanTitle('  Title | Site  ')).toBe('Title');
+      expect(scraper._cleanTitle('Title  ')).toBe('Title');
+    });
+  });
+
+  describe('title extraction with multiple sources', () => {
+    beforeEach(() => {
+      mockPage.goto.mockResolvedValue({ status: () => 200 });
+      mockPage.waitForSelector.mockResolvedValue();
+      mockPage.pdf.mockResolvedValue();
+    });
+
+    it('should extract title from document.title', async () => {
+      mockPage.evaluate.mockResolvedValue({
+        title: 'Overview | Claude Code',
+        source: 'document.title'
+      });
+
+      await scraper.scrapePage('https://example.com/page', 0);
+
+      expect(mockDependencies.metadataService.saveArticleTitle).toHaveBeenCalledWith('0', 'Overview');
+    });
+
+    it('should extract title from content h1 when document.title is empty', async () => {
+      mockPage.evaluate.mockResolvedValue({
+        title: 'Page Heading',
+        source: 'content-h1'
+      });
+
+      await scraper.scrapePage('https://example.com/page', 0);
+
+      expect(mockDependencies.metadataService.saveArticleTitle).toHaveBeenCalledWith('0', 'Page Heading');
+    });
+
+    it('should warn when title extraction fails', async () => {
+      mockPage.evaluate.mockResolvedValue({
+        title: '',
+        source: 'none'
+      });
+
+      await scraper.scrapePage('https://example.com/page', 0);
+
+      expect(mockDependencies.logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('标题提取失败'),
+        expect.any(Object)
+      );
+      expect(mockDependencies.metadataService.saveArticleTitle).not.toHaveBeenCalled();
     });
   });
 });
