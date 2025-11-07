@@ -69,7 +69,9 @@ export class PathService {
       failed: 'failed.json',
       imageLoadFailures: 'imageLoadFailures.json',
       progress: 'progress.json',
-      urlMapping: 'urlMapping.json'
+      urlMapping: 'urlMapping.json',
+      // 新增：分层TOC的section结构元数据文件
+      sectionStructure: 'sectionStructure.json'
     };
 
     const fileName = metadataFiles[type];
