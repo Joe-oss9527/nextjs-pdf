@@ -566,7 +566,9 @@ class PDFMerger:
 
                         prefix = cleaned_filename.split('-')[0] if '-' in cleaned_filename else ''
                         if prefix.isdigit():
-                            file_to_index[filename] = prefix
+                            # 移除前导零以匹配scraper生成的索引格式
+                            # "001" → "1", "000" → "0"
+                            file_to_index[filename] = str(int(prefix))
 
                         # 创建书签（用于flat TOC fallback）
                         bookmark_title = self._create_bookmark_title(filename, self.article_titles)
