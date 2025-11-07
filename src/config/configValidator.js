@@ -26,7 +26,13 @@ const configSchema = Joi.object({
 
   sectionEntryPoints: Joi.array().items(Joi.string().uri()).default([])
     .description('Additional entry URLs that should be crawled alongside rootURL'),
-  
+
+  sectionTitles: Joi.object().pattern(
+    Joi.string().uri(),
+    Joi.string()
+  ).optional()
+    .description('Manual override for section titles (URL -> Title mapping). If not provided, titles will be extracted from navigation menu'),
+
   ignoreURLs: Joi.array().items(Joi.string()).default([])
     .description('URLs to ignore during scraping'),
   

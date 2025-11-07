@@ -125,27 +125,74 @@ export class Scraper extends EventEmitter {
       // 创建页面
       page = await this.pageManager.createPage('url-collector');
 
+      // 收集section信息（逐入口页面，保证使用各自侧边栏的顺序）
+      const sections = [];
+      const urlToSectionMap = new Map(); // URL -> section index
       const rawUrls = [];
+      
+      for (let sectionIndex = 0; sectionIndex < entryPoints.length; sectionIndex++) {
+        const entryUrl = entryPoints[sectionIndex];
 
-      for (const entryUrl of entryPoints) {
         try {
+          // 提取section标题
+          const sectionTitle = await this._extractSectionTitle(page, entryUrl);
+
+          // 收集该入口页面侧边栏的URLs（内部已过滤顶栏nav-tabs）
           const entryUrls = await this._collectUrlsFromEntryPoint(page, entryUrl);
-          rawUrls.push(...entryUrls);
+
+          // 记录section信息
+          const sectionInfo = {
+            index: sectionIndex,
+            title: sectionTitle,
+            entryUrl: entryUrl,
+            pages: []
+          };
+
+          // 记录该section的所有URL及其顺序
+          entryUrls.forEach((url, orderInSection) => {
+            const startIndex = rawUrls.length;
+            rawUrls.push(url);
+
+            // 建立URL到section的映射
+            urlToSectionMap.set(url, {
+              sectionIndex,
+              orderInSection,
+              rawIndex: startIndex
+            });
+          });
+
+          sections.push(sectionInfo);
+
+          this.logger.info(`Section ${sectionIndex + 1}/${entryPoints.length} 收集完成`, {
+            title: sectionTitle,
+            entryUrl,
+            urlCount: entryUrls.length
+          });
+
         } catch (entryError) {
           this.logger.error('入口URL收集失败，将跳过该入口', {
             entryUrl,
             error: entryError.message
           });
+
+          // 即使失败也添加一个空section占位
+          sections.push({
+            index: sectionIndex,
+            title: `Section ${sectionIndex + 1}`,
+            entryUrl: entryUrl,
+            pages: []
+          });
         }
       }
 
-      this.logger.info(`提取到 ${rawUrls.length} 个原始URL`, {
+      this.logger.info(`提取到 ${rawUrls.length} 个原始URL，分属 ${sections.length} 个section`, {
         entryPointCount: entryPoints.length
       });
 
       // URL去重和规范化
       const normalizedUrls = new Map();
       const duplicates = new Set();
+      const sectionConflicts = []; // 🔥 新增：记录section冲突
 
       rawUrls.forEach((url, index) => {
         try {
@@ -154,14 +201,33 @@ export class Scraper extends EventEmitter {
 
           if (normalizedUrls.has(hash)) {
             duplicates.add(url);
+
+            // 🔥 日志增强：检测section冲突
+            const existing = normalizedUrls.get(hash);
+            const currentMapping = urlToSectionMap.get(url);
+
+            if (existing.sectionIndex !== currentMapping?.sectionIndex &&
+                existing.sectionIndex !== undefined &&
+                currentMapping?.sectionIndex !== undefined) {
+              sectionConflicts.push({
+                url: normalized,
+                existingSection: sections[existing.sectionIndex]?.title || existing.sectionIndex,
+                conflictSection: sections[currentMapping.sectionIndex]?.title || currentMapping.sectionIndex
+              });
+            }
             return;
           }
 
           if (!this.isIgnored(normalized) && this.validateUrl(normalized)) {
+            // 保留section映射信息
+            const sectionMapping = urlToSectionMap.get(url);
+
             normalizedUrls.set(hash, {
               original: url,
               normalized: normalized,
-              index: index
+              index: index,
+              sectionIndex: sectionMapping?.sectionIndex,
+              orderInSection: sectionMapping?.orderInSection
             });
           }
         } catch (error) {
@@ -169,16 +235,94 @@ export class Scraper extends EventEmitter {
         }
       });
 
+      // 🔥 日志增强：报告section冲突
+      if (sectionConflicts.length > 0) {
+        this.logger.warn('检测到URL在多个section中重复', {
+          conflictCount: sectionConflicts.length,
+          examples: sectionConflicts.slice(0, 3)
+        });
+
+        if (sectionConflicts.length <= 5) {
+          this.logger.debug('所有section冲突:', { conflicts: sectionConflicts });
+        }
+      }
+
       // 构建最终URL队列
       this.urlQueue = Array.from(normalizedUrls.values()).map(item => item.normalized);
       this.urlQueue.forEach(url => this.urlSet.add(url));
+
+      // 🔥 新增：构建section结构并填充pages信息
+      const urlIndexMap = new Map(); // normalized URL -> final index
+      Array.from(normalizedUrls.values()).forEach((item, finalIndex) => {
+        urlIndexMap.set(item.normalized, finalIndex);
+
+        // 将URL添加到对应的section
+        if (item.sectionIndex !== undefined) {
+          const section = sections[item.sectionIndex];
+          if (section) {
+            section.pages.push({
+              index: String(finalIndex), // 转为字符串以匹配articleTitles的键格式
+              url: item.normalized,
+              order: item.orderInSection
+            });
+          }
+        }
+      });
+
+      // 按order排序每个section的pages
+      sections.forEach(section => {
+        section.pages.sort((a, b) => a.order - b.order);
+      });
+
+      // 构建urlToSection快速查找映射
+      const urlToSection = {};
+      sections.forEach(section => {
+        section.pages.forEach(page => {
+          urlToSection[page.url] = section.index;
+        });
+      });
+
+      // 🔥 新增：保存section结构到元数据
+      const sectionStructure = {
+        sections,
+        urlToSection
+      };
+
+      // 保存到元数据服务
+      await this.metadataService.saveSectionStructure(sectionStructure);
+
+      // 🔥 日志增强：详细的section统计信息
+      this.logger.info('Section结构已保存', {
+        sectionCount: sections.length,
+        totalPages: Object.keys(urlToSection).length
+      });
+
+      // 输出每个section的详细统计
+      sections.forEach((section, idx) => {
+        this.logger.debug(`Section ${idx + 1}/${sections.length}: "${section.title}"`, {
+          entryUrl: section.entryUrl,
+          pageCount: section.pages.length,
+          firstPage: section.pages[0]?.url,
+          lastPage: section.pages[section.pages.length - 1]?.url
+        });
+      });
+
+      // 检测空section
+      const emptySections = sections.filter(s => s.pages.length === 0);
+      if (emptySections.length > 0) {
+        this.logger.warn('检测到空section（没有页面）', {
+          emptyCount: emptySections.length,
+          titles: emptySections.map(s => s.title)
+        });
+      }
 
       // 记录统计信息
       this.logger.info('URL收集完成', {
         原始数量: rawUrls.length,
         去重后数量: this.urlQueue.length,
         重复数量: duplicates.size,
-        被忽略数量: rawUrls.length - normalizedUrls.size - duplicates.size
+        被忽略数量: rawUrls.length - normalizedUrls.size - duplicates.size,
+        section数量: sections.length
       });
 
       if (duplicates.size > 0) {
@@ -190,7 +334,8 @@ export class Scraper extends EventEmitter {
 
       this.emit('urlsCollected', {
         totalUrls: this.urlQueue.length,
-        duplicates: duplicates.size
+        duplicates: duplicates.size,
+        sections: sections.length
       });
 
       return this.urlQueue;
@@ -232,8 +377,188 @@ export class Scraper extends EventEmitter {
       });
     }
 
-    // 去重保持顺序
-    return Array.from(new Set(entryPoints));
+    // 🔥 日志增强：检测并警告重复的entry points
+    const originalLength = entryPoints.length;
+    const deduplicated = Array.from(new Set(entryPoints));
+
+    if (deduplicated.length < originalLength) {
+      const duplicateCount = originalLength - deduplicated.length;
+      this.logger.warn('检测到重复的entry points', {
+        original: originalLength,
+        deduplicated: deduplicated.length,
+        duplicates: duplicateCount,
+        hint: 'rootURL可能与sectionEntryPoints中的某个URL重复'
+      });
+
+      // 找出具体的重复项
+      const seen = new Set();
+      const duplicates = [];
+      entryPoints.forEach(url => {
+        if (seen.has(url)) {
+          duplicates.push(url);
+        } else {
+          seen.add(url);
+        }
+      });
+
+      if (duplicates.length > 0) {
+        this.logger.debug('重复的entry point URLs:', { duplicates });
+      }
+    }
+
+    return deduplicated;
+  }
+
+  /**
+   * 从导航菜单中提取section标题
+   * @param {import('puppeteer').Page} page
+   * @param {string} entryUrl - Section entry URL
+   * @returns {Promise<string|null>}
+   */
+  async _extractSectionTitle(page, entryUrl) {
+    try {
+      // 1. 优先使用配置中的手动映射
+      if (this.config.sectionTitles && this.config.sectionTitles[entryUrl]) {
+        this.logger.debug(`使用配置的section标题: ${this.config.sectionTitles[entryUrl]}`, { entryUrl });
+        return this.config.sectionTitles[entryUrl];
+      }
+
+      // 2. 从导航菜单中提取标题
+      const title = await page.evaluate((targetUrl, navSelector) => {
+        try {
+          // 规范化URL以便比较
+          const normalizeUrl = (url) => {
+            try {
+              const parsed = new URL(url, window.location.href);
+              return parsed.href.replace(/\/$/, ''); // 移除尾部斜杠
+            } catch {
+              return url;
+            }
+          };
+
+          const normalizedTarget = normalizeUrl(targetUrl);
+
+          // 查找所有导航链接
+          const navLinks = document.querySelectorAll(navSelector);
+
+          // 🔥 改进：使用更严格的URL匹配逻辑
+          let bestMatch = null;
+          let bestMatchScore = -1;
+
+          for (const link of navLinks) {
+            const href = link.href || link.getAttribute('href');
+            if (!href) continue;
+
+            const normalizedHref = normalizeUrl(href);
+
+            // 计算匹配得分
+            let score = 0;
+
+            // 1. 精确匹配：最高优先级
+            if (normalizedHref === normalizedTarget) {
+              score = 1000;
+            }
+            // 2. 路径深度相同的前缀匹配：次高优先级
+            else {
+              try {
+                const targetPath = new URL(normalizedTarget).pathname;
+                const hrefPath = new URL(normalizedHref).pathname;
+
+                const targetDepth = targetPath.split('/').filter(Boolean).length;
+                const hrefDepth = hrefPath.split('/').filter(Boolean).length;
+
+                // 只匹配相同深度且完全相等的路径（避免误匹配相似前缀，如 overview vs overview-advanced）
+                if (targetDepth === hrefDepth && targetPath === hrefPath) {
+                  score = 500;
+                }
+                // 允许href比target短1级（用于section入口）
+                else if (targetDepth === hrefDepth + 1 && targetPath.startsWith(hrefPath + '/')) {
+                  score = 300;
+                }
+              } catch (e) {
+                // URL解析失败，跳过
+                continue;
+              }
+            }
+
+            // 如果匹配分数更高，更新最佳匹配
+            if (score > bestMatchScore) {
+              const text = link.textContent?.trim();
+
+              // 如果链接本身没有文本，尝试找最近的父节点标题
+              let finalText = text;
+              if (!finalText || finalText.length < 2) {
+                let parent = link.parentElement;
+                let attempts = 0;
+                while (parent && attempts < 3) {
+                  const heading = parent.querySelector('h1, h2, h3, h4, h5, h6, [role="heading"]');
+                  if (heading) {
+                    finalText = heading.textContent?.trim();
+                    break;
+                  }
+                  parent = parent.parentElement;
+                  attempts++;
+                }
+              }
+
+              if (finalText && finalText.length >= 2) {
+                bestMatch = finalText;
+                bestMatchScore = score;
+
+                // 如果找到精确匹配，立即返回
+                if (score === 1000) {
+                  return bestMatch;
+                }
+              }
+            }
+          }
+
+          // 返回最佳匹配
+          if (bestMatch) {
+            return bestMatch;
+          }
+
+          // 如果导航中没找到，尝试从页面主标题提取
+          const mainHeading = document.querySelector('h1, [role="heading"][aria-level="1"]');
+          if (mainHeading) {
+            return mainHeading.textContent?.trim();
+          }
+
+          return null;
+        } catch (e) {
+          console.error('提取section标题失败:', e);
+          return null;
+        }
+      }, entryUrl, this.config.navLinksSelector);
+
+      if (title) {
+        this.logger.debug(`从导航提取到section标题: ${title}`, { entryUrl });
+        return title;
+      }
+
+      // 3. 降级方案：从URL路径生成标题
+      const url = new URL(entryUrl);
+      const pathParts = url.pathname.split('/').filter(Boolean);
+      const lastPart = pathParts[pathParts.length - 1];
+      const fallbackTitle = lastPart
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+
+      this.logger.debug(`使用URL生成的fallback标题: ${fallbackTitle}`, { entryUrl });
+      return fallbackTitle;
+
+    } catch (error) {
+      this.logger.warn('提取section标题失败，使用fallback', {
+        entryUrl,
+        error: error.message
+      });
+
+      // 返回简单的fallback
+      const url = new URL(entryUrl);
+      const pathParts = url.pathname.split('/').filter(Boolean);
+      return pathParts[pathParts.length - 1] || 'Section';
+    }
   }
 
   /**
@@ -246,7 +571,7 @@ export class Scraper extends EventEmitter {
     this.logger.info('处理入口页面', { entryUrl });
 
     const startTime = Date.now();
-    this.logger.info('开始导航到入口页面', { entryUrl, waitUntil: 'load' });
+    this.logger.info('开始导航到入口页面', { entryUrl, waitUntil: 'domcontentloaded' });
 
     await retry(
       async () => {
@@ -267,9 +592,15 @@ export class Scraper extends EventEmitter {
           status: response?.status()
         });
 
-        // 等待动态内容加载（JS执行、异步请求等）
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        this.logger.info('动态内容等待完成', { entryUrl });
+        // 优先等待侧边栏容器出现，减少全局等待
+        const sidebarSelector = '#sidebar-content #navigation-items a[href]';
+        try {
+          await page.waitForSelector(sidebarSelector, { timeout: 5000 });
+          this.logger.info('侧边栏容器已就绪', { selector: sidebarSelector });
+        } catch (_) {
+          // 容器未就绪时，不强制延时，后续会回退到通用选择器
+          this.logger.debug('侧边栏容器未在超时内出现，将尝试通用选择器');
+        }
 
         return response;
       },
@@ -286,38 +617,53 @@ export class Scraper extends EventEmitter {
       }
     );
 
-    this.logger.info('导航完成，开始等待选择器', {
-      entryUrl,
-      selector: this.config.navLinksSelector,
-      elapsed: Date.now() - startTime
-    });
-
+    // 等待更具体的侧边栏链接，失败则退回通用选择器
+    const sidebarSelector = '#sidebar-content #navigation-items a[href]';
+    let selectorUsed = sidebarSelector;
     try {
-      await page.waitForSelector(this.config.navLinksSelector, {
-        timeout: 10000
-      });
-      this.logger.info('选择器找到', {
-        selector: this.config.navLinksSelector,
+      await page.waitForSelector(sidebarSelector, { timeout: 5000 });
+      this.logger.info('选择器找到（侧边栏）', {
+        selector: sidebarSelector,
         elapsed: Date.now() - startTime
       });
-    } catch (error) {
-      this.logger.warn('导航链接选择器等待超时', {
-        selector: this.config.navLinksSelector,
-        entryUrl,
-        error: error.message,
-        elapsed: Date.now() - startTime
-      });
+    } catch (e1) {
+      selectorUsed = this.config.navLinksSelector;
+      this.logger.debug('侧边栏选择器未命中，回退到通用选择器', { fallback: selectorUsed });
+      try {
+        await page.waitForSelector(selectorUsed, { timeout: 10000 });
+        this.logger.info('选择器找到（通用）', {
+          selector: selectorUsed,
+          elapsed: Date.now() - startTime
+        });
+      } catch (error) {
+        this.logger.warn('导航链接选择器等待超时', {
+          selector: selectorUsed,
+          entryUrl,
+          error: error.message,
+          elapsed: Date.now() - startTime
+        });
+      }
     }
 
-    const urls = await page.evaluate((selector) => {
-      const elements = document.querySelectorAll(selector);
-      return Array.from(elements)
+    const urls = await page.evaluate((sidebarSelector, genericSelector) => {
+      // 优先从侧边栏容器采集链接
+      let elements = [];
+      const container = document.querySelector('#sidebar-content #navigation-items');
+      if (container) {
+        elements = Array.from(container.querySelectorAll('a[href]'));
+      } else {
+        // 回退到通用选择器，但排除顶栏 nav-tabs
+        const all = Array.from(document.querySelectorAll(genericSelector));
+        elements = all.filter(el => !el.closest('.nav-tabs'));
+      }
+
+      return elements
         .map(el => {
           const href = el.href || el.getAttribute('href');
           return href ? href.trim() : null;
         })
         .filter(href => href && !href.startsWith('#') && !href.startsWith('javascript:'));
-    }, this.config.navLinksSelector);
+    }, sidebarSelector, this.config.navLinksSelector);
 
     // 确保入口页面本身也被处理
     urls.unshift(entryUrl);
@@ -327,6 +673,27 @@ export class Scraper extends EventEmitter {
       extractedCount: urls.length
     });
 
+    return urls;
+  }
+
+  /**
+   * 收集全局导航链接（不强制包含入口URL），用于根据侧边栏顺序进行分段
+   */
+  async _collectGlobalNavLinks(page) {
+    const urls = await page.evaluate((selector) => {
+      // 过滤掉顶栏 tab（nav-tabs）里的链接，只保留侧边栏/正文导航
+      const all = Array.from(document.querySelectorAll(selector));
+      const elements = all.filter(el => !el.closest('.nav-tabs'));
+
+      return elements
+        .map(el => {
+          const href = el.href || el.getAttribute('href');
+          return href ? href.trim() : null;
+        })
+        .filter(href => href && !href.startsWith('#') && !href.startsWith('javascript:'));
+    }, this.config.navLinksSelector);
+
+    this.logger.debug('全局导航URL提取完成', { extractedCount: urls.length });
     return urls;
   }
 

@@ -76,6 +76,9 @@ class PDFMerger:
         # 加载文章标题
         self.article_titles = self._load_article_titles()
 
+        # 加载section结构（用于分层TOC）
+        self.section_structure = self._load_section_structure()
+
     def _setup_logger(self) -> logging.Logger:
         """设置默认日志记录器"""
         logger = logging.getLogger('PDFMerger')
@@ -135,6 +138,32 @@ class PDFMerger:
             self.logger.warning(f"加载文章标题失败: {e}")
 
         return article_titles
+
+    def _load_section_structure(self) -> Optional[Dict[str, Any]]:
+        """加载section结构信息（用于分层TOC）"""
+        section_structure = None
+
+        try:
+            # 尝试从元数据目录加载
+            metadata_file = os.path.join(self.metadata_dir, 'sectionStructure.json')
+            if os.path.exists(metadata_file):
+                with open(metadata_file, 'r', encoding='utf-8') as f:
+                    section_structure = json.load(f)
+                    self.logger.info(f"已加载section结构: {len(section_structure.get('sections', []))} sections")
+                    return section_structure
+
+            # 回退到PDF目录
+            fallback_file = os.path.join(self.pdf_dir, 'sectionStructure.json')
+            if os.path.exists(fallback_file):
+                with open(fallback_file, 'r', encoding='utf-8') as f:
+                    section_structure = json.load(f)
+                    self.logger.info(f"已加载section结构（从PDF目录）: {len(section_structure.get('sections', []))} sections")
+                    return section_structure
+
+        except Exception as e:
+            self.logger.debug(f"加载section结构失败（将使用flat TOC）: {e}")
+
+        return section_structure
 
     def _get_pdf_files(self, directory_path: str, engine_filter: str = None) -> List[str]:
         """
@@ -325,6 +354,104 @@ class PDFMerger:
             self.logger.warning(f"创建书签标题失败 {filename}: {e}")
             return os.path.splitext(filename)[0]
 
+    def _build_hierarchical_toc(
+        self,
+        files: List[str],
+        page_counts: Dict[str, int],
+        file_to_index: Dict[str, str]
+    ) -> List[List[Any]]:
+        """
+        构建分层TOC结构
+
+        Args:
+            files: PDF文件名列表（按合并顺序）
+            page_counts: 文件名 -> 页数映射
+            file_to_index: 文件名 -> 索引映射
+
+        Returns:
+            分层TOC列表 [[level, title, page, link], ...]
+        """
+        toc = []
+
+        if not self.section_structure or 'sections' not in self.section_structure:
+            # Fallback到flat TOC
+            self.logger.debug("没有section结构，使用flat TOC")
+            return None
+
+        sections = self.section_structure['sections']
+        current_page = 0
+
+        # 构建文件名到页数的映射
+        file_page_map = {}  # filename -> start_page
+        for filename in files:
+            file_page_map[filename] = current_page
+            current_page += page_counts.get(filename, 0)
+
+        # 🔥 性能优化：预先构建反向索引 (index -> filename) 以避免O(n²)嵌套循环
+        index_to_file = {}  # index -> filename
+        for filename in files:
+            file_index = file_to_index.get(filename)
+            if file_index:
+                index_to_file[file_index] = filename
+
+        self.logger.debug(f"构建索引映射: {len(index_to_file)} 个文件")
+
+        # 遍历每个section
+        for section in sections:
+            section_title = section.get('title', 'Untitled Section')
+            section_pages = section.get('pages', [])
+
+            if not section_pages:
+                # 跳过空section
+                continue
+
+            # 找到该section的第一个有效页面作为section链接目标
+            section_start_page = None
+            valid_pages = []
+
+            for page_info in section_pages:
+                page_index = page_info.get('index')
+                if not page_index:
+                    continue
+
+                # 🔥 O(1) 查找而不是O(n)嵌套循环
+                found_file = index_to_file.get(page_index)
+
+                if found_file and found_file in file_page_map:
+                    page_start = file_page_map[found_file]
+                    page_title = self.article_titles.get(page_index, f"Page {page_index}")
+
+                    if section_start_page is None:
+                        section_start_page = page_start
+
+                    valid_pages.append({
+                        'title': page_title,
+                        'page': page_start,
+                        'index': page_index
+                    })
+
+            # 如果该section有有效页面，添加到TOC
+            if valid_pages:
+                # 添加section标题（level 1）
+                toc.append([
+                    1,  # Level 1: Section
+                    section_title,
+                    section_start_page + 1,  # PyMuPDF页码从1开始
+                    {"kind": 1, "page": section_start_page}
+                ])
+
+                # 添加该section下的页面（level 2）
+                for page in valid_pages:
+                    toc.append([
+                        2,  # Level 2: Page
+                        page['title'],
+                        page['page'] + 1,
+                        {"kind": 1, "page": page['page']}
+                    ])
+
+        self.logger.info(f"构建了分层TOC: {len([t for t in toc if t[0] == 1])} sections, {len([t for t in toc if t[0] == 2])} pages")
+        return toc
+
     def _monitor_memory(self) -> None:
         """监控内存使用情况"""
         try:
@@ -402,6 +529,10 @@ class PDFMerger:
                 merged_pdf = fitz.open()  # 创建空的PDF文档
                 toc = []  # 目录结构
 
+                # 🔥 新增：收集信息用于构建分层TOC
+                page_counts = {}  # filename -> page_count
+                file_to_index = {}  # filename -> index (用于匹配sectionStructure)
+
                 # Starting merge operation (logging reduced for cleaner output)
 
                 for i, filename in enumerate(files):
@@ -429,7 +560,21 @@ class PDFMerger:
                         # 插入PDF页面
                         merged_pdf.insert_pdf(current_file_pdf)
 
-                        # 创建书签
+                        # 🔥 新增：记录信息用于分层TOC
+                        page_counts[filename] = page_count
+
+                        # 从文件名提取索引（支持 001-xxx.pdf 和 001-xxx_puppeteer.pdf）
+                        cleaned_filename = filename
+                        if '_puppeteer.pdf' in filename:
+                            cleaned_filename = filename.replace('_puppeteer.pdf', '.pdf')
+
+                        prefix = cleaned_filename.split('-')[0] if '-' in cleaned_filename else ''
+                        if prefix.isdigit():
+                            # 移除前导零以匹配scraper生成的索引格式
+                            # "001" → "1", "000" → "0"
+                            file_to_index[filename] = str(int(prefix))
+
+                        # 创建书签（用于flat TOC fallback）
                         bookmark_title = self._create_bookmark_title(filename, self.article_titles)
                         toc.append([
                             1,  # 级别
@@ -467,6 +612,20 @@ class PDFMerger:
 
                         # 继续处理下一个文件
                         continue
+
+                # 🔥 新增：尝试构建分层TOC
+                hierarchical_toc = None
+                if self.section_structure:
+                    try:
+                        hierarchical_toc = self._build_hierarchical_toc(files, page_counts, file_to_index)
+                        if hierarchical_toc:
+                            self.logger.info(f"使用分层TOC结构")
+                            toc = hierarchical_toc
+                        else:
+                            self.logger.info(f"使用flat TOC结构（无section信息）")
+                    except Exception as e:
+                        self.logger.warning(f"构建分层TOC失败，使用flat TOC: {e}")
+                        # toc已经包含flat结构，无需修改
 
                 # 设置目录结构（如果启用了书签功能）
                 bookmarks_enabled = self.config.get('pdf', {}).get('bookmarks', True)
