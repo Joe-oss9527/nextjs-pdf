@@ -11,7 +11,11 @@
     "test": "jest tests/",
     "test:watch": "jest --watch tests/",
     "lint": "eslint 'src/**/*.js'",
-    "lint:fix": "eslint 'src/**/*.js' --fix"
+    "lint:fix": "eslint 'src/**/*.js' --fix",
+    "docs:openai": "node scripts/use-doc-target.js use openai",
+    "docs:claude": "node scripts/use-doc-target.js use claude-code",
+    "docs:list": "node scripts/use-doc-target.js list",
+    "docs:current": "node scripts/use-doc-target.js current"
   },
   "keywords": [
     "scraper",

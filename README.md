@@ -73,6 +73,7 @@ make kindle-all
   "rootURL": "https://docs.example.com",
   "baseUrl": "https://docs.example.com/docs/",
   "concurrency": 5,
+  "sectionEntryPoints": [],
   "pdf": {
     "engine": "puppeteer",
     "theme": "light",
@@ -98,6 +99,24 @@ Device-specific settings are stored in `config-profiles/` and automatically merg
     "maxCodeLineLength": 70
   }
 }
+```
+
+### Switching Documentation Targets
+
+Use the helper script to swap between OpenAI and Claude Code configs without manually editing `config.json`:
+
+```bash
+# Apply OpenAI defaults
+npm run docs:openai
+
+# Apply Claude Code (code.claude.com/docs) defaults
+npm run docs:claude
+
+# Inspect current root/base URLs
+npm run docs:current
+
+# List all available doc targets
+npm run docs:list
 ```
 
 ## Development

@@ -6,7 +6,7 @@ VENV_PYTHON = $(VENV_DIR)/bin/python
 VENV_PIP = $(VENV_DIR)/bin/pip
 NODE_MODULES = node_modules
 
-.PHONY: help install install-python install-node venv clean-venv clean clean-all run test lint kindle7 kindle-paperwhite kindle-oasis kindle-scribe kindle-all reset-config list-configs clean-kindle
+.PHONY: help install install-python install-node venv clean-venv clean clean-all run test lint kindle7 kindle-paperwhite kindle-oasis kindle-scribe kindle-all reset-config list-configs clean-kindle docs-openai docs-claude docs-current
 
 help:
 	@echo "Available commands:"
@@ -31,6 +31,11 @@ help:
 	@echo "  reset-config      - Reset to base configuration"
 	@echo "  list-configs      - List all available configurations"
 	@echo "  clean-kindle      - Clean Kindle PDF files"
+	@echo ""
+	@echo "Doc targets:"
+	@echo "  docs-openai       - Apply OpenAI docs configuration"
+	@echo "  docs-claude       - Apply Claude Code docs configuration"
+	@echo "  docs-current      - Show current doc configuration"
 
 # Create Python virtual environment with enhanced checking
 venv:
@@ -144,6 +149,7 @@ python-info: check-venv
 
 # Kindle PDF optimization commands
 CONFIG_SCRIPT = scripts/use-kindle-config.js
+DOC_TARGET_SCRIPT = scripts/use-doc-target.js
 
 # Generate PDFs for Kindle 7-inch
 kindle7:
@@ -198,6 +204,16 @@ kindle-all: kindle7 kindle-paperwhite kindle-oasis kindle-scribe
 	@echo "  - pdfs/finalPdf-paperwhite/"
 	@echo "  - pdfs/finalPdf-oasis/"
 	@echo "  - pdfs/finalPdf-scribe/"
+
+# Documentation target helpers
+docs-openai:
+	@node $(DOC_TARGET_SCRIPT) use openai
+
+docs-claude:
+	@node $(DOC_TARGET_SCRIPT) use claude-code
+
+docs-current:
+	@node $(DOC_TARGET_SCRIPT) current
 	@echo ""
 	@echo "请将这些PDF传输到相应设备进行验证"
 

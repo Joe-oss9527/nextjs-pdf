@@ -28,6 +28,8 @@ export class BrowserPool extends EventEmitter {
     this.browsers = [];
     this.availableBrowsers = [];
     this.busyBrowsers = [];
+    // 跟踪已断开的浏览器实例
+    this.disconnectedBrowsers = [];
     this.isInitialized = false;
     this.isClosed = false;
     
@@ -172,7 +174,8 @@ export class BrowserPool extends EventEmitter {
       this.emit('browser-acquired', {
         browserId: browser.process()?.pid || 'unknown',
         available: this.availableBrowsers.length,
-        busy: this.busyBrowsers.length
+        busy: this.busyBrowsers.length,
+        stats: { ...this.stats }
       });
 
       return browser;
@@ -248,7 +251,8 @@ export class BrowserPool extends EventEmitter {
               browserId: browser.process()?.pid || 'unknown',
               available: this.availableBrowsers.length,
               busy: this.busyBrowsers.length,
-              waitTime: elapsed
+              waitTime: elapsed,
+              stats: { ...this.stats }
             });
 
             resolve(browser);
@@ -315,10 +319,13 @@ export class BrowserPool extends EventEmitter {
       this.emit('browser-released', {
         browserId: browser.process()?.pid || 'unknown',
         available: this.availableBrowsers.length,
-        busy: this.busyBrowsers.length
+        busy: this.busyBrowsers.length,
+        stats: { ...this.stats }
       });
     } else {
       this.logger?.warn('释放的浏览器已断开连接');
+      // 记录断开的浏览器，防止被重新加入队列
+      this.disconnectedBrowsers.push(browser);
     }
   }
 
@@ -331,6 +338,11 @@ export class BrowserPool extends EventEmitter {
     this.logger?.warn('浏览器断开连接', {
       browserId: browser.process()?.pid || 'unknown'
     });
+
+    // 记录断开的浏览器
+    if (!this.disconnectedBrowsers.includes(browser)) {
+      this.disconnectedBrowsers.push(browser);
+    }
 
     // 从所有数组中移除断开的浏览器
     const allIndex = this.browsers.indexOf(browser);
@@ -393,6 +405,7 @@ export class BrowserPool extends EventEmitter {
    */
   async close() {
     if (this.isClosed) {
+      this.logger?.warn('浏览器池已经关闭');
       return;
     }
 

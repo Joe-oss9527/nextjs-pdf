@@ -1,0 +1,16 @@
+{
+  "rootURL": "https://platform.openai.com/docs/guides/prompt-engineering",
+  "baseUrl": "https://platform.openai.com/docs",
+  "navLinksSelector": "nav a[href], aside a[href], [role='navigation'] a[href], .sidebar a[href]",
+  "contentSelector": "main, article, [role='main'], .main-content",
+  "ignoreURLs": [
+    "docs/pages",
+    "docs/app/api-reference"
+  ],
+  "allowedDomains": [
+    "platform.openai.com",
+    "openai.com"
+  ],
+  "sectionEntryPoints": [],
+  "enablePDFStyleProcessing": false
+}
