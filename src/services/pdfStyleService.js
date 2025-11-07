@@ -81,28 +81,77 @@ export class PDFStyleService {
   async removeDarkTheme(page) {
     try {
       await page.evaluate(() => {
-        // 强制移除根节点上的深色主题标记
-        document.documentElement.classList.remove('dark', 'dark-mode', 'theme-dark');
-        document.body.classList.remove('dark', 'dark-mode', 'theme-dark');
+        // === 阶段1.1：清除浏览器存储中的主题偏好 ===
+        // 防止 JavaScript 重新应用深色主题
+        const themeKeys = [
+          'theme', 'theme-preference', 'color-mode', 'colorMode', 'themeMode',
+          'next-theme', 'chakra-ui-color-mode', 'mantine-color-scheme',
+          'vuepress-color-scheme', 'docusaurus.theme'
+        ];
+
+        themeKeys.forEach(key => {
+          try {
+            localStorage.removeItem(key);
+            sessionStorage.removeItem(key);
+          } catch (e) {
+            // localStorage 可能被禁用，忽略错误
+          }
+        });
+
+        // === 阶段1.2：移除深色主题标记并设置浅色标识 ===
+        // 强制移除根节点上的深色主题类
+        document.documentElement.classList.remove('dark', 'dark-mode', 'theme-dark', 'night-mode');
+        document.body.classList.remove('dark', 'dark-mode', 'theme-dark', 'night-mode');
+
+        // 添加浅色主题标识
+        document.documentElement.classList.add('light', 'light-mode', 'theme-light');
+        document.body.classList.add('light');
+
+        // 设置主题属性
         document.documentElement.removeAttribute('data-theme');
         document.body.removeAttribute('data-theme');
         document.documentElement.setAttribute('data-theme', 'light');
+        document.documentElement.setAttribute('data-color-mode', 'light');
+        document.documentElement.setAttribute('data-color-scheme', 'light');
 
-        // 移除所有元素的深色主题相关类和属性
+        // === 阶段1.3：修改 color-scheme meta 标签 ===
+        let colorSchemeMeta = document.querySelector('meta[name="color-scheme"]');
+        if (colorSchemeMeta) {
+          colorSchemeMeta.setAttribute('content', 'light');
+        } else {
+          colorSchemeMeta = document.createElement('meta');
+          colorSchemeMeta.name = 'color-scheme';
+          colorSchemeMeta.content = 'light';
+          document.head.appendChild(colorSchemeMeta);
+        }
+
+        // 同时设置 theme-color meta（如果存在）
+        let themeColorMeta = document.querySelector('meta[name="theme-color"]');
+        if (themeColorMeta) {
+          themeColorMeta.setAttribute('content', '#ffffff');
+        }
+
+        // === 清理所有元素的深色主题类和属性 ===
         document.querySelectorAll('*').forEach(el => {
-          el.classList.remove('dark', 'dark-mode', 'theme-dark');
-          if (el.hasAttribute('data-theme')) {
+          // 移除深色主题类
+          el.classList.remove('dark', 'dark-mode', 'theme-dark', 'night-mode');
+
+          // 移除深色主题属性
+          if (el.hasAttribute('data-theme') && el.getAttribute('data-theme') === 'dark') {
             el.removeAttribute('data-theme');
+          }
+          if (el.hasAttribute('data-color-mode') && el.getAttribute('data-color-mode') === 'dark') {
+            el.removeAttribute('data-color-mode');
           }
         });
 
         // 清理特定选择器中的深色标识
-        document.querySelectorAll('[data-theme="dark"], [class*="dark"], .theme-dark').forEach(el => {
+        document.querySelectorAll('[data-theme="dark"], .theme-dark').forEach(el => {
           el.removeAttribute('data-theme');
           el.classList.remove('dark', 'dark-mode', 'theme-dark');
         });
       });
-      this.logger.debug('已移除深色主题标记');
+      this.logger.debug('已移除深色主题标记并强制设置浅色主题');
     } catch (error) {
       this.logger.warn('移除深色主题失败', { error: error.message });
     }
@@ -247,6 +296,86 @@ export class PDFStyleService {
       @page {
         margin: 1.5cm;
         size: A4;
+      }
+
+      /* === 阶段2.1：强制浅色主题 CSS 变量覆盖 === */
+      :root, html, body, [data-theme], [class*="theme"] {
+        /* 通用颜色变量（所有可能的命名） */
+        --bg: #ffffff !important;
+        --bg-color: #ffffff !important;
+        --background: #ffffff !important;
+        --background-color: #ffffff !important;
+        --body-bg: #ffffff !important;
+        --page-bg: #ffffff !important;
+
+        --text: #000000 !important;
+        --text-color: #000000 !important;
+        --foreground: #000000 !important;
+        --color: #000000 !important;
+
+        /* Next.js Nextra 主题常用变量 */
+        --nextra-bg: #ffffff !important;
+        --nextra-navbar-bg: #ffffff !important;
+        --nextra-sidebar-bg: #f8fafc !important;
+        --nextra-text: #000000 !important;
+        --nextra-primary: #0070f3 !important;
+
+        /* Tailwind CSS 变量 */
+        --tw-bg-opacity: 1 !important;
+        --tw-text-opacity: 1 !important;
+        --tw-prose-body: #374151 !important;
+        --tw-prose-headings: #111827 !important;
+
+        /* Chakra UI 变量 */
+        --chakra-colors-bg: #ffffff !important;
+        --chakra-colors-text: #000000 !important;
+
+        /* Mantine 变量 */
+        --mantine-color-body: #ffffff !important;
+        --mantine-color-text: #000000 !important;
+
+        /* Docusaurus 变量 */
+        --ifm-background-color: #ffffff !important;
+        --ifm-font-color-base: #000000 !important;
+
+        /* VuePress 变量 */
+        --vp-c-bg: #ffffff !important;
+        --vp-c-text-1: #213547 !important;
+
+        /* 语义化颜色 */
+        --primary-bg: #ffffff !important;
+        --secondary-bg: #f8fafc !important;
+        --muted: #6b7280 !important;
+        --muted-foreground: #6b7280 !important;
+        --border: #e5e7eb !important;
+        --card-bg: #ffffff !important;
+        --popover-bg: #ffffff !important;
+      }
+
+      /* === 阶段2.2：强制 body/html 基础颜色 === */
+      html, body {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        color-scheme: light !important;
+      }
+
+      /* 覆盖所有可能的深色容器 */
+      *, *::before, *::after {
+        border-color: #e5e7eb !important;
+      }
+
+      /* === 阶段2.3：覆盖系统深色模式偏好 === */
+      @media (prefers-color-scheme: dark) {
+        :root, html, body {
+          background-color: #ffffff !important;
+          color: #000000 !important;
+          color-scheme: light !important;
+        }
+
+        /* 重置所有可能在 dark mode 下改变的元素 */
+        * {
+          color-scheme: light !important;
+        }
       }
 
       /* === 仅在深色主题时强制转换为浅色 === */
@@ -402,6 +531,39 @@ export class PDFStyleService {
       .dark-mode-toggle,
       .sidebar-toggle,
       .mobile-menu {
+        display: none !important;
+      }
+
+      /* === 全局隐藏站点级导航/侧栏/目录/面包屑（不依赖内容区结构）=== */
+      nav,
+      [role="navigation"],
+      aside,
+      [role="complementary"],
+      /* 侧栏与目录区域（常见命名） */
+      [id*="sidebar"],
+      [class*="sidebar"],
+      [data-sidebar],
+      .table-of-contents,
+      .toc,
+      #on-this-page,
+      .on-this-page,
+      [aria-label="On this page"],
+      /* 面包屑与分页 */
+      [data-testid="breadcrumb"],
+      [aria-label="breadcrumb"],
+      .breadcrumbs,
+      #pagination,
+      .pagination,
+      /* 复制整页等与阅读无关控件 */
+      .copy-page,
+      [data-action="copy-page"],
+      /* 聊天助手/悬浮输入框 */
+      .chat-assistant-floating-input,
+      .chat-assistant-send-button,
+      #assistant-bar-placeholder,
+      [class*="chat-assistant"],
+      [class*="floating-input"],
+      [id*="assistant-bar"] {
         display: none !important;
       }
 
@@ -613,6 +775,54 @@ export class PDFStyleService {
         document.querySelectorAll('[data-theme="dark"], [class*="dark"], .theme-dark').forEach(el => {
           el.removeAttribute('data-theme');
           el.classList.remove('dark', 'dark-mode', 'theme-dark');
+        });
+
+        // === 阶段3：强制设置所有元素为浅色（全局颜色检测和转换）===
+        // 强制设置 body 和根元素的颜色
+        document.body.style.setProperty('background-color', '#ffffff', 'important');
+        document.body.style.setProperty('color', '#000000', 'important');
+        document.documentElement.style.setProperty('background-color', '#ffffff', 'important');
+        document.documentElement.style.setProperty('color', '#000000', 'important');
+
+        // 处理所有可能的深色容器
+        const allElements = document.querySelectorAll('*');
+        let darkElementsFixed = 0;
+
+        allElements.forEach(el => {
+          const computedStyle = window.getComputedStyle(el);
+          const bgColor = computedStyle.backgroundColor;
+          const textColor = computedStyle.color;
+
+          // 检测深色背景并强制转换为白色
+          if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
+            const rgbMatch = bgColor.match(/rgb[a]?\((\d+),\s*(\d+),\s*(\d+)/);
+            if (rgbMatch) {
+              const r = parseInt(rgbMatch[1]);
+              const g = parseInt(rgbMatch[2]);
+              const b = parseInt(rgbMatch[3]);
+
+              // 如果背景色的RGB值都小于50（很深的颜色）
+              if (r < 50 && g < 50 && b < 50) {
+                el.style.setProperty('background-color', '#ffffff', 'important');
+                darkElementsFixed++;
+              }
+            }
+          }
+
+          // 检测浅色文本（在深色背景上的白色文本）并转换为深色
+          if (textColor) {
+            const rgbMatch = textColor.match(/rgb[a]?\((\d+),\s*(\d+),\s*(\d+)/);
+            if (rgbMatch) {
+              const r = parseInt(rgbMatch[1]);
+              const g = parseInt(rgbMatch[2]);
+              const b = parseInt(rgbMatch[3]);
+
+              // 如果文本颜色的RGB值都大于200（很浅的颜色，如白色）
+              if (r > 200 && g > 200 && b > 200) {
+                el.style.setProperty('color', '#000000', 'important');
+              }
+            }
+          }
         });
 
         // 只添加最基础的PDF打印优化样式

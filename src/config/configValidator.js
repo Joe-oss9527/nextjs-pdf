@@ -48,6 +48,9 @@ const configSchema = Joi.object({
   logLevel: Joi.string().valid('debug', 'info', 'warn', 'error').default('info')
     .description('Logging level'),
 
+  enablePDFStyleProcessing: Joi.boolean().default(false)
+    .description('Enable PDF style processing (DOM manipulation) - false prevents printToPDF failures on some sites'),
+
   // 浏览器配置
   browser: Joi.object({
     headless: Joi.boolean().default(true)
@@ -300,8 +303,22 @@ function validateConfig(config, options = {}) {
 
   try {
     logger.debug('Starting configuration validation...');
-    
+
+    // 🔍 诊断日志：记录 validation 前的配置
+    logger.debug('Config BEFORE validation', {
+      enablePDFStyleProcessing: config.enablePDFStyleProcessing,
+      type: typeof config.enablePDFStyleProcessing,
+      allKeys: Object.keys(config).filter(k => k.includes('PDF') || k.includes('Style'))
+    });
+
     const { error, value, warning } = configSchema.validate(config, validationOptions);
+
+    // 🔍 诊断日志：记录 validation 后的配置
+    logger.debug('Config AFTER validation', {
+      enablePDFStyleProcessing: value?.enablePDFStyleProcessing,
+      type: typeof value?.enablePDFStyleProcessing,
+      allKeys: value ? Object.keys(value).filter(k => k.includes('PDF') || k.includes('Style')) : []
+    });
     
     if (error) {
       const errorMessage = error.details.map(detail => {
