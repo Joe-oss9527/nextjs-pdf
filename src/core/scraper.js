@@ -550,6 +550,15 @@ export class Scraper extends EventEmitter {
       }
 
       // 应用PDF样式优化（可选，添加错误处理）
+      // 🔍 诊断日志：记录配置检查详情
+      this.logger.info('PDF样式处理配置检查', {
+        url,
+        enablePDFStyleProcessing: this.config.enablePDFStyleProcessing,
+        type: typeof this.config.enablePDFStyleProcessing,
+        strictCheck: this.config.enablePDFStyleProcessing === true,
+        configKeys: Object.keys(this.config).filter(k => k.includes('PDF') || k.includes('Style'))
+      });
+
       if (this.config.enablePDFStyleProcessing === true) {
         try {
           await this.pdfStyleService.applyPDFStyles(page, this.config.contentSelector);
