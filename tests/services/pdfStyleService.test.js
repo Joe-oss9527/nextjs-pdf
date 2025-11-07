@@ -226,11 +226,16 @@ describe('PDFStyleService', () => {
 
   describe('processSpecialContent', () => {
     it('should process special content successfully', async () => {
-      mockPage.evaluate.mockResolvedValue(undefined);
+      const stats = {
+        detailsExpanded: 5,
+        ariaExpandedFixed: 3,
+        hiddenContentRevealed: 2
+      };
+      mockPage.evaluate.mockResolvedValue(stats);
 
       await pdfStyleService.processSpecialContent(mockPage);
       
-      expect(mockLogger.debug).toHaveBeenCalledWith('特殊内容处理完成');
+      expect(mockLogger.info).toHaveBeenCalledWith('特殊内容处理完成', stats);
       expect(mockPage.evaluate).toHaveBeenCalledWith(expect.any(Function));
     });
 

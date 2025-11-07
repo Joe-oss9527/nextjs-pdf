@@ -1,0 +1,20 @@
+{
+  "rootURL": "https://code.claude.com/docs/en/overview",
+  "baseUrl": "https://code.claude.com/docs/en/",
+  "navLinksSelector": "a[href^='/docs/en/'], [id*='sidebar'] a[href], nav a[href]",
+  "contentSelector": "#content-area",
+  "allowedDomains": [
+    "code.claude.com"
+  ],
+  "ignoreURLs": [],
+  "sectionEntryPoints": [
+    "https://code.claude.com/docs/en/overview",
+    "https://code.claude.com/docs/en/sub-agents",
+    "https://code.claude.com/docs/en/third-party-integrations",
+    "https://code.claude.com/docs/en/setup",
+    "https://code.claude.com/docs/en/settings",
+    "https://code.claude.com/docs/en/cli-reference",
+    "https://code.claude.com/docs/en/legal-and-compliance"
+  ],
+  "enablePDFStyleProcessing": true
+}

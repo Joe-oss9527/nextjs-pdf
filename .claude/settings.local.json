@@ -8,7 +8,15 @@
       "Bash(pdfinfo:*)",
       "Bash(rm:*)",
       "Bash(node:*)",
-      "WebFetch(domain:docs.anthropic.com)"
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(make clean:*)",
+      "Bash(make run:*)",
+      "Bash(time curl:*)",
+      "Bash(curl:*)",
+      "Bash(npm start)",
+      "WebFetch(domain:code.claude.com)",
+      "Bash(tee:*)",
+      "Bash(pdftotext:*)"
     ],
     "deny": []
   }
