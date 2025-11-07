@@ -26,6 +26,23 @@ export class MetadataService {
   }
 
   /**
+   * 保存section结构信息（用于生成分层TOC）
+   */
+  async saveSectionStructure(structure) {
+    const filePath = this.pathService.getMetadataPath('sectionStructure');
+    await this.fileService.writeJson(filePath, structure);
+    this.logger.debug(`保存section结构: ${structure.sections?.length || 0} sections`);
+  }
+
+  /**
+   * 获取section结构信息
+   */
+  async getSectionStructure() {
+    const filePath = this.pathService.getMetadataPath('sectionStructure');
+    return await this.fileService.readJson(filePath, null);
+  }
+
+  /**
    * 记录失败的链接
    */
   async logFailedLink(url, index, error) {
