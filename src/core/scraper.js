@@ -192,6 +192,7 @@ export class Scraper extends EventEmitter {
       // URL去重和规范化
       const normalizedUrls = new Map();
       const duplicates = new Set();
+      const sectionConflicts = []; // 🔥 新增：记录section冲突
 
       rawUrls.forEach((url, index) => {
         try {
@@ -200,6 +201,20 @@ export class Scraper extends EventEmitter {
 
           if (normalizedUrls.has(hash)) {
             duplicates.add(url);
+
+            // 🔥 日志增强：检测section冲突
+            const existing = normalizedUrls.get(hash);
+            const currentMapping = urlToSectionMap.get(url);
+
+            if (existing.sectionIndex !== currentMapping?.sectionIndex &&
+                existing.sectionIndex !== undefined &&
+                currentMapping?.sectionIndex !== undefined) {
+              sectionConflicts.push({
+                url: normalized,
+                existingSection: sections[existing.sectionIndex]?.title || existing.sectionIndex,
+                conflictSection: sections[currentMapping.sectionIndex]?.title || currentMapping.sectionIndex
+              });
+            }
             return;
           }
 
@@ -219,6 +234,18 @@ export class Scraper extends EventEmitter {
           this.logger.warn('URL规范化失败', { url, error: error.message });
         }
       });
+
+      // 🔥 日志增强：报告section冲突
+      if (sectionConflicts.length > 0) {
+        this.logger.warn('检测到URL在多个section中重复', {
+          conflictCount: sectionConflicts.length,
+          examples: sectionConflicts.slice(0, 3)
+        });
+
+        if (sectionConflicts.length <= 5) {
+          this.logger.debug('所有section冲突:', { conflicts: sectionConflicts });
+        }
+      }
 
       // 构建最终URL队列
       this.urlQueue = Array.from(normalizedUrls.values()).map(item => item.normalized);
@@ -264,10 +291,30 @@ export class Scraper extends EventEmitter {
       // 保存到元数据服务
       await this.metadataService.saveSectionStructure(sectionStructure);
 
+      // 🔥 日志增强：详细的section统计信息
       this.logger.info('Section结构已保存', {
         sectionCount: sections.length,
         totalPages: Object.keys(urlToSection).length
       });
+
+      // 输出每个section的详细统计
+      sections.forEach((section, idx) => {
+        this.logger.debug(`Section ${idx + 1}/${sections.length}: "${section.title}"`, {
+          entryUrl: section.entryUrl,
+          pageCount: section.pages.length,
+          firstPage: section.pages[0]?.url,
+          lastPage: section.pages[section.pages.length - 1]?.url
+        });
+      });
+
+      // 检测空section
+      const emptySections = sections.filter(s => s.pages.length === 0);
+      if (emptySections.length > 0) {
+        this.logger.warn('检测到空section（没有页面）', {
+          emptyCount: emptySections.length,
+          titles: emptySections.map(s => s.title)
+        });
+      }
 
       // 记录统计信息
       this.logger.info('URL收集完成', {
@@ -330,8 +377,36 @@ export class Scraper extends EventEmitter {
       });
     }
 
-    // 去重保持顺序
-    return Array.from(new Set(entryPoints));
+    // 🔥 日志增强：检测并警告重复的entry points
+    const originalLength = entryPoints.length;
+    const deduplicated = Array.from(new Set(entryPoints));
+
+    if (deduplicated.length < originalLength) {
+      const duplicateCount = originalLength - deduplicated.length;
+      this.logger.warn('检测到重复的entry points', {
+        original: originalLength,
+        deduplicated: deduplicated.length,
+        duplicates: duplicateCount,
+        hint: 'rootURL可能与sectionEntryPoints中的某个URL重复'
+      });
+
+      // 找出具体的重复项
+      const seen = new Set();
+      const duplicates = [];
+      entryPoints.forEach(url => {
+        if (seen.has(url)) {
+          duplicates.push(url);
+        } else {
+          seen.add(url);
+        }
+      });
+
+      if (duplicates.length > 0) {
+        this.logger.debug('重复的entry point URLs:', { duplicates });
+      }
+    }
+
+    return deduplicated;
   }
 
   /**
@@ -366,25 +441,59 @@ export class Scraper extends EventEmitter {
           // 查找所有导航链接
           const navLinks = document.querySelectorAll(navSelector);
 
+          // 🔥 改进：使用更严格的URL匹配逻辑
+          let bestMatch = null;
+          let bestMatchScore = -1;
+
           for (const link of navLinks) {
             const href = link.href || link.getAttribute('href');
             if (!href) continue;
 
             const normalizedHref = normalizeUrl(href);
 
-            // 精确匹配或路径前缀匹配
-            if (normalizedHref === normalizedTarget || normalizedTarget.startsWith(normalizedHref + '/')) {
-              // 提取文本内容
-              let text = link.textContent?.trim();
+            // 计算匹配得分
+            let score = 0;
+
+            // 1. 精确匹配：最高优先级
+            if (normalizedHref === normalizedTarget) {
+              score = 1000;
+            }
+            // 2. 路径深度相同的前缀匹配：次高优先级
+            else {
+              try {
+                const targetPath = new URL(normalizedTarget).pathname;
+                const hrefPath = new URL(normalizedHref).pathname;
+
+                const targetDepth = targetPath.split('/').filter(Boolean).length;
+                const hrefDepth = hrefPath.split('/').filter(Boolean).length;
+
+                // 只匹配相同深度的路径（避免误匹配子路径）
+                if (targetDepth === hrefDepth && targetPath.startsWith(hrefPath)) {
+                  score = 500;
+                }
+                // 允许href比target短1级（用于section入口）
+                else if (targetDepth === hrefDepth + 1 && targetPath.startsWith(hrefPath + '/')) {
+                  score = 300;
+                }
+              } catch (e) {
+                // URL解析失败，跳过
+                continue;
+              }
+            }
+
+            // 如果匹配分数更高，更新最佳匹配
+            if (score > bestMatchScore) {
+              const text = link.textContent?.trim();
 
               // 如果链接本身没有文本，尝试找最近的父节点标题
-              if (!text || text.length < 2) {
+              let finalText = text;
+              if (!finalText || finalText.length < 2) {
                 let parent = link.parentElement;
                 let attempts = 0;
                 while (parent && attempts < 3) {
                   const heading = parent.querySelector('h1, h2, h3, h4, h5, h6, [role="heading"]');
                   if (heading) {
-                    text = heading.textContent?.trim();
+                    finalText = heading.textContent?.trim();
                     break;
                   }
                   parent = parent.parentElement;
@@ -392,10 +501,21 @@ export class Scraper extends EventEmitter {
                 }
               }
 
-              if (text && text.length >= 2) {
-                return text;
+              if (finalText && finalText.length >= 2) {
+                bestMatch = finalText;
+                bestMatchScore = score;
+
+                // 如果找到精确匹配，立即返回
+                if (score === 1000) {
+                  return bestMatch;
+                }
               }
             }
+          }
+
+          // 返回最佳匹配
+          if (bestMatch) {
+            return bestMatch;
           }
 
           // 如果导航中没找到，尝试从页面主标题提取
