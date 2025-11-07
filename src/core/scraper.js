@@ -117,55 +117,31 @@ export class Scraper extends EventEmitter {
       throw new ValidationError('爬虫尚未初始化');
     }
 
-    this.logger.info('开始收集URL', { rootURL: this.config.rootURL });
+    const entryPoints = this._getEntryPoints();
+    this.logger.info('开始收集URL', { entryPoints });
 
     let page = null;
     try {
       // 创建页面
       page = await this.pageManager.createPage('url-collector');
 
-      // 导航到根页面
-      await retry(
-        () => page.goto(this.config.rootURL, {
-          waitUntil: 'networkidle0',
-          timeout: this.config.pageTimeout || 30000
-        }),
-        {
-          maxAttempts: this.config.maxRetries || 3,
-          delay: 2000,
-          onRetry: (attempt, error) => {
-            this.logger.warn(`URL收集页面加载重试 ${attempt}次`, {
-              url: this.config.rootURL,
-              error: error.message
-            });
-          }
-        }
-      );
+      const rawUrls = [];
 
-      // 等待导航链接加载
-      try {
-        await page.waitForSelector(this.config.navLinksSelector, {
-          timeout: 10000
-        });
-      } catch (error) {
-        this.logger.warn('导航链接选择器等待超时', {
-          selector: this.config.navLinksSelector,
-          error: error.message
-        });
+      for (const entryUrl of entryPoints) {
+        try {
+          const entryUrls = await this._collectUrlsFromEntryPoint(page, entryUrl);
+          rawUrls.push(...entryUrls);
+        } catch (entryError) {
+          this.logger.error('入口URL收集失败，将跳过该入口', {
+            entryUrl,
+            error: entryError.message
+          });
+        }
       }
 
-      // 提取URL
-      const rawUrls = await page.evaluate((selector) => {
-        const elements = document.querySelectorAll(selector);
-        return Array.from(elements)
-          .map(el => {
-            const href = el.href || el.getAttribute('href');
-            return href ? href.trim() : null;
-          })
-          .filter(href => href && !href.startsWith('#') && !href.startsWith('javascript:'));
-      }, this.config.navLinksSelector);
-
-      this.logger.info(`提取到 ${rawUrls.length} 个原始URL`);
+      this.logger.info(`提取到 ${rawUrls.length} 个原始URL`, {
+        entryPointCount: entryPoints.length
+      });
 
       // URL去重和规范化
       const normalizedUrls = new Map();
@@ -239,6 +215,119 @@ export class Scraper extends EventEmitter {
         await this.pageManager.closePage('url-collector');
       }
     }
+  }
+
+  /**
+   * 根据配置构建入口URL列表
+   * @returns {string[]} 入口URL数组
+   */
+  _getEntryPoints() {
+    const entryPoints = [this.config.rootURL];
+
+    if (Array.isArray(this.config.sectionEntryPoints)) {
+      this.config.sectionEntryPoints.forEach(url => {
+        if (typeof url === 'string' && url.trim()) {
+          entryPoints.push(url.trim());
+        }
+      });
+    }
+
+    // 去重保持顺序
+    return Array.from(new Set(entryPoints));
+  }
+
+  /**
+   * 从单个入口页面收集URL
+   * @param {import('puppeteer').Page} page
+   * @param {string} entryUrl
+   * @returns {Promise<string[]>}
+   */
+  async _collectUrlsFromEntryPoint(page, entryUrl) {
+    this.logger.info('处理入口页面', { entryUrl });
+
+    const startTime = Date.now();
+    this.logger.info('开始导航到入口页面', { entryUrl, waitUntil: 'load' });
+
+    await retry(
+      async () => {
+        const gotoStartTime = Date.now();
+        const waitUntil = this.config?.navigationWaitUntil || 'domcontentloaded';
+        const timeout = this.config?.pageTimeout || 30000;
+        this.logger.info('执行 page.goto', { entryUrl, timestamp: gotoStartTime, waitUntil });
+
+        const response = await page.goto(entryUrl, {
+          waitUntil,
+          timeout
+        });
+
+        const gotoEndTime = Date.now();
+        this.logger.info('page.goto 完成，等待动态内容加载', {
+          entryUrl,
+          duration: gotoEndTime - gotoStartTime,
+          status: response?.status()
+        });
+
+        // 等待动态内容加载（JS执行、异步请求等）
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        this.logger.info('动态内容等待完成', { entryUrl });
+
+        return response;
+      },
+      {
+        maxAttempts: this.config.maxRetries || 3,
+        delay: 2000,
+        onRetry: (attempt, error) => {
+          this.logger.warn(`入口页面加载重试 ${attempt}次`, {
+            url: entryUrl,
+            error: error.message,
+            elapsed: Date.now() - startTime
+          });
+        }
+      }
+    );
+
+    this.logger.info('导航完成，开始等待选择器', {
+      entryUrl,
+      selector: this.config.navLinksSelector,
+      elapsed: Date.now() - startTime
+    });
+
+    try {
+      await page.waitForSelector(this.config.navLinksSelector, {
+        timeout: 10000
+      });
+      this.logger.info('选择器找到', {
+        selector: this.config.navLinksSelector,
+        elapsed: Date.now() - startTime
+      });
+    } catch (error) {
+      this.logger.warn('导航链接选择器等待超时', {
+        selector: this.config.navLinksSelector,
+        entryUrl,
+        error: error.message,
+        elapsed: Date.now() - startTime
+      });
+    }
+
+    const urls = await page.evaluate((selector) => {
+      const elements = document.querySelectorAll(selector);
+      return Array.from(elements)
+        .map(el => {
+          const href = el.href || el.getAttribute('href');
+          return href ? href.trim() : null;
+        })
+        .filter(href => href && !href.startsWith('#') && !href.startsWith('javascript:'));
+    }, this.config.navLinksSelector);
+
+    // 确保入口页面本身也被处理
+    urls.unshift(entryUrl);
+
+    this.logger.debug('入口页面URL提取完成', {
+      entryUrl,
+      extractedCount: urls.length
+    });
+
+    return urls;
   }
 
   /**
@@ -451,6 +540,13 @@ export class Scraper extends EventEmitter {
           url,
           error: expandError.message
         });
+      }
+
+      // 移除深色主题（始终执行，安全操作，不替换DOM）
+      try {
+        await this.pdfStyleService.removeDarkTheme(page);
+      } catch (themeError) {
+        this.logger.warn('深色主题移除失败', { url, error: themeError.message });
       }
 
       // 应用PDF样式优化（可选，添加错误处理）

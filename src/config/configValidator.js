@@ -23,6 +23,9 @@ const configSchema = Joi.object({
   
   contentSelector: Joi.string().required()
     .description('CSS selector for main content'),
+
+  sectionEntryPoints: Joi.array().items(Joi.string().uri()).default([])
+    .description('Additional entry URLs that should be crawled alongside rootURL'),
   
   ignoreURLs: Joi.array().items(Joi.string()).default([])
     .description('URLs to ignore during scraping'),

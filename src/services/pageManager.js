@@ -184,11 +184,36 @@ export class PageManager extends EventEmitter {
 
         // 覆盖 permissions
         const originalQuery = window.navigator.permissions.query;
-        window.navigator.permissions.query = (parameters) => (
-          parameters.name === 'notifications' ?
-            Promise.resolve({ state: Notification.permission }) :
-            originalQuery(parameters)
-        );
+        window.navigator.permissions.query = (parameters) => {
+          if (parameters.name === 'notifications') {
+            const permission = typeof Notification !== 'undefined'
+              ? Notification.permission
+              : 'default';
+            return Promise.resolve({ state: permission });
+          }
+          return originalQuery(parameters);
+        };
+
+        // Provide Notification API fallback so site scripts don't crash
+        if (typeof window.Notification === 'undefined') {
+          class FakeNotification {
+            constructor(title, options) {
+              this.title = title;
+              this.options = options;
+            }
+            static async requestPermission() {
+              return 'default';
+            }
+          }
+          FakeNotification.permission = 'default';
+          window.Notification = FakeNotification;
+        }
+
+        if (typeof window.Notification.requestPermission !== 'function') {
+          window.Notification.requestPermission = async () => {
+            return window.Notification.permission || 'default';
+          };
+        }
 
         // 伪装 Chrome 运行时
         window.chrome = {
@@ -316,7 +341,13 @@ export class PageManager extends EventEmitter {
       'Script error.',
       'Non-Error promise rejection captured',
       'TypeError: Cannot read properties of null',
-      'TypeError: Cannot read properties of undefined'
+      'TypeError: Cannot read properties of undefined',
+      // 常见但无害的客户端环境差异
+      'Notification is not defined',
+      'ReferenceError: Notification is not defined',
+      'require is not defined',
+      'ReferenceError: require is not defined',
+      'exports is not defined in ES module scope'
     ];
 
     // 检查是否为已知的可忽略错误

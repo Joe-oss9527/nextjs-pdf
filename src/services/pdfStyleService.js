@@ -75,6 +75,40 @@ export class PDFStyleService {
   }
 
   /**
+   * 移除深色主题（独立于样式处理）
+   * 安全：不替换 DOM，仅移除深色相关类/属性
+   */
+  async removeDarkTheme(page) {
+    try {
+      await page.evaluate(() => {
+        // 强制移除根节点上的深色主题标记
+        document.documentElement.classList.remove('dark', 'dark-mode', 'theme-dark');
+        document.body.classList.remove('dark', 'dark-mode', 'theme-dark');
+        document.documentElement.removeAttribute('data-theme');
+        document.body.removeAttribute('data-theme');
+        document.documentElement.setAttribute('data-theme', 'light');
+
+        // 移除所有元素的深色主题相关类和属性
+        document.querySelectorAll('*').forEach(el => {
+          el.classList.remove('dark', 'dark-mode', 'theme-dark');
+          if (el.hasAttribute('data-theme')) {
+            el.removeAttribute('data-theme');
+          }
+        });
+
+        // 清理特定选择器中的深色标识
+        document.querySelectorAll('[data-theme="dark"], [class*="dark"], .theme-dark').forEach(el => {
+          el.removeAttribute('data-theme');
+          el.classList.remove('dark', 'dark-mode', 'theme-dark');
+        });
+      });
+      this.logger.debug('已移除深色主题标记');
+    } catch (error) {
+      this.logger.warn('移除深色主题失败', { error: error.message });
+    }
+  }
+
+  /**
    * 检测页面主题模式
    */
   async detectThemeMode(page) {
@@ -472,16 +506,24 @@ export class PDFStyleService {
           throw new Error(`内容选择器未找到: ${selector}`);
         }
 
-        // 只移除明显的交互元素
+        // 移除交互和导航元素（在内容区域内执行，避免全站影响）
         const elementsToRemove = [
-          'script', 'noscript', 
+          'script', 'noscript',
+          // 交互类
           'button', 'input', 'textarea', 'select',
-          '.theme-toggle', '.dark-mode-toggle',
-          '[data-theme-toggle]'
+          // 站点导航/侧栏/目录/面包屑/分页
+          'nav', 'aside', '[role="navigation"]', '[role="complementary"]',
+          '[id*="sidebar"]', '[class*="sidebar"]',
+          '.table-of-contents', '.toc', '#on-this-page', '.on-this-page', '[aria-label="On this page"]',
+          '#pagination', '.pagination', '[data-testid="breadcrumb"]', '.breadcrumbs', '[aria-label="breadcrumb"]',
+          // 视觉干扰或无关控件
+          '.theme-toggle', '.dark-mode-toggle', '[data-theme-toggle]', '.copy-page', '[data-action="copy-page"]'
         ];
 
         elementsToRemove.forEach(sel => {
-          contentElement.querySelectorAll(sel).forEach(el => el.remove());
+          contentElement.querySelectorAll(sel).forEach(el => {
+            try { el.remove(); } catch {}
+          });
         });
 
         // 强制移除深色主题类和属性
@@ -500,7 +542,7 @@ export class PDFStyleService {
         });
         
         // === 最小干预：仅添加换行支持，保留原始样式 ===
-        const codeElements = document.querySelectorAll(`
+        const codeElements = contentElement.querySelectorAll(`
           pre, 
           pre[class*="language-"],
           pre[class*="hljs"],
@@ -525,7 +567,7 @@ export class PDFStyleService {
         });
         
         // === 确保代码块内元素也支持换行 ===
-        const codeChildren = document.querySelectorAll(`
+        const codeChildren = contentElement.querySelectorAll(`
           pre *, 
           pre[class*="language-"] *,
           pre[class*="hljs"] *,
@@ -564,7 +606,7 @@ export class PDFStyleService {
           }
         });
 
-        // 替换body内容（保持所有原始样式）
+        // 替换body内容为提炼后的主要内容
         document.body.innerHTML = contentElement.outerHTML;
 
         // 强制移除内容中的深色主题

@@ -10,6 +10,7 @@ export const configSchema = Joi.object({
   screenshotDelay: Joi.number().integer().min(0).default(500),
   navLinksSelector: Joi.string().required(),
   contentSelector: Joi.string().required(),
+  sectionEntryPoints: Joi.array().items(Joi.string().uri()).default([]),
   ignoreURLs: Joi.array().items(Joi.string()).default([]),
   maxRetries: Joi.number().integer().min(1).default(3),
   retryDelay: Joi.number().integer().min(0).default(1000),
