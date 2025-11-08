@@ -83,12 +83,27 @@ class PDFMerger:
         """设置默认日志记录器"""
         logger = logging.getLogger('PDFMerger')
         if not logger.handlers:
-            handler = logging.StreamHandler()
             formatter = logging.Formatter(
                 '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
             )
-            handler.setFormatter(formatter)
-            logger.addHandler(handler)
+
+            # Console handler (stderr)
+            console_handler = logging.StreamHandler()
+            console_handler.setFormatter(formatter)
+            logger.addHandler(console_handler)
+
+            # File handler (logs/python_pdf_merger.log)
+            try:
+                log_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'logs')
+                os.makedirs(log_dir, exist_ok=True)
+                log_file = os.path.join(log_dir, 'python_pdf_merger.log')
+                file_handler = logging.FileHandler(log_file, encoding='utf-8')
+                file_handler.setFormatter(formatter)
+                logger.addHandler(file_handler)
+            except Exception as e:
+                # If file handler fails, continue with console only
+                logger.warning(f"无法创建文件日志处理器: {e}")
+
             logger.setLevel(logging.WARNING)  # Only show warnings and errors
         return logger
 

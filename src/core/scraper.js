@@ -1067,7 +1067,7 @@ export class Scraper extends EventEmitter {
       const cleanedTitle = this._cleanTitle(title);
       if (cleanedTitle) {
         await this.metadataService.saveArticleTitle(String(index), cleanedTitle);
-        this.logger.debug(`提取到标题 [${index}]: ${cleanedTitle}`, {
+        this.logger.info(`提取到标题 [${index}]: ${cleanedTitle}`, {
           source: titleInfo.source,
           original: title !== cleanedTitle ? title : undefined
         });

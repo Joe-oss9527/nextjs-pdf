@@ -14,7 +14,6 @@ export class StateManager extends EventEmitter {
       failedUrls: new Map(),           // 失败的URL及错误信息
       urlToIndex: new Map(),           // URL到索引的映射
       indexToUrl: new Map(),           // 索引到URL的映射
-      articleTitles: new Map(),        // 文章标题
       imageLoadFailures: new Set(),    // 图片加载失败的URL
       urlToFile: new Map(),            // URL到文件路径的映射
       startTime: null,                 // 开始时间
@@ -61,15 +60,6 @@ export class StateManager extends EventEmitter {
       // 恢复开始时间
       this.state.startTime = progress.startTime ? new Date(progress.startTime) : null;
 
-      // 加载文章标题
-      const titles = await this.fileService.readJson(
-        this.pathService.getMetadataPath('articleTitles'),
-        {}
-      );
-      Object.entries(titles).forEach(([index, title]) =>
-        this.state.articleTitles.set(String(index), title)
-      );
-
       // 加载图片加载失败记录
       const imageFailures = await this.fileService.readJson(
         this.pathService.getMetadataPath('imageLoadFailures'),
@@ -88,8 +78,7 @@ export class StateManager extends EventEmitter {
 
       this.logger.info('状态加载完成', {
         已处理: this.state.processedUrls.size,
-        失败: this.state.failedUrls.size,
-        标题数: this.state.articleTitles.size
+        失败: this.state.failedUrls.size
       });
 
       this.emit('loaded', this.getStats());
@@ -133,16 +122,6 @@ export class StateManager extends EventEmitter {
           savedAt: new Date().toISOString(),
           stats: this.getStats()
         }
-      );
-
-      // 保存文章标题
-      const titles = {};
-      this.state.articleTitles.forEach((title, index) => {
-        titles[index] = title;
-      });
-      await this.fileService.writeJson(
-        this.pathService.getMetadataPath('articleTitles'),
-        titles
       );
 
       // 保存图片加载失败记录
@@ -261,14 +240,6 @@ export class StateManager extends EventEmitter {
   }
 
   /**
-   * 设置文章标题
-   */
-  setArticleTitle(index, title) {
-    this.state.articleTitles.set(String(index), title);
-    this.emit('title-saved', { index, title });
-  }
-
-  /**
    * 标记图片加载失败
    */
   markImageLoadFailure(url) {
@@ -307,7 +278,6 @@ export class StateManager extends EventEmitter {
     this.state.failedUrls.clear();
     this.state.urlToIndex.clear();
     this.state.indexToUrl.clear();
-    this.state.articleTitles.clear();
     this.state.imageLoadFailures.clear();
     this.state.urlToFile.clear();
     this.state.startTime = null;

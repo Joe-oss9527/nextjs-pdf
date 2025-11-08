@@ -16,7 +16,9 @@
       "Bash(npm start)",
       "WebFetch(domain:code.claude.com)",
       "Bash(tee:*)",
-      "Bash(pdftotext:*)"
+      "Bash(pdftotext:*)",
+      "Bash(cat:*)",
+      "Bash(git add:*)"
     ],
     "deny": []
   }

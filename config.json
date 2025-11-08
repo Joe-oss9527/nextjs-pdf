@@ -64,5 +64,15 @@
   "python": {
     "executable": "./venv/bin/python",
     "timeout": 300000
-  }
+  },
+  "sectionTitles": {
+    "https://code.claude.com/docs/en/overview": "Getting started",
+    "https://code.claude.com/docs/en/sub-agents": "Build with Claude Code",
+    "https://code.claude.com/docs/en/third-party-integrations": "Deployment",
+    "https://code.claude.com/docs/en/setup": "Administration",
+    "https://code.claude.com/docs/en/settings": "Configuration",
+    "https://code.claude.com/docs/en/cli-reference": "Reference",
+    "https://code.claude.com/docs/en/legal-and-compliance": "Resources"
+  },
+  "navigationStrategy": "load"
 }
