@@ -14,7 +14,7 @@ export class MetadataService {
     const titles = await this.fileService.readJson(filePath, {});
     titles[index] = title;
     await this.fileService.writeJson(filePath, titles);
-    this.logger.debug(`保存文章标题: [${index}] ${title}`);
+    this.logger.info(`保存文章标题: [${index}] ${title}`);
   }
 
   /**

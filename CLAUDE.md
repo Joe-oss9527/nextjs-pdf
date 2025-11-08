@@ -4,6 +4,8 @@
 
 **Stack**: Node.js, Puppeteer-extra, Python PyMuPDF | **Tests**: 516 passing | **Status**: Production-ready
 
+> **About this file**: Project memory for Claude Code. Contains frequently-used commands, code standards, architectural decisions, and troubleshooting guides. Keep updated as the project evolves. See [Claude Code docs](https://code.claude.com/docs/en/memory) for best practices.
+
 ## Quick Start
 
 **Standard workflow**: `make clean && make run`
@@ -26,7 +28,19 @@
   - Always add to Joi schema before using in code, otherwise `this.config.yourField` will be undefined
   - Example: `enablePDFStyleProcessing` was missing → got stripped → feature never ran
   - Verify with: `node scripts/test-config-loading.js`
-**State**: Use `stateManager` for persistence, NOT direct file operations
+**State & Metadata** (Single Source of Truth principle):
+  - ⚠️ **CRITICAL**: Each data type should have ONLY ONE authoritative source to prevent conflicts
+  - `stateManager` → Process state only (URLs, progress, failures)
+  - `metadataService` → Content metadata only (titles, sections, mappings)
+  - **Never duplicate data** across services (causes sync bugs)
+  - Example bug (fixed): `articleTitles` was in both StateManager and MetadataService → StateManager overwrote MetadataService's incremental saves with empty Map → PDF TOC showed "Page 0" instead of real titles
+  - Fix: Removed `articleTitles` from StateManager entirely, MetadataService is single source
+**Logging levels**: Use appropriate levels for visibility
+  - `error`: Critical failures requiring immediate attention
+  - `warn`: Recoverable issues that may need investigation
+  - `info`: **Important operations** (title extraction, PDF generation, file saves) - use for operations you want visible in default logs
+  - `debug`: Verbose details only needed during development
+  - ⚠️ **Don't use `debug` for critical operations** - they won't appear in production logs (default level is `info`)
 **PDF flow**: Puppeteer generates → PyMuPDF merges with bookmarks
 
 ## Configuration
@@ -123,6 +137,22 @@
 
 **TOC issues**: Scrape first for titles | Set `pdf.bookmarks: true` | Use zero-padded file names
 
+**articleTitles.json empty / PDF TOC shows "Page 0" instead of titles**:
+- Symptom: Python merger warns "⚠️ articleTitles.json 为空或不存在", PDF bookmarks show generic names
+- Root cause: Data conflict between StateManager and MetadataService (see Architecture Rules)
+- How it happened: MetadataService saved titles incrementally during scraping → StateManager.save() overwrote file with empty Map at the end
+- Evidence: `articleTitles.json` is 2 bytes (empty `{}`), but scraping logs show titles extracted successfully
+- Fix applied (2025-01-08): Removed `articleTitles` from StateManager entirely, MetadataService is now single source
+- Verify fix: Check `pdfs/metadata/articleTitles.json` is >1KB with actual titles, not empty object
+- Related files: `src/services/stateManager.js` (removed lines 17, 64-71, 138-146, 266-269, 310), `src/services/metadataService.js` (unchanged, already correct)
+
+**Python logs not appearing in log files**:
+- Symptom: Python merger warnings visible in console but missing from `logs/` directory
+- Root cause: Python script only used `logging.StreamHandler()` → writes to stderr, not files
+- Fix applied (2025-01-08): Added `logging.FileHandler` to `src/python/pdf_merger.py:95-103`
+- Python logs now written to: `logs/python_pdf_merger.log`
+- Verify: Check file exists and contains Python warnings/errors (if any occurred)
+
 **Page load timeout (45s+)**: Check `waitUntil` setting in `scraper.js`
 - Symptom: Page loads timeout, but `curl` shows fast response (1-2s)
 - Root cause: `waitUntil: 'networkidle0'` waits for zero network connections, fails with persistent background requests (analytics, websockets)
@@ -180,6 +210,8 @@
 **Selectors**: Always inspect actual DOM with `scripts/inspect-selectors.js` | Prefer specific over generic for SPAs | Static sites: `main, article` | Dynamic sites: `#content-area, [id*='content']`
 **Page loading**: Use `domcontentloaded` + delay for SPAs | Avoid `networkidle0` (fails with persistent requests) | Test with `curl` first to verify actual load time
 **Common errors**: Config to `configValidator.js` first | Verify selectors match actual DOM (not SSR HTML) | Update `allowedDomains` when changing sites
+**Data architecture**: Follow single source of truth principle | Never duplicate data across services | Use correct service for each data type (StateManager for process state, MetadataService for content metadata)
+**Logging strategy**: Use `info` level for important operations you want visible in production | Reserve `debug` for verbose development details | Log key events like title extraction, PDF generation, file saves at `info` level
 
 **Config validation workflow** (CRITICAL - prevents silent failures):
 1. Add field to `configValidator.js` Joi schema FIRST
