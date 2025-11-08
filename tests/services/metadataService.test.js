@@ -22,6 +22,7 @@ describe('MetadataService', () => {
 
     mockLogger = {
       debug: jest.fn(),
+      info: jest.fn(),
       warn: jest.fn()
     };
 
@@ -40,7 +41,7 @@ describe('MetadataService', () => {
         '/metadata/articleTitles.json',
         { '1': '旧标题', '2': '新文章标题' }
       );
-      expect(mockLogger.debug).toHaveBeenCalledWith('保存文章标题: [2] 新文章标题');
+      expect(mockLogger.info).toHaveBeenCalledWith('保存文章标题: [2] 新文章标题');
     });
 
     test('应该覆盖已存在的标题', async () => {
