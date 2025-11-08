@@ -43,14 +43,14 @@ export class QueueManager extends EventEmitter {
     });
 
     this.queue.on('add', () => {
-      this.emit('task-added', {
+      this.emit('taskAdded', {
         size: this.queue.size,
         pending: this.queue.pending
       });
     });
 
     this.queue.on('next', () => {
-      this.emit('task-completed', {
+      this.emit('taskCompleted', {
         size: this.queue.size,
         pending: this.queue.pending
       });
@@ -80,13 +80,13 @@ export class QueueManager extends EventEmitter {
         task.status = 'completed';
         task.completedAt = Date.now();
         task.duration = task.completedAt - task.startedAt;
-        this.emit('task-success', { id, result, task });
+        this.emit('taskSuccess', { id, result, task });
         return result;
       } catch (error) {
         task.status = 'failed';
         task.error = error;
         task.failedAt = Date.now();
-        this.emit('task-failure', { id, error, task });
+        this.emit('taskFailed', { id, error, task });
         throw error;
       }
     };
