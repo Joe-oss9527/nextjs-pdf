@@ -1,29 +1,13 @@
-import { jest } from '@jest/globals';
 import { NetworkError } from '../../src/utils/errors.js';
 
-const mockLaunch = jest.fn();
-const mockUse = jest.fn();
-const mockStealthFactory = jest.fn(() => ({
-  name: 'stealth',
-  _isPuppeteerExtraPlugin: true,
-  beforeLaunch: jest.fn(),
-  afterLaunch: jest.fn(async (browser) => browser),
-  onBrowser: jest.fn()
-}));
+// Mock puppeteer-extra and stealth plugin before importing BrowserPool
+jest.mock('puppeteer-extra');
+jest.mock('puppeteer-extra-plugin-stealth');
 
-jest.unstable_mockModule('puppeteer-extra', () => ({
-  default: {
-    launch: mockLaunch,
-    use: mockUse
-  }
-}));
-
-jest.unstable_mockModule('puppeteer-extra-plugin-stealth', () => ({
-  default: mockStealthFactory
-}));
-
-const puppeteer = (await import('puppeteer-extra')).default;
-const { BrowserPool } = await import('../../src/services/browserPool.js');
+// Import BrowserPool and mocked modules
+import { BrowserPool } from '../../src/services/browserPool.js';
+import puppeteer from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 
 describe('BrowserPool', () => {
   let browserPool;
@@ -50,7 +34,13 @@ describe('BrowserPool', () => {
       error: jest.fn()
     };
 
-    mockLaunch.mockImplementation(() => Promise.resolve(createMockBrowser()));
+    // Configure mocks
+    puppeteer.launch.mockImplementation(() => Promise.resolve(createMockBrowser()));
+    puppeteer.use.mockReturnValue(undefined);
+    StealthPlugin.mockReturnValue({
+      name: 'stealth',
+      _isPuppeteerExtraPlugin: true
+    });
 
     browserPool = new BrowserPool({
       logger: mockLogger,
@@ -92,7 +82,7 @@ describe('BrowserPool', () => {
     it('should initialize browser pool successfully', async () => {
       await browserPool.initialize();
 
-      expect(mockLaunch).toHaveBeenCalledTimes(2);
+      expect(puppeteer.launch).toHaveBeenCalledTimes(2);
       expect(browserPool.browsers).toHaveLength(2);
       expect(browserPool.availableBrowsers).toHaveLength(2);
       expect(browserPool.isInitialized).toBe(true);
@@ -104,12 +94,12 @@ describe('BrowserPool', () => {
 
       await browserPool.initialize();
 
-      expect(mockLaunch).not.toHaveBeenCalled();
+      expect(puppeteer.launch).not.toHaveBeenCalled();
       expect(mockLogger.warn).toHaveBeenCalledWith('浏览器池已经初始化');
     });
 
     it('should handle partial browser creation failures', async () => {
-      mockLaunch
+      puppeteer.launch
         .mockResolvedValueOnce(createMockBrowser())
         .mockRejectedValueOnce(new Error('Browser creation failed'));
 
@@ -121,7 +111,7 @@ describe('BrowserPool', () => {
     });
 
     it('should throw if no browsers can be created', async () => {
-      mockLaunch.mockRejectedValue(new Error('Browser creation failed'));
+      puppeteer.launch.mockRejectedValue(new Error('Browser creation failed'));
 
       await expect(browserPool.initialize()).rejects.toThrow(NetworkError);
       expect(browserPool.isInitialized).toBe(false);
@@ -145,7 +135,7 @@ describe('BrowserPool', () => {
       expect(browser).toHaveProperty('isConnected');
       expect(browser).toHaveProperty('on');
       expect(browser).toHaveProperty('process');
-      expect(mockLaunch).toHaveBeenCalledWith(expect.objectContaining({
+      expect(puppeteer.launch).toHaveBeenCalledWith(expect.objectContaining({
         headless: true,
         defaultViewport: { width: 1920, height: 1080 },
         args: expect.arrayContaining(['--no-sandbox', '--disable-gpu'])
@@ -171,7 +161,7 @@ describe('BrowserPool', () => {
     });
 
     it('should handle creation errors', async () => {
-      mockLaunch.mockRejectedValue(new Error('Launch failed'));
+      puppeteer.launch.mockRejectedValue(new Error('Launch failed'));
 
       await expect(browserPool.createBrowser()).rejects.toThrow(NetworkError);
       expect(browserPool.stats.errors).toBe(1);
