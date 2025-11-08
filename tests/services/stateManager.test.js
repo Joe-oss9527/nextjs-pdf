@@ -47,7 +47,6 @@ describe('StateManager', () => {
       expect(stateManager.state.failedUrls).toBeInstanceOf(Map);
       expect(stateManager.state.urlToIndex).toBeInstanceOf(Map);
       expect(stateManager.state.indexToUrl).toBeInstanceOf(Map);
-      expect(stateManager.state.articleTitles).toBeInstanceOf(Map);
       expect(stateManager.state.imageLoadFailures).toBeInstanceOf(Set);
       expect(stateManager.state.urlToFile).toBeInstanceOf(Map);
       expect(stateManager.state.startTime).toBeNull();
@@ -63,13 +62,11 @@ describe('StateManager', () => {
         urlToIndex: { 'url1': 1, 'url2': 2 },
         startTime: '2024-03-15T10:00:00Z'
       };
-      const mockTitles = { '1': 'Title 1', '2': 'Title 2' };
       const mockImageFailures = [{ url: 'img1.jpg' }];
       const mockUrlMapping = { 'url1': { path: '/path1' } };
 
       mockFileService.readJson
         .mockResolvedValueOnce(mockProgress)
-        .mockResolvedValueOnce(mockTitles)
         .mockResolvedValueOnce(mockImageFailures)
         .mockResolvedValueOnce(mockUrlMapping);
 
@@ -84,7 +81,6 @@ describe('StateManager', () => {
       expect(stateManager.state.failedUrls.get('url3')).toBe('Error');
       expect(stateManager.state.urlToIndex.get('url1')).toBe(1);
       expect(stateManager.state.indexToUrl.get(1)).toBe('url1');
-      expect(stateManager.state.articleTitles.get('1')).toBe('Title 1');
       expect(stateManager.state.imageLoadFailures.has('img1.jpg')).toBe(true);
       expect(stateManager.state.urlToFile.get('url1')).toBe('/path1');
       expect(stateManager.state.startTime).toEqual(new Date('2024-03-15T10:00:00Z'));
@@ -113,7 +109,6 @@ describe('StateManager', () => {
     test('应该处理空的状态数据', async () => {
       mockFileService.readJson
         .mockResolvedValueOnce({ processedUrls: [], failedUrls: [], urlToIndex: {} })
-        .mockResolvedValueOnce({})
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce({});
 
@@ -132,7 +127,6 @@ describe('StateManager', () => {
       stateManager.state.failedUrls.set('url2', 'Network error');
       stateManager.state.urlToIndex.set('url1', 1);
       stateManager.state.indexToUrl.set(1, 'url1');
-      stateManager.state.articleTitles.set('1', 'Title 1');
       stateManager.state.imageLoadFailures.add('img1.jpg');
       stateManager.state.urlToFile.set('url1', '/path1');
       stateManager.state.startTime = new Date('2024-03-15T10:00:00Z');
@@ -154,12 +148,6 @@ describe('StateManager', () => {
           savedAt: expect.any(String),
           stats: expect.any(Object)
         })
-      );
-
-      // 验证标题保存
-      expect(mockFileService.writeJson).toHaveBeenCalledWith(
-        '/metadata/articleTitles.json',
-        { '1': 'Title 1' }
       );
 
       // 验证图片失败记录保存
@@ -352,24 +340,6 @@ describe('StateManager', () => {
     });
   });
 
-  describe('文章标题管理', () => {
-    test('setArticleTitle应该保存标题', () => {
-      const titlePromise = new Promise((resolve) => {
-        stateManager.once('title-saved', resolve);
-      });
-
-      stateManager.setArticleTitle(5, 'Article Title');
-
-      expect(stateManager.state.articleTitles.get('5')).toBe('Article Title');
-
-      return titlePromise.then((event) => {
-        expect(event).toEqual({
-          index: 5,
-          title: 'Article Title'
-        });
-      });
-    });
-  });
 
   describe('图片加载失败管理', () => {
     test('markImageLoadFailure应该记录失败', () => {
@@ -439,7 +409,6 @@ describe('StateManager', () => {
       stateManager.state.failedUrls.set('url2', 'Error');
       stateManager.state.urlToIndex.set('url1', 1);
       stateManager.state.indexToUrl.set(1, 'url1');
-      stateManager.state.articleTitles.set('1', 'Title');
       stateManager.state.imageLoadFailures.add('img1');
       stateManager.state.urlToFile.set('url1', '/path');
       stateManager.state.startTime = Date.now();
@@ -455,7 +424,6 @@ describe('StateManager', () => {
       expect(stateManager.state.failedUrls.size).toBe(0);
       expect(stateManager.state.urlToIndex.size).toBe(0);
       expect(stateManager.state.indexToUrl.size).toBe(0);
-      expect(stateManager.state.articleTitles.size).toBe(0);
       expect(stateManager.state.imageLoadFailures.size).toBe(0);
       expect(stateManager.state.urlToFile.size).toBe(0);
       expect(stateManager.state.startTime).toBeNull();
