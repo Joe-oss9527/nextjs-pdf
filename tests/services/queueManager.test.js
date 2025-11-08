@@ -93,8 +93,8 @@ describe('QueueManager', () => {
       queueManager.queue.emit('idle');
     });
 
-    test('应该转发task-added事件', (done) => {
-      queueManager.on('task-added', (data) => {
+    test('应该转发taskAdded事件', (done) => {
+      queueManager.on('taskAdded', (data) => {
         expect(data).toEqual({ size: 0, pending: 0 });
         done();
       });
@@ -102,8 +102,8 @@ describe('QueueManager', () => {
       queueManager.queue.emit('add');
     });
 
-    test('应该转发task-completed事件', (done) => {
-      queueManager.on('task-completed', (data) => {
+    test('应该转发taskCompleted事件', (done) => {
+      queueManager.on('taskCompleted', (data) => {
         expect(data).toEqual({ size: 0, pending: 0 });
         done();
       });
@@ -141,10 +141,10 @@ describe('QueueManager', () => {
       );
     });
 
-    test('应该在任务成功时发出task-success事件', (done) => {
+    test('应该在任务成功时发出taskSuccess事件', (done) => {
       const fn = jest.fn().mockResolvedValue('success');
-      
-      queueManager.on('task-success', (event) => {
+
+      queueManager.on('taskSuccess', (event) => {
         expect(event.id).toBe('task1');
         expect(event.result).toBe('success');
         expect(event.task).toBeDefined();
@@ -154,11 +154,11 @@ describe('QueueManager', () => {
       queueManager.addTask('task1', fn);
     });
 
-    test('应该在任务失败时发出task-failure事件', (done) => {
+    test('应该在任务失败时发出taskFailed事件', (done) => {
       const error = new Error('Task failed');
       const fn = jest.fn().mockRejectedValue(error);
-      
-      queueManager.on('task-failure', (event) => {
+
+      queueManager.on('taskFailed', (event) => {
         expect(event.id).toBe('task1');
         expect(event.error).toBe(error);
         expect(event.task.status).toBe('failed');

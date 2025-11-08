@@ -305,6 +305,9 @@ export class PythonMergeService extends EventEmitter {
      */
     async _executePython(args) {
         return new Promise((resolve, reject) => {
+            let settled = false;
+            let timeoutHandle = null;
+
             const process = spawn(this.pythonConfig.executable, args, {
                 encoding: this.pythonConfig.encoding,
                 timeout: this.pythonConfig.timeout,
@@ -323,25 +326,40 @@ export class PythonMergeService extends EventEmitter {
             });
 
             process.on('close', (code) => {
-                resolve({
-                    exitCode: code,
-                    stdout: stdout.trim(),
-                    stderr: stderr.trim()
-                });
+                if (!settled) {
+                    settled = true;
+                    if (timeoutHandle) {
+                        clearTimeout(timeoutHandle);
+                    }
+                    resolve({
+                        exitCode: code,
+                        stdout: stdout.trim(),
+                        stderr: stderr.trim()
+                    });
+                }
             });
 
             process.on('error', (error) => {
-                reject(new PythonMergeError(
-                    `Python进程执行失败: ${error.message}`,
-                    'PYTHON_EXECUTION_FAILED',
-                    { args, error: error.message }
-                ));
+                if (!settled) {
+                    settled = true;
+                    if (timeoutHandle) {
+                        clearTimeout(timeoutHandle);
+                    }
+                    reject(new PythonMergeError(
+                        `Python进程执行失败: ${error.message}`,
+                        'PYTHON_EXECUTION_FAILED',
+                        { args, error: error.message }
+                    ));
+                }
             });
 
             // 处理超时
-            setTimeout(() => {
-                if (!process.killed) {
-                    process.kill('SIGTERM');
+            timeoutHandle = setTimeout(() => {
+                if (!settled) {
+                    settled = true;
+                    if (!process.killed) {
+                        process.kill('SIGTERM');
+                    }
                     reject(new PythonMergeError(
                         'Python脚本执行超时',
                         'EXECUTION_TIMEOUT',
