@@ -2,6 +2,9 @@
 
 A comprehensive guide for AI coding agents working on this documentation PDF scraper project.
 
+This file is the canonical source of truth for project structure, commands, configuration rules, and coding standards.  
+Any other agent-specific files (for example `CLAUDE.md`) should treat this document as authoritative and avoid duplicating normative content.
+
 ## Project Overview
 
 **Documentation PDF Scraper** - A Puppeteer-based system for generating PDFs from documentation sites with anti-bot bypass and collapsible content expansion capabilities.
