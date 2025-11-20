@@ -1,13 +1,11 @@
 {
-  "rootURL": "https://platform.openai.com/docs/guides/prompt-engineering",
-  "baseUrl": "https://platform.openai.com/docs",
+  "rootURL": "https://developers.openai.com/codex",
+  "baseUrl": "https://developers.openai.com/codex",
   "navLinksSelector": "nav a[href], aside a[href], [role='navigation'] a[href], .sidebar a[href]",
-  "contentSelector": "main, article, [role='main'], .main-content",
-  "ignoreURLs": [
-    "docs/pages",
-    "docs/app/api-reference"
-  ],
+  "contentSelector": "#track-content, main #track-content, main .space-y-12, .space-y-12, main, article, [role='main'], .main-content",
+  "ignoreURLs": [],
   "allowedDomains": [
+    "developers.openai.com",
     "platform.openai.com",
     "openai.com"
   ],

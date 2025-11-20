@@ -41,3 +41,8 @@
 - Keep `allowedDomains` strict; default headless browser is recommended.
 - Do not commit PDFs, logs, or `venv/` (already in `.gitignore`).
 
+## Scraping Notes (OpenAI Codex docs)
+- Prefer stable content selectors: `#track-content, main #track-content, main .space-y-12` before falling back to `main/article` so full articles are captured.
+- When un-hiding `.hidden` elements, skip nav/aside/TOC and modal overlays (search dialogs) to avoid blank-overlay PDFs.
+- Hide ToC/PageActions/copy-link UI (`TableOfContents` astro island, `PageActions`, `[data-anchor-id]`) before printing to keep content clean.
+- If only the first screen prints, clone the main content container into `document.body` and set `html/body` height/overflow to auto/visible to force multi-page output.
