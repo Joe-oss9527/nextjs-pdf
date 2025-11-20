@@ -1,20 +1,12 @@
 {
-  "rootURL": "https://code.claude.com/docs/en/overview",
-  "baseUrl": "https://code.claude.com/docs/en/",
+  "rootURL": "https://developers.openai.com/codex",
+  "baseUrl": "https://developers.openai.com/codex",
   "pdfDir": "pdfs",
   "concurrency": 5,
   "screenshotDelay": 500,
-  "navLinksSelector": "a[href^='/docs/en/'], [id*='sidebar'] a[href], nav a[href]",
-  "contentSelector": "#content-area",
-  "sectionEntryPoints": [
-    "https://code.claude.com/docs/en/overview",
-    "https://code.claude.com/docs/en/sub-agents",
-    "https://code.claude.com/docs/en/third-party-integrations",
-    "https://code.claude.com/docs/en/setup",
-    "https://code.claude.com/docs/en/settings",
-    "https://code.claude.com/docs/en/cli-reference",
-    "https://code.claude.com/docs/en/legal-and-compliance"
-  ],
+  "navLinksSelector": "nav a[href], aside a[href], [role='navigation'] a[href], .sidebar a[href]",
+  "contentSelector": "#track-content, main #track-content, main .space-y-12, .space-y-12, main, article, [role='main'], .main-content",
+  "sectionEntryPoints": [],
   "ignoreURLs": [],
   "maxRetries": 3,
   "retryDelay": 1000,
@@ -23,10 +15,12 @@
   "navigationRetries": 4,
   "imageTimeout": 10000,
   "allowedDomains": [
-    "code.claude.com"
+    "developers.openai.com",
+    "platform.openai.com",
+    "openai.com"
   ],
   "logLevel": "info",
-  "enablePDFStyleProcessing": true,
+  "enablePDFStyleProcessing": false,
   "browser": {
     "headless": true,
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
@@ -74,5 +68,5 @@
     "https://code.claude.com/docs/en/cli-reference": "Reference",
     "https://code.claude.com/docs/en/legal-and-compliance": "Resources"
   },
-  "navigationStrategy": "load"
+  "navigationStrategy": "domcontentloaded"
 }

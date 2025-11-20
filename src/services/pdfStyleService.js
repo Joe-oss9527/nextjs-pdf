@@ -919,6 +919,24 @@ export class PDFStyleService {
         let ariaExpandedCount = 0;
         let hiddenContentCount = 0;
 
+        // 将隐藏处理限定在主要内容区域，避免误展示全屏遮罩/弹窗
+        const contentRoot = document.querySelector('main, article, [role="main"], .main-content');
+        const shouldSkipHidden = (el) => {
+          // 跳过模态、对话框、全屏遮罩和全局浮层
+          if (el.closest('[role="dialog"], [aria-modal="true"], .modal, .overlay, [data-overlay], [class*="overlay"], [class*="modal"]')) {
+            return true;
+          }
+          // 跳过导航/目录容器，避免错误地显示侧边栏目录
+          if (el.closest('nav, aside, [role="navigation"], .table-of-contents, .toc, #on-this-page, .on-this-page')) {
+            return true;
+          }
+          // 若能定位到主要内容，只处理其内部节点
+          if (contentRoot && !contentRoot.contains(el)) {
+            return true;
+          }
+          return false;
+        };
+
         // 处理Mermaid图表
         document.querySelectorAll('.mermaid').forEach(el => {
           if (el.querySelector('svg')) {
@@ -1001,8 +1019,12 @@ export class PDFStyleService {
           }
         });
 
-        // 3. 强制显示所有带有 hidden 类的内容区域
+        // 3. 强制显示主要内容区域中带有 hidden 类的内容
         document.querySelectorAll('.hidden, .collapsed, [hidden]').forEach(el => {
+          if (shouldSkipHidden(el)) {
+            return;
+          }
+
           // 跳过代码块切换器（语言选择器）
           if (el.classList.contains('code-block')) {
             return;
@@ -1038,6 +1060,46 @@ export class PDFStyleService {
           panel.style.setProperty('visibility', 'visible', 'important');
           panel.setAttribute('aria-hidden', 'false');
         });
+
+        // 6. 隐藏侧边目录和浮动页操作按钮（PDF不需要）
+        const selectorsToHide = [
+          'astro-island[component-url*=\"TableOfContents\"]',
+          '.table-of-contents, .toc, #on-this-page, .on-this-page',
+          'nav[data-hk], nav[data-component=\"TableOfContents\"]',
+          'astro-island[component-url*=\"PageActions\"]',
+          '[data-page-actions]',
+          '.copy-page, [data-action=\"copy-page\"]',
+          '[data-anchor-id]'
+        ];
+        selectorsToHide.forEach(sel => {
+          document.querySelectorAll(sel).forEach(el => {
+            el.style.setProperty('display', 'none', 'important');
+            el.style.setProperty('visibility', 'hidden', 'important');
+          });
+        });
+
+        // 7. 重新构建打印内容，避免只捕获首屏（优先包含整段正文与标题区域）
+        const targetContainer =
+          document.querySelector('#track-content')?.closest('.space-y-12') ||
+          document.querySelector('main .space-y-12') ||
+          document.querySelector('#track-content') ||
+          document.querySelector('main') ||
+          document.body;
+
+        if (targetContainer && targetContainer !== document.body) {
+          const cloned = targetContainer.cloneNode(true);
+          document.body.innerHTML = '';
+          document.body.appendChild(cloned);
+
+          // 确保 html/body 不限制高度，允许多页打印
+          [document.documentElement, document.body].forEach(el => {
+            el.style.setProperty('height', 'auto', 'important');
+            el.style.setProperty('max-height', 'none', 'important');
+            el.style.setProperty('overflow', 'visible', 'important');
+          });
+
+          window.scrollTo(0, 0);
+        }
 
         return {
           detailsExpanded: expandedElementsCount,
