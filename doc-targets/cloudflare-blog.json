@@ -1,0 +1,24 @@
+{
+    "rootURL": "https://blog.cloudflare.com/",
+    "baseUrl": "https://blog.cloudflare.com/",
+    "navLinksSelector": "a.fw5.no-underline.gray1",
+    "paginationSelector": "a[href^=\"/page/\"], a:contains(\"Older Posts\")",
+    "contentSelector": "div.post-content",
+    "allowedDomains": [
+        "blog.cloudflare.com"
+    ],
+    "ignoreURLs": [
+        "/tag/",
+        "/author/",
+        "/page/",
+        "/category/"
+    ],
+    "sectionEntryPoints": [],
+    "sectionTitles": {},
+    "enablePDFStyleProcessing": false,
+    "navigationStrategy": "domcontentloaded",
+    "maxPaginationPages": 10,
+    "output": {
+        "finalPdfDirectory": "finalPdf-cloudflare"
+    }
+}
