@@ -17,7 +17,8 @@ const TARGETS_DIR = path.resolve(rootDir, 'doc-targets');
 
 const DOC_TARGETS = {
   'openai': 'openai-docs.json',
-  'claude-code': 'claude-code.json'
+  'claude-code': 'claude-code.json',
+  'cloudflare-blog': 'cloudflare-blog.json'
 };
 
 function validateSafePath(targetPath) {
