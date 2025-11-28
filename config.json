@@ -1,13 +1,19 @@
 {
-  "rootURL": "https://developers.openai.com/codex",
-  "baseUrl": "https://developers.openai.com/codex",
+  "rootURL": "https://blog.cloudflare.com/",
+  "baseUrl": "https://blog.cloudflare.com/",
   "pdfDir": "pdfs",
   "concurrency": 5,
   "screenshotDelay": 500,
-  "navLinksSelector": "nav a[href], aside a[href], [role='navigation'] a[href], .sidebar a[href]",
-  "contentSelector": "#track-content, main #track-content, main .space-y-12, .space-y-12, main, article, [role='main'], .main-content",
+  "navLinksSelector": "a.fw5.no-underline.gray1",
+  "paginationSelector": "a[href^=\"/page/\"], a:contains(\"Older Posts\")",
+  "contentSelector": "div.post-content",
   "sectionEntryPoints": [],
-  "ignoreURLs": [],
+  "ignoreURLs": [
+    "/tag/",
+    "/author/",
+    "/page/",
+    "/category/"
+  ],
   "maxRetries": 3,
   "retryDelay": 1000,
   "pageTimeout": 45000,
@@ -15,9 +21,7 @@
   "navigationRetries": 4,
   "imageTimeout": 10000,
   "allowedDomains": [
-    "developers.openai.com",
-    "platform.openai.com",
-    "openai.com"
+    "blog.cloudflare.com"
   ],
   "logLevel": "info",
   "enablePDFStyleProcessing": false,
@@ -30,7 +34,7 @@
     "directory": "metadata"
   },
   "output": {
-    "finalPdfDirectory": "finalPdf-oasis",
+    "finalPdfDirectory": "finalPdf-cloudflare",
     "tempDirectory": ".temp"
   },
   "pdf": {
@@ -59,14 +63,7 @@
     "executable": "./venv/bin/python",
     "timeout": 300000
   },
-  "sectionTitles": {
-    "https://code.claude.com/docs/en/overview": "Getting started",
-    "https://code.claude.com/docs/en/sub-agents": "Build with Claude Code",
-    "https://code.claude.com/docs/en/third-party-integrations": "Deployment",
-    "https://code.claude.com/docs/en/setup": "Administration",
-    "https://code.claude.com/docs/en/settings": "Configuration",
-    "https://code.claude.com/docs/en/cli-reference": "Reference",
-    "https://code.claude.com/docs/en/legal-and-compliance": "Resources"
-  },
-  "navigationStrategy": "domcontentloaded"
+  "sectionTitles": {},
+  "navigationStrategy": "domcontentloaded",
+  "maxPaginationPages": 3
 }

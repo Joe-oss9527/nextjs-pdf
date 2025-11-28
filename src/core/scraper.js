@@ -129,7 +129,7 @@ export class Scraper extends EventEmitter {
       const sections = [];
       const urlToSectionMap = new Map(); // URL -> section index
       const rawUrls = [];
-      
+
       for (let sectionIndex = 0; sectionIndex < entryPoints.length; sectionIndex++) {
         const entryUrl = entryPoints[sectionIndex];
 
@@ -207,8 +207,8 @@ export class Scraper extends EventEmitter {
             const currentMapping = urlToSectionMap.get(url);
 
             if (existing.sectionIndex !== currentMapping?.sectionIndex &&
-                existing.sectionIndex !== undefined &&
-                currentMapping?.sectionIndex !== undefined) {
+              existing.sectionIndex !== undefined &&
+              currentMapping?.sectionIndex !== undefined) {
               sectionConflicts.push({
                 url: normalized,
                 existingSection: sections[existing.sectionIndex]?.title || existing.sectionIndex,
@@ -570,110 +570,140 @@ export class Scraper extends EventEmitter {
   async _collectUrlsFromEntryPoint(page, entryUrl) {
     this.logger.info('处理入口页面', { entryUrl });
 
-    const startTime = Date.now();
-    this.logger.info('开始导航到入口页面', { entryUrl, waitUntil: 'domcontentloaded' });
+    const allUrls = [];
+    let currentUrl = entryUrl;
+    let pageNum = 1;
+    const maxPages = this.config.maxPaginationPages || 10; // 默认最多翻10页，防止无限循环
 
-    await retry(
-      async () => {
-        const gotoStartTime = Date.now();
-        const waitUntil = this.config?.navigationWaitUntil || 'domcontentloaded';
-        const timeout = this.config?.pageTimeout || 30000;
-        this.logger.info('执行 page.goto', { entryUrl, timestamp: gotoStartTime, waitUntil });
+    while (true) {
+      const startTime = Date.now();
+      this.logger.info(`开始导航到页面 [Page ${pageNum}]`, { currentUrl, waitUntil: 'domcontentloaded' });
 
-        const response = await page.goto(entryUrl, {
-          waitUntil,
-          timeout
-        });
+      // 1. 导航到当前页面
+      await retry(
+        async () => {
+          const gotoStartTime = Date.now();
+          const waitUntil = this.config?.navigationWaitUntil || 'domcontentloaded';
+          const timeout = this.config?.pageTimeout || 30000;
 
-        const gotoEndTime = Date.now();
-        this.logger.info('page.goto 完成，等待动态内容加载', {
-          entryUrl,
-          duration: gotoEndTime - gotoStartTime,
-          status: response?.status()
-        });
-
-        // 优先等待侧边栏容器出现，减少全局等待
-        const sidebarSelector = '#sidebar-content #navigation-items a[href]';
-        try {
-          await page.waitForSelector(sidebarSelector, { timeout: 5000 });
-          this.logger.info('侧边栏容器已就绪', { selector: sidebarSelector });
-        } catch (_) {
-          // 容器未就绪时，不强制延时，后续会回退到通用选择器
-          this.logger.debug('侧边栏容器未在超时内出现，将尝试通用选择器');
-        }
-
-        return response;
-      },
-      {
-        maxAttempts: this.config.maxRetries || 3,
-        delay: 2000,
-        onRetry: (attempt, error) => {
-          this.logger.warn(`入口页面加载重试 ${attempt}次`, {
-            url: entryUrl,
-            error: error.message,
-            elapsed: Date.now() - startTime
+          const response = await page.goto(currentUrl, {
+            waitUntil,
+            timeout
           });
-        }
-      }
-    );
 
-    // 等待更具体的侧边栏链接，失败则退回通用选择器
-    const sidebarSelector = '#sidebar-content #navigation-items a[href]';
-    let selectorUsed = sidebarSelector;
-    try {
-      await page.waitForSelector(sidebarSelector, { timeout: 5000 });
-      this.logger.info('选择器找到（侧边栏）', {
-        selector: sidebarSelector,
-        elapsed: Date.now() - startTime
-      });
-    } catch (e1) {
-      selectorUsed = this.config.navLinksSelector;
-      this.logger.debug('侧边栏选择器未命中，回退到通用选择器', { fallback: selectorUsed });
-      try {
-        await page.waitForSelector(selectorUsed, { timeout: 10000 });
-        this.logger.info('选择器找到（通用）', {
-          selector: selectorUsed,
-          elapsed: Date.now() - startTime
-        });
-      } catch (error) {
-        this.logger.warn('导航链接选择器等待超时', {
-          selector: selectorUsed,
-          entryUrl,
-          error: error.message,
-          elapsed: Date.now() - startTime
-        });
+          const gotoEndTime = Date.now();
+          this.logger.info('page.goto 完成', {
+            url: currentUrl,
+            duration: gotoEndTime - gotoStartTime,
+            status: response?.status()
+          });
+
+          // 尝试等待内容加载
+          try {
+            const selector = this.config.navLinksSelector || 'a[href]';
+            await page.waitForSelector(selector, { timeout: 5000 });
+          } catch (_) {
+            this.logger.debug('等待链接选择器超时，继续尝试提取');
+          }
+
+          return response;
+        },
+        {
+          maxAttempts: this.config.maxRetries || 3,
+          delay: 2000,
+          onRetry: (attempt, error) => {
+            this.logger.warn(`页面加载重试 ${attempt}次`, {
+              url: currentUrl,
+              error: error.message
+            });
+          }
+        }
+      );
+
+      // 2. 提取当前页面的链接
+      const urls = await page.evaluate((selector) => {
+        const elements = Array.from(document.querySelectorAll(selector));
+        return elements
+          .map(el => {
+            const href = el.href || el.getAttribute('href');
+            return href ? href.trim() : null;
+          })
+          .filter(href => href && !href.startsWith('#') && !href.startsWith('javascript:'));
+      }, this.config.navLinksSelector);
+
+      this.logger.info(`Page ${pageNum} 提取到 ${urls.length} 个链接`);
+
+      // 过滤掉非文章链接（可选，依赖选择器的准确性）
+      // 这里我们假设 navLinksSelector 已经足够准确
+      allUrls.push(...urls);
+
+      // 3. 检查是否需要分页
+      if (!this.config.paginationSelector) {
+        break;
+      }
+
+      if (pageNum >= maxPages) {
+        this.logger.info(`达到最大分页数 (${maxPages})，停止翻页`);
+        break;
+      }
+
+      // 4. 寻找下一页链接
+      const nextPageUrl = await page.evaluate((selector) => {
+        // 支持多个选择器，用逗号分隔
+        const selectors = selector.split(',').map(s => s.trim());
+
+        for (const s of selectors) {
+          // 尝试找到"下一页"或"Older Posts"等链接
+          // 这里我们查找匹配选择器的元素
+          const links = Array.from(document.querySelectorAll(s));
+
+          // 简单的启发式：通常是最后一个匹配的，或者包含特定文本
+          // 对于Cloudflare blog，是 "Older Posts"
+          // 我们假设选择器已经定位到了正确的 <a> 标签
+
+          // 如果有多个匹配，通常分页链接在底部，取最后一个
+          const link = links[links.length - 1];
+          if (link) {
+            return link.href;
+          }
+        }
+        return null;
+      }, this.config.paginationSelector);
+
+      if (nextPageUrl && nextPageUrl !== currentUrl) {
+        this.logger.info(`发现下一页: ${nextPageUrl}`);
+        currentUrl = nextPageUrl;
+        pageNum++;
+      } else {
+        this.logger.info('未发现下一页，分页结束');
+        break;
       }
     }
 
-    const urls = await page.evaluate((sidebarSelector, genericSelector) => {
-      // 优先从侧边栏容器采集链接
-      let elements = [];
-      const container = document.querySelector('#sidebar-content #navigation-items');
-      if (container) {
-        elements = Array.from(container.querySelectorAll('a[href]'));
-      } else {
-        // 回退到通用选择器，但排除顶栏 nav-tabs
-        const all = Array.from(document.querySelectorAll(genericSelector));
-        elements = all.filter(el => !el.closest('.nav-tabs'));
+    // 确保入口页面本身也被处理（如果是单页情况，且入口就是内容页的话。但在博客模式下，入口是列表页，通常不需要爬取入口页本身作为内容）
+    // 为了兼容旧逻辑（文档模式），如果只抓了一页且没有分页配置，我们还是把入口URL加进去
+    // 但对于博客列表页，我们通常不希望把列表页本身生成PDF
+
+    // 策略：如果 config.isBlogMode 为 true，则不添加 entryUrl
+    // 或者简单点，如果提取到了链接，就只返回链接。
+    // 旧逻辑是：urls.unshift(entryUrl);
+
+    // 我们保留旧逻辑的兼容性：如果不是分页模式，且看起来像文档（有侧边栏），则保留。
+    // 但为了简单和安全，我们只在非分页模式下添加 entryUrl
+    if (!this.config.paginationSelector) {
+      // 检查是否已存在
+      if (!allUrls.includes(entryUrl)) {
+        allUrls.unshift(entryUrl);
       }
+    }
 
-      return elements
-        .map(el => {
-          const href = el.href || el.getAttribute('href');
-          return href ? href.trim() : null;
-        })
-        .filter(href => href && !href.startsWith('#') && !href.startsWith('javascript:'));
-    }, sidebarSelector, this.config.navLinksSelector);
-
-    // 确保入口页面本身也被处理
-    urls.unshift(entryUrl);
-
-    this.logger.debug('入口页面URL提取完成', {
+    this.logger.debug('URL提取完成', {
       entryUrl,
-      extractedCount: urls.length
+      totalCount: allUrls.length,
+      pagesScanned: pageNum
     });
 
-    return urls;
+    return allUrls;
   }
 
   /**
@@ -842,9 +872,9 @@ export class Scraper extends EventEmitter {
     for (const strategy of strategies) {
       try {
         this.logger.debug(`尝试导航策略: ${strategy.name}`, { url });
-        
+
         const response = await page.goto(url, strategy.options);
-        
+
         // 检查响应状态
         if (response && response.status() >= 400) {
           throw new Error(`HTTP ${response.status()}: ${response.statusText()}`);
@@ -866,8 +896,8 @@ export class Scraper extends EventEmitter {
         }
 
         // 如果是其他错误，根据错误类型决定是否继续
-        if (error.message.includes('net::ERR_ABORTED') || 
-            error.message.includes('net::ERR_FAILED')) {
+        if (error.message.includes('net::ERR_ABORTED') ||
+          error.message.includes('net::ERR_FAILED')) {
           // 网络错误，尝试等待一下再重试
           await new Promise(resolve => setTimeout(resolve, 2000));
           continue;
@@ -1078,9 +1108,9 @@ export class Scraper extends EventEmitter {
           source: titleInfo.source,
           titleInfo: titleInfo,
           hint: 'PDF目录将显示文件名而非实际标题。请检查：' +
-                '\n  1. contentSelector 是否正确匹配页面结构' +
-                '\n  2. 页面是否完全加载（检查 navigationWaitUntil 配置）' +
-                '\n  3. 页面是否有 <title> 标签或 h1-h3 标题元素'
+            '\n  1. contentSelector 是否正确匹配页面结构' +
+            '\n  2. 页面是否完全加载（检查 navigationWaitUntil 配置）' +
+            '\n  3. 页面是否有 <title> 标签或 h1-h3 标题元素'
         });
 
         // 记录到元数据以便后续分析
