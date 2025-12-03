@@ -60,5 +60,11 @@
   },
   "sectionTitles": {},
   "navigationStrategy": "load",
-  "maxPaginationPages": 1
+  "maxPaginationPages": 1,
+  "translation": {
+    "enabled": false,
+    "bilingual": true,
+    "targetLanguage": "Chinese",
+    "concurrency": 2
+  }
 }

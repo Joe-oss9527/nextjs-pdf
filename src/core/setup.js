@@ -14,6 +14,7 @@ import { BrowserPool } from '../services/browserPool.js';
 import { PageManager } from '../services/pageManager.js';
 import { ImageService } from '../services/imageService.js';
 import { PDFStyleService } from '../services/pdfStyleService.js';
+import { TranslationService } from '../services/translationService.js';
 import { Scraper } from './scraper.js';
 import { PythonMergeService } from '../services/PythonMergeService.js';
 
@@ -137,7 +138,7 @@ async function setupContainer() {
 
         // 页面管理器
         container.register('pageManager', (browserPool, config, logger) => {
-            return new PageManager(browserPool, { 
+            return new PageManager(browserPool, {
                 logger,
                 userAgent: config.browser?.userAgent,
                 ...config.browser
@@ -179,6 +180,15 @@ async function setupContainer() {
             lifecycle: 'singleton'
         });
 
+        // 翻译服务
+        container.register('translationService', (config) => {
+            return new TranslationService(config);
+        }, {
+            singleton: true,
+            dependencies: ['config'],
+            lifecycle: 'singleton'
+        });
+
 
         // 7. 注册核心爬虫服务
 
@@ -195,7 +205,8 @@ async function setupContainer() {
             progressTracker,
             queueManager,
             imageService,
-            pdfStyleService     // 添加 pdfStyleService
+            pdfStyleService,     // 添加 pdfStyleService
+            translationService   // 添加 translationService
         ) => {
             const scraper = new Scraper({
                 config,
@@ -209,7 +220,8 @@ async function setupContainer() {
                 progressTracker,
                 queueManager,
                 imageService,
-                pdfStyleService     // 传递 pdfStyleService
+                pdfStyleService,    // 传递 pdfStyleService
+                translationService  // 传递 translationService
             });
 
             await scraper.initialize();
@@ -219,16 +231,17 @@ async function setupContainer() {
             dependencies: [
                 'config',
                 'logger',
-                'browserPool',      // 添加依赖
+                'browserPool',
                 'pageManager',
                 'fileService',
                 'pathService',
-                'metadataService',  // 添加依赖
+                'metadataService',
                 'stateManager',
                 'progressTracker',
                 'queueManager',
                 'imageService',
-                'pdfStyleService'   // 添加依赖
+                'pdfStyleService',
+                'translationService'
             ],
             lifecycle: 'singleton'
         });
