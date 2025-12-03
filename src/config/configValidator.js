@@ -33,6 +33,9 @@ const configSchema = Joi.object({
   sectionEntryPoints: Joi.array().items(Joi.string().uri()).default([])
     .description('Additional entry URLs that should be crawled alongside rootURL'),
 
+  targetUrls: Joi.array().items(Joi.string().uri()).optional()
+    .description('Specific URLs to scrape directly, bypassing crawling'),
+
   sectionTitles: Joi.object().pattern(
     Joi.string().uri(),
     Joi.string()

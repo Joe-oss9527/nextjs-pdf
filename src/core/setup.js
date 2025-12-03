@@ -111,6 +111,7 @@ async function setupContainer() {
         container.register('queueManager', (config, logger) => {
             return new QueueManager({
                 concurrency: config.concurrency || 5,
+                timeout: 120000, // Increase timeout to 2 minutes for translation
                 logger
             });
         }, {

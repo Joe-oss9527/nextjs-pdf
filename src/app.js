@@ -106,7 +106,7 @@ class Application {
 
             // 清理和准备PDF目录
             this.logger.info('🧹 Preparing PDF directory...');
-            await fileService.cleanDirectory(config.pdfDir);
+            // await fileService.cleanDirectory(config.pdfDir); // Don't clean on start to allow resume
             await fileService.ensureDirectory(config.pdfDir);
 
             // 启动进度跟踪
@@ -154,7 +154,7 @@ class Application {
             const path = await import('path');
             const config = await this.container.get('config');
             const pdfDir = config.pdfDir || 'pdfs';
-            
+
             // 查找PDF源目录（排除finalPdf和metadata）
             let targetDirectory = null;
             try {
@@ -162,9 +162,9 @@ class Application {
                 for (const item of items) {
                     const itemPath = path.join(pdfDir, item);
                     const stat = await fs.stat(itemPath);
-                    if (stat.isDirectory() && 
-                        !item.startsWith('finalPdf') && 
-                        item !== 'metadata' && 
+                    if (stat.isDirectory() &&
+                        !item.startsWith('finalPdf') &&
+                        item !== 'metadata' &&
                         item !== '.temp') {
                         targetDirectory = item;
                         break;

@@ -1,3 +1,4 @@
+
 import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
@@ -12,8 +13,10 @@ import { delay } from '../utils/common.js';
 export class TranslationService {
     constructor(config = {}) {
         this.config = config;
-        this.logger = createLogger('TranslationService');
+        this.logger = createLogger({ logLevel: config.logLevel });
+        this.logger.info('TranslationService constructor called', { configKeys: Object.keys(config) });
         this.enabled = config.translation?.enabled || false;
+        this.logger.info('TranslationService enabled:', { enabled: this.enabled });
         this.bilingual = config.translation?.bilingual || false;
         this.targetLanguage = config.translation?.targetLanguage || 'Chinese';
         this.concurrency = config.translation?.concurrency || 1;
@@ -30,7 +33,7 @@ export class TranslationService {
     }
 
     _getCacheKey(text) {
-        return crypto.createHash('md5').update(`${this.targetLanguage}:${text}`).digest('hex');
+        return crypto.createHash('md5').update(`${this.targetLanguage}:${text} `).digest('hex');
     }
 
     _getFromCache(text) {
@@ -96,7 +99,7 @@ export class TranslationService {
                         });
 
                         if (!hasBlockChildren && isValid(el)) {
-                            const id = `translate-${tag}-${index}-${Math.random().toString(36).substr(2, 9)}`;
+                            const id = `translate - ${tag} -${index} -${Math.random().toString(36).substr(2, 9)} `;
                             el.setAttribute('data-translate-id', id);
                             elements.push({
                                 id,
@@ -143,9 +146,11 @@ export class TranslationService {
 
                 // Use simple concurrency control
                 const activePromises = [];
-                const results = [];
+                let aborted = false;
 
                 for (let i = 0; i < batches.length; i++) {
+                    if (aborted) break;
+
                     const batch = batches[i];
                     const promise = this._translateBatch(batch).then(res => {
                         // Save to cache
@@ -160,6 +165,10 @@ export class TranslationService {
                         }
                     }).catch(err => {
                         this.logger.error(`Batch ${i + 1} failed`, { error: err.message });
+                        // If timeout or severe error, abort remaining batches to save time
+                        if (err.message.includes('timed out')) {
+                            aborted = true;
+                        }
                     });
 
                     activePromises.push(promise);
@@ -223,21 +232,31 @@ export class TranslationService {
             inputMap[item.id] = item.text;
         });
 
-        const prompt = `
+        const instructions = `
 You are a professional technical translator. Translate the following JSON object values into ${this.targetLanguage}.
 Keep the keys unchanged.
 Do not translate code, variable names, or technical terms that should remain in English.
 Output ONLY the valid JSON object with translated values. No markdown formatting, no explanations.
-
-Input JSON:
-${JSON.stringify(inputMap, null, 2)}
 `;
 
+        const jsonInput = JSON.stringify(inputMap, null, 2);
+
         return new Promise((resolve, reject) => {
-            const child = spawn('gemini', [prompt]);
+            // Pass instructions as argument, JSON via stdin
+            const child = spawn('gemini', [instructions]);
+
+            // Set a timeout for the translation process
+            const timeout = setTimeout(() => {
+                child.kill();
+                reject(new Error('Translation timed out'));
+            }, 20000); // 20 seconds timeout
 
             let stdout = '';
             let stderr = '';
+
+            // Write JSON to stdin
+            child.stdin.write(jsonInput);
+            child.stdin.end();
 
             child.stdout.on('data', (data) => {
                 stdout += data.toString();
@@ -248,6 +267,7 @@ ${JSON.stringify(inputMap, null, 2)}
             });
 
             child.on('close', (code) => {
+                clearTimeout(timeout);
                 if (code !== 0) {
                     this.logger.error('gemini-cli exited with error', { code, stderr });
                     // Don't reject, just return empty so other batches proceed? 
@@ -277,6 +297,8 @@ ${JSON.stringify(inputMap, null, 2)}
             });
 
             child.on('error', (err) => {
+                clearTimeout(timeout);
+                this.logger.error('gemini spawn error', { error: err.message });
                 reject(err);
             });
         });

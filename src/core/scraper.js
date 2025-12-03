@@ -34,6 +34,8 @@ export class Scraper extends EventEmitter {
     this.isRunning = false;
     this.startTime = null;
 
+    this.logger.info('Scraper constructor called', { hasTranslationService: !!this.translationService });
+
     // 绑定事件处理
     this._bindEvents();
   }
@@ -118,6 +120,22 @@ export class Scraper extends EventEmitter {
       throw new ValidationError('爬虫尚未初始化');
     }
 
+    this.logger.debug('Checking targetUrls', { targetUrls: this.config.targetUrls });
+
+    // 1. 优先检查 targetUrls 配置 (Explicit URLs mode)
+    if (this.config.targetUrls && Array.isArray(this.config.targetUrls) && this.config.targetUrls.length > 0) {
+      this.logger.info('使用配置中的目标URL列表', { count: this.config.targetUrls.length });
+
+      const sectionInfo = {
+        index: 0,
+        title: 'Custom Selection',
+        entryUrl: this.config.rootURL,
+        urls: this.config.targetUrls
+      };
+
+      return this._processCollectedUrls([sectionInfo]);
+    }
+
     const entryPoints = this._getEntryPoints();
     this.logger.info('开始收集URL', { entryPoints });
 
@@ -185,161 +203,11 @@ export class Scraper extends EventEmitter {
           });
         }
       }
-
       this.logger.info(`提取到 ${rawUrls.length} 个原始URL，分属 ${sections.length} 个section`, {
         entryPointCount: entryPoints.length
       });
 
-      // URL去重和规范化
-      const normalizedUrls = new Map();
-      const duplicates = new Set();
-      const sectionConflicts = []; // 🔥 新增：记录section冲突
-
-      rawUrls.forEach((url, index) => {
-        try {
-          const normalized = normalizeUrl(url);
-          const hash = getUrlHash(normalized);
-
-          if (normalizedUrls.has(hash)) {
-            duplicates.add(url);
-
-            // 🔥 日志增强：检测section冲突
-            const existing = normalizedUrls.get(hash);
-            const currentMapping = urlToSectionMap.get(url);
-
-            if (existing.sectionIndex !== currentMapping?.sectionIndex &&
-              existing.sectionIndex !== undefined &&
-              currentMapping?.sectionIndex !== undefined) {
-              sectionConflicts.push({
-                url: normalized,
-                existingSection: sections[existing.sectionIndex]?.title || existing.sectionIndex,
-                conflictSection: sections[currentMapping.sectionIndex]?.title || currentMapping.sectionIndex
-              });
-            }
-            return;
-          }
-
-          if (!this.isIgnored(normalized) && this.validateUrl(normalized)) {
-            // 保留section映射信息
-            const sectionMapping = urlToSectionMap.get(url);
-
-            normalizedUrls.set(hash, {
-              original: url,
-              normalized: normalized,
-              index: index,
-              sectionIndex: sectionMapping?.sectionIndex,
-              orderInSection: sectionMapping?.orderInSection
-            });
-          }
-        } catch (error) {
-          this.logger.warn('URL规范化失败', { url, error: error.message });
-        }
-      });
-
-      // 🔥 日志增强：报告section冲突
-      if (sectionConflicts.length > 0) {
-        this.logger.warn('检测到URL在多个section中重复', {
-          conflictCount: sectionConflicts.length,
-          examples: sectionConflicts.slice(0, 3)
-        });
-
-        if (sectionConflicts.length <= 5) {
-          this.logger.debug('所有section冲突:', { conflicts: sectionConflicts });
-        }
-      }
-
-      // 构建最终URL队列
-      this.urlQueue = Array.from(normalizedUrls.values()).map(item => item.normalized);
-      this.urlQueue.forEach(url => this.urlSet.add(url));
-
-      // 🔥 新增：构建section结构并填充pages信息
-      const urlIndexMap = new Map(); // normalized URL -> final index
-      Array.from(normalizedUrls.values()).forEach((item, finalIndex) => {
-        urlIndexMap.set(item.normalized, finalIndex);
-
-        // 将URL添加到对应的section
-        if (item.sectionIndex !== undefined) {
-          const section = sections[item.sectionIndex];
-          if (section) {
-            section.pages.push({
-              index: String(finalIndex), // 转为字符串以匹配articleTitles的键格式
-              url: item.normalized,
-              order: item.orderInSection
-            });
-          }
-        }
-      });
-
-      // 按order排序每个section的pages
-      sections.forEach(section => {
-        section.pages.sort((a, b) => a.order - b.order);
-      });
-
-      // 构建urlToSection快速查找映射
-      const urlToSection = {};
-      sections.forEach(section => {
-        section.pages.forEach(page => {
-          urlToSection[page.url] = section.index;
-        });
-      });
-
-      // 🔥 新增：保存section结构到元数据
-      const sectionStructure = {
-        sections,
-        urlToSection
-      };
-
-      // 保存到元数据服务
-      await this.metadataService.saveSectionStructure(sectionStructure);
-
-      // 🔥 日志增强：详细的section统计信息
-      this.logger.info('Section结构已保存', {
-        sectionCount: sections.length,
-        totalPages: Object.keys(urlToSection).length
-      });
-
-      // 输出每个section的详细统计
-      sections.forEach((section, idx) => {
-        this.logger.debug(`Section ${idx + 1}/${sections.length}: "${section.title}"`, {
-          entryUrl: section.entryUrl,
-          pageCount: section.pages.length,
-          firstPage: section.pages[0]?.url,
-          lastPage: section.pages[section.pages.length - 1]?.url
-        });
-      });
-
-      // 检测空section
-      const emptySections = sections.filter(s => s.pages.length === 0);
-      if (emptySections.length > 0) {
-        this.logger.warn('检测到空section（没有页面）', {
-          emptyCount: emptySections.length,
-          titles: emptySections.map(s => s.title)
-        });
-      }
-
-      // 记录统计信息
-      this.logger.info('URL收集完成', {
-        原始数量: rawUrls.length,
-        去重后数量: this.urlQueue.length,
-        重复数量: duplicates.size,
-        被忽略数量: rawUrls.length - normalizedUrls.size - duplicates.size,
-        section数量: sections.length
-      });
-
-      if (duplicates.size > 0) {
-        this.logger.debug('发现重复URL', {
-          count: duplicates.size,
-          examples: Array.from(duplicates).slice(0, 5)
-        });
-      }
-
-      this.emit('urlsCollected', {
-        totalUrls: this.urlQueue.length,
-        duplicates: duplicates.size,
-        sections: sections.length
-      });
-
-      return this.urlQueue;
+      return this._processCollectedUrls(sections, urlToSectionMap, rawUrls);
 
     } catch (error) {
       this.logger.error('URL收集失败', {
@@ -361,6 +229,173 @@ export class Scraper extends EventEmitter {
         await this.pageManager.closePage('url-collector');
       }
     }
+  }
+
+  /**
+   * 处理收集到的URL（去重、规范化、构建Section结构）
+   */
+  async _processCollectedUrls(sections, preCalculatedMap = null, preCalculatedRawUrls = null) {
+    // 如果是直接传入 sections (targetUrls 模式)，需要构建 map 和 rawUrls
+    let urlToSectionMap = preCalculatedMap;
+    let rawUrls = preCalculatedRawUrls;
+
+    if (!urlToSectionMap || !rawUrls) {
+      urlToSectionMap = new Map();
+      rawUrls = [];
+
+      sections.forEach(section => {
+        if (section.urls) {
+          section.urls.forEach((url, order) => {
+            rawUrls.push(url);
+            urlToSectionMap.set(url, {
+              sectionIndex: section.index,
+              orderInSection: order
+            });
+          });
+          // 清理临时 urls 字段
+          delete section.urls;
+          section.pages = [];
+        }
+      });
+    }
+
+    // URL去重和规范化
+    const normalizedUrls = new Map();
+    const duplicates = new Set();
+    const sectionConflicts = []; // 🔥 新增：记录section冲突
+
+    rawUrls.forEach((url, index) => {
+      try {
+        const normalized = normalizeUrl(url);
+        const hash = getUrlHash(normalized);
+
+        if (normalizedUrls.has(hash)) {
+          duplicates.add(url);
+
+          // 🔥 日志增强：检测section冲突
+          const existing = normalizedUrls.get(hash);
+          const currentMapping = urlToSectionMap.get(url);
+
+          if (existing.sectionIndex !== currentMapping?.sectionIndex &&
+            existing.sectionIndex !== undefined &&
+            currentMapping?.sectionIndex !== undefined) {
+            sectionConflicts.push({
+              url: normalized,
+              existingSection: sections[existing.sectionIndex]?.title || existing.sectionIndex,
+              conflictSection: sections[currentMapping.sectionIndex]?.title || currentMapping.sectionIndex
+            });
+          }
+          return;
+        }
+
+        if (!this.isIgnored(normalized) && this.validateUrl(normalized)) {
+          // 保留section映射信息
+          const sectionMapping = urlToSectionMap.get(url);
+
+          normalizedUrls.set(hash, {
+            original: url,
+            normalized: normalized,
+            index: index,
+            sectionIndex: sectionMapping?.sectionIndex,
+            orderInSection: sectionMapping?.orderInSection
+          });
+        }
+      } catch (error) {
+        this.logger.warn('URL规范化失败', { url, error: error.message });
+      }
+    });
+
+    // 🔥 日志增强：报告section冲突
+    if (sectionConflicts.length > 0) {
+      this.logger.warn('检测到URL在多个section中重复', {
+        conflictCount: sectionConflicts.length,
+        examples: sectionConflicts.slice(0, 3)
+      });
+
+      if (sectionConflicts.length <= 5) {
+        this.logger.debug('所有section冲突:', { conflicts: sectionConflicts });
+      }
+    }
+
+    // 构建最终URL队列
+    this.urlQueue = Array.from(normalizedUrls.values()).map(item => item.normalized);
+    this.urlQueue.forEach(url => this.urlSet.add(url));
+
+    // 🔥 新增：构建section结构并填充pages信息
+    const urlIndexMap = new Map(); // normalized URL -> final index
+    Array.from(normalizedUrls.values()).forEach((item, finalIndex) => {
+      urlIndexMap.set(item.normalized, finalIndex);
+
+      // 将URL添加到对应的section
+      if (item.sectionIndex !== undefined) {
+        const section = sections[item.sectionIndex];
+        if (section) {
+          section.pages.push({
+            index: String(finalIndex), // 转为字符串以匹配articleTitles的键格式
+            url: item.normalized,
+            order: item.orderInSection
+          });
+        }
+      }
+    });
+
+    // 按order排序每个section的pages
+    sections.forEach(section => {
+      section.pages.sort((a, b) => a.order - b.order);
+    });
+
+    // 构建urlToSection快速查找映射
+    const urlToSection = {};
+    sections.forEach(section => {
+      section.pages.forEach(page => {
+        urlToSection[page.url] = section.index;
+      });
+    });
+
+    // 🔥 新增：保存section结构到元数据
+    const sectionStructure = {
+      sections,
+      urlToSection
+    };
+
+    // 保存到元数据服务
+    await this.metadataService.saveSectionStructure(sectionStructure);
+
+    // 🔥 日志增强：详细的section统计信息
+    this.logger.info('Section结构已保存', {
+      sectionCount: sections.length,
+      totalPages: Object.keys(urlToSection).length
+    });
+
+    // 输出每个section的详细统计
+    sections.forEach((section, idx) => {
+      this.logger.debug(`Section ${idx + 1}/${sections.length}: "${section.title}"`, {
+        entryUrl: section.entryUrl,
+        pageCount: section.pages.length,
+        firstPage: section.pages[0]?.url,
+        lastPage: section.pages[section.pages.length - 1]?.url
+      });
+    });
+
+    // 检测空section
+    const emptySections = sections.filter(s => s.pages.length === 0);
+    if (emptySections.length > 0) {
+      this.logger.warn('检测到空section（没有页面）', {
+        emptyCount: emptySections.length,
+        titles: emptySections.map(s => s.title)
+      });
+    }
+
+    // 记录统计信息
+    this.logger.info('URL收集完成', {
+      原始数量: rawUrls.length,
+      去重后数量: this.urlQueue.length,
+      重复数量: duplicates.size,
+      被忽略数量: rawUrls.length - this.urlQueue.length - duplicates.size,
+      section数量: sections.length
+    });
+
+    return this.urlQueue;
   }
 
   /**
@@ -1065,21 +1100,22 @@ export class Scraper extends EventEmitter {
           });
           // 继续生成PDF，即使样式处理失败
         }
-      } else {
-        this.logger.debug('跳过PDF样式处理（配置已禁用）');
+        // 继续生成PDF，即使翻译失败
       }
 
-      // 翻译页面内容（如果启用）
-      try {
-        if (this.translationService) {
+      // 翻译
+      // 翻译
+      if (this.translationService) {
+        try {
+          this.logger.info('Before translation wait');
           await this.translationService.translatePage(page);
+          this.logger.info('After translation wait');
+        } catch (translationError) {
+          this.logger.warn('翻译失败，继续生成原始PDF', {
+            url,
+            error: translationError.message
+          });
         }
-      } catch (translationError) {
-        this.logger.warn('页面翻译失败', {
-          url,
-          error: translationError.message
-        });
-        // 继续生成PDF，即使翻译失败
       }
 
       // 🔥 关键修改：生成PDF时使用数字索引而不是哈希

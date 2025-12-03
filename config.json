@@ -1,10 +1,10 @@
 {
-  "rootURL": "https://claude.com/blog",
-  "baseUrl": "https://claude.com/",
+  "rootURL": "https://www.anthropic.com/research/how-ai-is-transforming-work-at-anthropic",
+  "baseUrl": "https://www.anthropic.com/",
   "pdfDir": "pdfs",
   "concurrency": 5,
   "screenshotDelay": 500,
-  "navLinksSelector": "a[href^='/blog/']",
+  "navLinksSelector": "a[href^='/research/']",
   "paginationSelector": "",
   "contentSelector": "main",
   "sectionEntryPoints": [],
@@ -16,9 +16,9 @@
   "navigationRetries": 4,
   "imageTimeout": 10000,
   "allowedDomains": [
-    "claude.com"
+    "www.anthropic.com"
   ],
-  "logLevel": "info",
+  "logLevel": "debug",
   "enablePDFStyleProcessing": true,
   "browser": {
     "headless": true,
@@ -62,9 +62,12 @@
   "navigationStrategy": "load",
   "maxPaginationPages": 1,
   "translation": {
-    "enabled": false,
+    "enabled": true,
     "bilingual": true,
     "targetLanguage": "Chinese",
     "concurrency": 2
-  }
+  },
+  "targetUrls": [
+    "https://www.anthropic.com/research/how-ai-is-transforming-work-at-anthropic"
+  ]
 }

@@ -1,5 +1,5 @@
 {
-    "rootURL": "https://www.anthropic.com/research",
+    "rootURL": "https://www.anthropic.com/research/how-ai-is-transforming-work-at-anthropic",
     "baseUrl": "https://www.anthropic.com/",
     "navLinksSelector": "a[href^='/research/']",
     "contentSelector": "main",
@@ -12,5 +12,14 @@
     "enablePDFStyleProcessing": true,
     "navigationStrategy": "load",
     "maxPaginationPages": 1,
-    "paginationSelector": ""
+    "paginationSelector": "",
+    "targetUrls": [
+        "https://www.anthropic.com/research/how-ai-is-transforming-work-at-anthropic"
+    ],
+    "translation": {
+        "enabled": true,
+        "bilingual": true,
+        "targetLanguage": "Chinese",
+        "concurrency": 2
+    }
 }
