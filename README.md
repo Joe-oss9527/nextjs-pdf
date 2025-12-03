@@ -112,6 +112,9 @@ npm run docs:openai
 # Apply Claude Code (code.claude.com/docs) defaults
 npm run docs:claude
 
+# Apply Anthropic Research defaults
+npm run docs:anthropic
+
 # Inspect current root/base URLs
 npm run docs:current
 
