@@ -37,6 +37,7 @@ help:
 	@echo "  docs-claude       - Apply Claude Code docs configuration"
 	@echo "  docs-cloudflare   - Apply Cloudflare Blog configuration"
 	@echo "  docs-anthropic    - Apply Anthropic Research configuration"
+	@echo "  docs-claude-blog  - Apply Claude Blog configuration"
 	@echo "  docs-current      - Show current doc configuration"
 
 # Create Python virtual environment with enhanced checking
@@ -219,6 +220,9 @@ docs-cloudflare:
 
 docs-anthropic:
 	@node $(DOC_TARGET_SCRIPT) use anthropic-research
+
+docs-claude-blog:
+	@node $(DOC_TARGET_SCRIPT) use claude-blog
 
 docs-current:
 	@node $(DOC_TARGET_SCRIPT) current

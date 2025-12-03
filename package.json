@@ -16,7 +16,8 @@
     "docs:claude": "node scripts/use-doc-target.js use claude-code",
     "docs:list": "node scripts/use-doc-target.js list",
     "docs:current": "node scripts/use-doc-target.js current",
-    "docs:anthropic": "node scripts/use-doc-target.js use anthropic-research"
+    "docs:anthropic": "node scripts/use-doc-target.js use anthropic-research",
+    "docs:claude-blog": "node scripts/use-doc-target.js use claude-blog"
   },
   "keywords": [
     "scraper",

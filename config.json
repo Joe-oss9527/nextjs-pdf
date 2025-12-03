@@ -1,10 +1,10 @@
 {
-  "rootURL": "https://www.anthropic.com/research",
-  "baseUrl": "https://www.anthropic.com/",
+  "rootURL": "https://claude.com/blog",
+  "baseUrl": "https://claude.com/",
   "pdfDir": "pdfs",
   "concurrency": 5,
   "screenshotDelay": 500,
-  "navLinksSelector": "a[href^='/research/']",
+  "navLinksSelector": "a[href^='/blog/']",
   "paginationSelector": "",
   "contentSelector": "main",
   "sectionEntryPoints": [],
@@ -16,7 +16,7 @@
   "navigationRetries": 4,
   "imageTimeout": 10000,
   "allowedDomains": [
-    "www.anthropic.com"
+    "claude.com"
   ],
   "logLevel": "info",
   "enablePDFStyleProcessing": true,

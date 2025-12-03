@@ -1,0 +1,16 @@
+{
+    "rootURL": "https://claude.com/blog",
+    "baseUrl": "https://claude.com/",
+    "navLinksSelector": "a[href^='/blog/']",
+    "contentSelector": "main",
+    "allowedDomains": [
+        "claude.com"
+    ],
+    "ignoreURLs": [],
+    "sectionEntryPoints": [],
+    "sectionTitles": {},
+    "enablePDFStyleProcessing": true,
+    "navigationStrategy": "load",
+    "maxPaginationPages": 1,
+    "paginationSelector": ""
+}

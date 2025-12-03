@@ -115,6 +115,9 @@ npm run docs:claude
 # Apply Anthropic Research defaults
 npm run docs:anthropic
 
+# Apply Claude Blog defaults
+npm run docs:claude-blog
+
 # Inspect current root/base URLs
 npm run docs:current
 
