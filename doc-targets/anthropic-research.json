@@ -1,0 +1,16 @@
+{
+    "rootURL": "https://www.anthropic.com/research",
+    "baseUrl": "https://www.anthropic.com/",
+    "navLinksSelector": "a[href^='/research/']",
+    "contentSelector": "main",
+    "allowedDomains": [
+        "www.anthropic.com"
+    ],
+    "ignoreURLs": [],
+    "sectionEntryPoints": [],
+    "sectionTitles": {},
+    "enablePDFStyleProcessing": true,
+    "navigationStrategy": "load",
+    "maxPaginationPages": 1,
+    "paginationSelector": ""
+}

@@ -1,19 +1,14 @@
 {
-  "rootURL": "https://blog.cloudflare.com/",
-  "baseUrl": "https://blog.cloudflare.com/",
+  "rootURL": "https://www.anthropic.com/research",
+  "baseUrl": "https://www.anthropic.com/",
   "pdfDir": "pdfs",
   "concurrency": 5,
   "screenshotDelay": 500,
-  "navLinksSelector": "a.fw5.no-underline.gray1",
-  "paginationSelector": "a[href^=\"/page/\"], a:contains(\"Older Posts\")",
-  "contentSelector": "div.post-content",
+  "navLinksSelector": "a[href^='/research/']",
+  "paginationSelector": "",
+  "contentSelector": "main",
   "sectionEntryPoints": [],
-  "ignoreURLs": [
-    "/tag/",
-    "/author/",
-    "/page/",
-    "/category/"
-  ],
+  "ignoreURLs": [],
   "maxRetries": 3,
   "retryDelay": 1000,
   "pageTimeout": 45000,
@@ -21,10 +16,10 @@
   "navigationRetries": 4,
   "imageTimeout": 10000,
   "allowedDomains": [
-    "blog.cloudflare.com"
+    "www.anthropic.com"
   ],
   "logLevel": "info",
-  "enablePDFStyleProcessing": false,
+  "enablePDFStyleProcessing": true,
   "browser": {
     "headless": true,
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
@@ -34,7 +29,7 @@
     "directory": "metadata"
   },
   "output": {
-    "finalPdfDirectory": "finalPdf-cloudflare",
+    "finalPdfDirectory": "finalPdf-anthropic",
     "tempDirectory": ".temp"
   },
   "pdf": {
@@ -64,6 +59,6 @@
     "timeout": 300000
   },
   "sectionTitles": {},
-  "navigationStrategy": "domcontentloaded",
-  "maxPaginationPages": 3
+  "navigationStrategy": "load",
+  "maxPaginationPages": 1
 }
