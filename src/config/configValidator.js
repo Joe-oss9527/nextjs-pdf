@@ -298,7 +298,22 @@ const configSchema = Joi.object({
 
     rateLimitDelay: Joi.number().integer().min(100).default(1000)
       .description('Delay between requests to avoid rate limiting (ms)')
-  }).default().description('Network settings')
+  }).default().description('Network settings'),
+
+  // 翻译配置
+  translation: Joi.object({
+    enabled: Joi.boolean().default(false)
+      .description('Enable translation'),
+
+    bilingual: Joi.boolean().default(false)
+      .description('Enable bilingual display (original + translated)'),
+
+    targetLanguage: Joi.string().default('Chinese')
+      .description('Target language for translation'),
+
+    concurrency: Joi.number().integer().min(1).max(5).default(1)
+      .description('Translation concurrency')
+  }).default().description('Translation settings')
 });
 
 /**

@@ -8,3 +8,4 @@ logs
 screenshots/
 venv/
 .temp/
+*.log

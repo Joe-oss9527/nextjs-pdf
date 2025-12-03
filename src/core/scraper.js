@@ -25,6 +25,7 @@ export class Scraper extends EventEmitter {
     this.queueManager = dependencies.queueManager;
     this.imageService = dependencies.imageService;
     this.pdfStyleService = dependencies.pdfStyleService;
+    this.translationService = dependencies.translationService;
 
     // 内部状态
     this.urlQueue = [];
@@ -1066,6 +1067,19 @@ export class Scraper extends EventEmitter {
         }
       } else {
         this.logger.debug('跳过PDF样式处理（配置已禁用）');
+      }
+
+      // 翻译页面内容（如果启用）
+      try {
+        if (this.translationService) {
+          await this.translationService.translatePage(page);
+        }
+      } catch (translationError) {
+        this.logger.warn('页面翻译失败', {
+          url,
+          error: translationError.message
+        });
+        // 继续生成PDF，即使翻译失败
       }
 
       // 🔥 关键修改：生成PDF时使用数字索引而不是哈希
