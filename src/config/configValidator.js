@@ -21,7 +21,7 @@ const configSchema = Joi.object({
   navLinksSelector: Joi.string().required()
     .description('CSS selector for navigation links'),
 
-  paginationSelector: Joi.string().optional()
+  paginationSelector: Joi.string().allow('').optional()
     .description('CSS selector for pagination (next page) link'),
 
   maxPaginationPages: Joi.number().integer().min(1).default(10)
