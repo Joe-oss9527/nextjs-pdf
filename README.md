@@ -74,12 +74,26 @@ make kindle-all
   "baseUrl": "https://docs.example.com/docs/",
   "concurrency": 5,
   "sectionEntryPoints": [],
+  "targetUrls": [],
   "pdf": {
     "engine": "puppeteer",
     "theme": "light",
     "fontSize": "14px",
     "bookmarks": true
   }
+}
+```
+
+### Scraping Specific URLs
+
+To scrape specific URLs without crawling the entire site, use the `targetUrls` configuration:
+
+```json
+{
+  "targetUrls": [
+    "https://example.com/specific-page-1",
+    "https://example.com/specific-page-2"
+  ]
 }
 ```
 
