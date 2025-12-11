@@ -303,6 +303,41 @@ const configSchema = Joi.object({
       .description('Delay between requests to avoid rate limiting (ms)')
   }).default().description('Network settings'),
 
+  // Markdown 转换配置
+  markdown: Joi.object({
+    enabled: Joi.boolean().default(false)
+      .description('Enable HTML to Markdown pipeline'),
+
+    outputDir: Joi.string().default('markdown')
+      .description('Output directory for markdown files (relative to pdfDir)'),
+
+    includeFrontmatter: Joi.boolean().default(true)
+      .description('Include YAML frontmatter in generated markdown')
+  }).default().description('Markdown conversion settings'),
+
+  // Markdown 转 PDF 配置
+  markdownPdf: Joi.object({
+    enabled: Joi.boolean().default(false)
+      .description('Use md-to-pdf instead of Puppeteer for PDF generation'),
+
+    stylesheet: Joi.string().optional()
+      .description('Custom CSS stylesheet for md-to-pdf'),
+
+    highlightStyle: Joi.string().default('github')
+      .description('Code highlight theme for markdown PDF'),
+
+    pdfOptions: Joi.object({
+      format: Joi.string().default('A4')
+        .description('PDF page format for md-to-pdf'),
+      margin: Joi.alternatives().try(
+        Joi.string(),
+        Joi.object()
+      ).optional()
+        .description('PDF margins passed to md-to-pdf')
+    }).default({ format: 'A4' })
+      .description('Additional pdf_options for md-to-pdf')
+  }).default().description('Markdown to PDF settings'),
+
   // 翻译配置
   translation: Joi.object({
     enabled: Joi.boolean().default(false)
@@ -315,7 +350,16 @@ const configSchema = Joi.object({
       .description('Target language for translation'),
 
     concurrency: Joi.number().integer().min(1).max(5).default(1)
-      .description('Translation concurrency')
+      .description('Translation concurrency'),
+
+    timeout: Joi.number().integer().min(1000).default(60000)
+      .description('Translation timeout per batch (ms)'),
+
+    maxRetries: Joi.number().integer().min(1).default(3)
+      .description('Maximum retry attempts for translation batch'),
+
+    retryDelay: Joi.number().integer().min(0).default(2000)
+      .description('Delay between translation retries (ms)')
   }).default().description('Translation settings')
 });
 

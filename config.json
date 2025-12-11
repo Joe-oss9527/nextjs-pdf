@@ -65,7 +65,23 @@
     "enabled": true,
     "bilingual": true,
     "targetLanguage": "Chinese",
-    "concurrency": 2
+    "concurrency": 2,
+    "timeout": 60000,
+    "maxRetries": 3,
+    "retryDelay": 2000
+  },
+  "markdown": {
+    "enabled": true,
+    "outputDir": "markdown",
+    "includeFrontmatter": true
+  },
+  "markdownPdf": {
+    "enabled": true,
+    "highlightStyle": "github",
+    "pdfOptions": {
+      "format": "A4",
+      "margin": "20mm"
+    }
   },
   "targetUrls": [
     "https://www.anthropic.com/research/how-ai-is-transforming-work-at-anthropic"

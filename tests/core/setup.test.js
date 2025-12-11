@@ -62,6 +62,18 @@ jest.mock('../../src/services/imageService.js', () => ({
 jest.mock('../../src/services/pdfStyleService.js', () => ({
   PDFStyleService: jest.fn()
 }));
+jest.mock('../../src/services/translationService.js', () => ({
+  TranslationService: jest.fn()
+}));
+jest.mock('../../src/services/markdownService.js', () => ({
+  MarkdownService: jest.fn()
+}));
+jest.mock('../../src/services/markdownToPdfService.js', () => ({
+  MarkdownToPdfService: jest.fn()
+}));
+jest.mock('../../src/services/pandocPdfService.js', () => ({
+  PandocPdfService: jest.fn()
+}));
 jest.mock('../../src/core/scraper.js', () => ({
   Scraper: jest.fn().mockImplementation(() => ({
     initialize: jest.fn().mockResolvedValue()
@@ -178,6 +190,23 @@ describe('setup', () => {
         lifecycle: 'singleton'
       }));
 
+      expect(mockContainer.register).toHaveBeenCalledWith('translationService', expect.any(Function), expect.objectContaining({
+        singleton: true,
+        dependencies: ['config', 'pathService', 'logger'],
+        lifecycle: 'singleton'
+      }));
+
+      expect(mockContainer.register).toHaveBeenCalledWith('markdownService', expect.any(Function), expect.objectContaining({
+        singleton: true,
+        dependencies: ['config', 'logger'],
+        lifecycle: 'singleton'
+      }));
+
+      expect(mockContainer.register).toHaveBeenCalledWith('markdownToPdfService', expect.any(Function), expect.objectContaining({
+        singleton: true,
+        dependencies: ['config', 'logger'],
+        lifecycle: 'singleton'
+      }));
 
       expect(mockContainer.register).toHaveBeenCalledWith('scraper', expect.any(Function), expect.objectContaining({
         singleton: true,
@@ -193,7 +222,10 @@ describe('setup', () => {
           'progressTracker',
           'queueManager',
           'imageService',
-          'pdfStyleService'
+          'pdfStyleService',
+          'translationService',
+          'markdownService',
+          'markdownToPdfService'
         ],
         lifecycle: 'singleton'
       }));
@@ -205,7 +237,7 @@ describe('setup', () => {
       }));
 
       // Verify total number of services registered
-      expect(mockContainer.register).toHaveBeenCalledTimes(14);
+      expect(mockContainer.register).toHaveBeenCalledTimes(17);
 
       // Verify validation and preloading
       expect(mockContainer.validateDependencies).toHaveBeenCalled();
@@ -298,6 +330,7 @@ describe('setup', () => {
       queueManagerFactory({ concurrency: 10 }, mockLoggerService);
       expect(QueueManager).toHaveBeenCalledWith({
         concurrency: 10,
+        timeout: 0, // Disabled queue timeout - operations have their own timeouts
         logger: mockLoggerService
       });
 
@@ -335,6 +368,44 @@ describe('setup', () => {
         codeFont: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace'
       });
 
+      // Test translationService factory
+      const translationServiceFactory = mockContainer.register.mock.calls.find(
+        call => call[0] === 'translationService'
+      )[1];
+
+      const { TranslationService } = await import('../../src/services/translationService.js');
+      const mockPathService = { getTranslationCacheDirectory: jest.fn() };
+      translationServiceFactory({ translation: { enabled: true } }, mockPathService, mockLoggerService);
+      expect(TranslationService).toHaveBeenCalledWith({
+        config: { translation: { enabled: true } },
+        pathService: mockPathService,
+        logger: mockLoggerService
+      });
+
+      // Test markdownService factory
+      const markdownServiceFactory = mockContainer.register.mock.calls.find(
+        call => call[0] === 'markdownService'
+      )[1];
+
+      const { MarkdownService } = await import('../../src/services/markdownService.js');
+      markdownServiceFactory(mockConfig, mockLoggerService);
+      expect(MarkdownService).toHaveBeenCalledWith({
+        config: mockConfig,
+        logger: mockLoggerService
+      });
+
+      // Test markdownToPdfService factory
+      const markdownToPdfServiceFactory = mockContainer.register.mock.calls.find(
+        call => call[0] === 'markdownToPdfService'
+      )[1];
+
+      const { PandocPdfService } = await import('../../src/services/pandocPdfService.js');
+      markdownToPdfServiceFactory(mockConfig, mockLoggerService);
+      expect(PandocPdfService).toHaveBeenCalledWith({
+        config: mockConfig,
+        logger: mockLoggerService
+      });
+
       // Test scraper factory
       const scraperFactory = mockContainer.register.mock.calls.find(
         call => call[0] === 'scraper'
@@ -353,7 +424,10 @@ describe('setup', () => {
         'progressTracker',
         'queueManager',
         'imageService',
-        'pdfStyleService'
+        'pdfStyleService',
+        'translationService',
+        'markdownService',
+        'markdownToPdfService'
       ];
       
       await scraperFactory(...services);
@@ -369,7 +443,10 @@ describe('setup', () => {
         progressTracker: 'progressTracker',
         queueManager: 'queueManager',
         imageService: 'imageService',
-        pdfStyleService: 'pdfStyleService'
+        pdfStyleService: 'pdfStyleService',
+        translationService: 'translationService',
+        markdownService: 'markdownService',
+        markdownToPdfService: 'markdownToPdfService'
       });
     });
   });
@@ -423,6 +500,7 @@ describe('setup', () => {
       queueManagerFactory({}, {});
       expect(QueueManager).toHaveBeenCalledWith({
         concurrency: 5,
+        timeout: 0, // Disabled queue timeout - operations have their own timeouts
         logger: {}
       });
 

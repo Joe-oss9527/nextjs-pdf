@@ -31,11 +31,14 @@
     "async": "^3.2.5",
     "chalk": "^5.3.0",
     "joi": "^17.13.3",
+    "md-to-pdf": "^5.2.4",
+    "p-limit": "^5.0.0",
     "p-queue": "^7.4.1",
     "pdf-lib": "^1.17.1",
     "puppeteer": "^24.14.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "turndown": "^7.1.2",
     "winston": "^3.17.0"
   },
   "devDependencies": {

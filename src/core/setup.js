@@ -1,5 +1,5 @@
 import Container from './container.js';
-import { createLogger } from '../utils/logger.js';
+        import { createLogger } from '../utils/logger.js';
 import { validateConfig } from '../config/configValidator.js';
 
 // 导入所有服务类
@@ -15,6 +15,9 @@ import { PageManager } from '../services/pageManager.js';
 import { ImageService } from '../services/imageService.js';
 import { PDFStyleService } from '../services/pdfStyleService.js';
 import { TranslationService } from '../services/translationService.js';
+import { MarkdownService } from '../services/markdownService.js';
+import { MarkdownToPdfService } from '../services/markdownToPdfService.js';
+import { PandocPdfService } from '../services/pandocPdfService.js';
 import { Scraper } from './scraper.js';
 import { PythonMergeService } from '../services/PythonMergeService.js';
 
@@ -111,7 +114,7 @@ async function setupContainer() {
         container.register('queueManager', (config, logger) => {
             return new QueueManager({
                 concurrency: config.concurrency || 5,
-                timeout: 120000, // Increase timeout to 2 minutes for translation
+                timeout: 0, // Disable queue timeout - individual operations have their own timeouts
                 logger
             });
         }, {
@@ -182,14 +185,35 @@ async function setupContainer() {
         });
 
         // 翻译服务
-        container.register('translationService', (config) => {
-            return new TranslationService(config);
+        container.register('translationService', (config, pathService, logger) => {
+            return new TranslationService({
+                config,
+                pathService,
+                logger
+            });
         }, {
             singleton: true,
-            dependencies: ['config'],
+            dependencies: ['config', 'pathService', 'logger'],
             lifecycle: 'singleton'
         });
 
+        // Markdown 服务
+        container.register('markdownService', (config, logger) => {
+            return new MarkdownService({ config, logger });
+        }, {
+            singleton: true,
+            dependencies: ['config', 'logger'],
+            lifecycle: 'singleton'
+        });
+
+        // Markdown 转 PDF 服务 - 使用 Pandoc 以获得更好的 CJK 支持
+        container.register('markdownToPdfService', (config, logger) => {
+            return new PandocPdfService({ config, logger });
+        }, {
+            singleton: true,
+            dependencies: ['config', 'logger'],
+            lifecycle: 'singleton'
+        });
 
         // 7. 注册核心爬虫服务
 
@@ -207,7 +231,9 @@ async function setupContainer() {
             queueManager,
             imageService,
             pdfStyleService,     // 添加 pdfStyleService
-            translationService   // 添加 translationService
+            translationService,  // 添加 translationService
+            markdownService,
+            markdownToPdfService
         ) => {
             const scraper = new Scraper({
                 config,
@@ -222,7 +248,9 @@ async function setupContainer() {
                 queueManager,
                 imageService,
                 pdfStyleService,    // 传递 pdfStyleService
-                translationService  // 传递 translationService
+                translationService,  // 传递 translationService
+                markdownService,
+                markdownToPdfService
             });
 
             await scraper.initialize();
@@ -242,7 +270,9 @@ async function setupContainer() {
                 'queueManager',
                 'imageService',
                 'pdfStyleService',
-                'translationService'
+                'translationService',
+                'markdownService',
+                'markdownToPdfService'
             ],
             lifecycle: 'singleton'
         });

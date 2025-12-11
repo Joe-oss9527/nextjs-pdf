@@ -80,6 +80,23 @@ export class FileService {
   }
 
   /**
+   * 写入纯文本文件
+   */
+  async writeText(filePath, content) {
+    try {
+      await this.ensureDirectory(path.dirname(filePath));
+      await fs.writeFile(filePath, content, 'utf8');
+      this.logger.debug(`写入文本文件: ${filePath}`);
+    } catch (error) {
+      throw new FileOperationError(
+        `写入文本文件失败: ${filePath} - ${error.message}`,
+        filePath,
+        'writeText'
+      );
+    }
+  }
+
+  /**
    * 追加到JSON数组文件
    */
   async appendToJsonArray(filePath, item) {
