@@ -26,6 +26,8 @@ export class Scraper extends EventEmitter {
     this.imageService = dependencies.imageService;
     this.pdfStyleService = dependencies.pdfStyleService;
     this.translationService = dependencies.translationService;
+    this.markdownService = dependencies.markdownService;
+    this.markdownToPdfService = dependencies.markdownToPdfService;
 
     // 内部状态
     this.urlQueue = [];
@@ -393,6 +395,13 @@ export class Scraper extends EventEmitter {
       重复数量: duplicates.size,
       被忽略数量: rawUrls.length - this.urlQueue.length - duplicates.size,
       section数量: sections.length
+    });
+
+    // 触发事件，便于外部监听URL收集结果
+    this.emit('urlsCollected', {
+      totalUrls: this.urlQueue.length,
+      duplicates: duplicates.size,
+      sections: sections.length
     });
 
     return this.urlQueue;
@@ -1103,21 +1112,6 @@ export class Scraper extends EventEmitter {
         // 继续生成PDF，即使翻译失败
       }
 
-      // 翻译
-      // 翻译
-      if (this.translationService) {
-        try {
-          this.logger.info('Before translation wait');
-          await this.translationService.translatePage(page);
-          this.logger.info('After translation wait');
-        } catch (translationError) {
-          this.logger.warn('翻译失败，继续生成原始PDF', {
-            url,
-            error: translationError.message
-          });
-        }
-      }
-
       // 🔥 关键修改：生成PDF时使用数字索引而不是哈希
       const pdfPath = this.pathService.getPdfPath(url, {
         useHash: false,  // 使用索引而不是哈希
@@ -1126,15 +1120,122 @@ export class Scraper extends EventEmitter {
 
       await this.fileService.ensureDirectory(path.dirname(pdfPath));
 
-      // 使用Puppeteer引擎生成PDF
-      this.logger.info('开始使用Puppeteer引擎生成PDF', { pdfPath });
-      const pdfOptions = {
-        ...this.pdfStyleService.getPDFOptions(),
-        path: pdfPath
-      };
-      await page.pdf(pdfOptions);
+      const useMarkdownWorkflow =
+        this.config.markdown?.enabled &&
+        this.config.markdownPdf?.enabled &&
+        !!this.markdownService &&
+        !!this.markdownToPdfService;
 
-      this.logger.info(`PDF已保存: ${pdfPath}`);
+      if (useMarkdownWorkflow) {
+        try {
+          this.logger.info('使用 Markdown 工作流生成 PDF', {
+            url,
+            pdfPath
+          });
+
+          const markdownContent = await this.markdownService.extractAndConvertPage(
+            page,
+            this.config.contentSelector
+          );
+
+          const markdownWithFrontmatter = this.markdownService.addFrontmatter(
+            markdownContent,
+            {
+              title,
+              url,
+              index
+            }
+          );
+
+          const translatedMarkdown = this.translationService
+            ? await this.translationService.translateMarkdown(
+                markdownWithFrontmatter
+              )
+            : markdownWithFrontmatter;
+
+          const markdownOutputDir = path.join(
+            this.config.pdfDir,
+            this.config.markdown?.outputDir || 'markdown'
+          );
+          const baseName = path.basename(pdfPath, '.pdf');
+          const originalMarkdownPath = path.join(
+            markdownOutputDir,
+            `${baseName}.md`
+          );
+          const translatedMarkdownPath = path.join(
+            markdownOutputDir,
+            `${baseName}_translated.md`
+          );
+
+          await this.fileService.writeText(
+            originalMarkdownPath,
+            markdownWithFrontmatter
+          );
+          await this.fileService.writeText(
+            translatedMarkdownPath,
+            translatedMarkdown
+          );
+
+          await this.markdownToPdfService.convertContentToPdf(
+            translatedMarkdown,
+            pdfPath,
+            this.config.markdownPdf
+          );
+
+          this.logger.info('Markdown 工作流 PDF 已生成', { pdfPath });
+        } catch (markdownError) {
+          this.logger.warn('Markdown 工作流失败，回退到 Puppeteer PDF', {
+            url,
+            error: markdownError.message
+          });
+
+          // 回退到原始 DOM 翻译 + Puppeteer PDF
+          if (this.translationService) {
+            try {
+              this.logger.info('Before translation wait');
+              await this.translationService.translatePage(page);
+              this.logger.info('After translation wait');
+            } catch (translationError) {
+              this.logger.warn('翻译失败，继续生成原始PDF', {
+                url,
+                error: translationError.message
+              });
+            }
+          }
+
+          this.logger.info('开始使用Puppeteer引擎生成PDF（回退模式）', {
+            pdfPath
+          });
+          const fallbackPdfOptions = {
+            ...this.pdfStyleService.getPDFOptions(),
+            path: pdfPath
+          };
+          await page.pdf(fallbackPdfOptions);
+          this.logger.info(`PDF已保存: ${pdfPath}`);
+        }
+      } else {
+        // 原始 DOM 翻译 + Puppeteer PDF 工作流
+        if (this.translationService) {
+          try {
+            this.logger.info('Before translation wait');
+            await this.translationService.translatePage(page);
+            this.logger.info('After translation wait');
+          } catch (translationError) {
+            this.logger.warn('翻译失败，继续生成原始PDF', {
+              url,
+              error: translationError.message
+            });
+          }
+        }
+
+        this.logger.info('开始使用Puppeteer引擎生成PDF', { pdfPath });
+        const pdfOptions = {
+          ...this.pdfStyleService.getPDFOptions(),
+          path: pdfPath
+        };
+        await page.pdf(pdfOptions);
+        this.logger.info(`PDF已保存: ${pdfPath}`);
+      }
 
       // 保存URL到索引的映射，用于追溯和调试
       this.stateManager.setUrlIndex(url, index);

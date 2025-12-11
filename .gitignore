@@ -9,3 +9,4 @@ screenshots/
 venv/
 .temp/
 *.log
+logs/

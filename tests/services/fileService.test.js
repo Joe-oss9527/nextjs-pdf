@@ -55,6 +55,18 @@ describe('FileService', () => {
     });
   });
 
+  describe('writeText', () => {
+    test('应该正确写入文本文件', async () => {
+      const filePath = path.join(testDir, 'test.txt');
+      const content = 'hello world';
+
+      await fileService.writeText(filePath, content);
+
+      const readContent = await fs.readFile(filePath, 'utf8');
+      expect(readContent).toBe(content);
+    });
+  });
+
   describe('appendToJsonArray', () => {
     test('应该正确追加到JSON数组', async () => {
       const filePath = path.join(testDir, 'array.json');

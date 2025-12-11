@@ -1,39 +1,79 @@
-
-import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import pLimit from 'p-limit';
 import { createLogger } from '../utils/logger.js';
-import { delay } from '../utils/common.js';
+import { delay, retry } from '../utils/common.js';
+import { GeminiClient } from './geminiClient.js';
 
 /**
  * Translation Service
  * Handles content translation using gemini-cli with caching and concurrency control
  */
 export class TranslationService {
-    constructor(config = {}) {
-        this.config = config;
-        this.logger = createLogger({ logLevel: config.logLevel });
-        this.logger.info('TranslationService constructor called', { configKeys: Object.keys(config) });
-        this.enabled = config.translation?.enabled || false;
-        this.logger.info('TranslationService enabled:', { enabled: this.enabled });
-        this.bilingual = config.translation?.bilingual || false;
-        this.targetLanguage = config.translation?.targetLanguage || 'Chinese';
-        this.concurrency = config.translation?.concurrency || 1;
+  constructor(options = {}) {
+    const {
+      config = {},
+      logger,
+      pathService,
+      client
+    } = options;
 
-        // Cache directory
-        this.cacheDir = path.join(process.cwd(), '.temp', 'translation_cache');
-        this._ensureCacheDir();
-    }
+    this.config = config;
+    this.logger = logger || createLogger({ logLevel: config.logLevel });
+    this.pathService = pathService || null;
 
-    _ensureCacheDir() {
-        if (!fs.existsSync(this.cacheDir)) {
-            fs.mkdirSync(this.cacheDir, { recursive: true });
-        }
+    this.logger.info('TranslationService constructor called', {
+      configKeys: Object.keys(config || {})
+    });
+
+    const translationConfig = config.translation || {};
+
+    this.enabled = translationConfig.enabled || false;
+    this.bilingual = translationConfig.bilingual || false;
+    this.targetLanguage = translationConfig.targetLanguage || 'Chinese';
+    this.concurrency = translationConfig.concurrency || 1;
+
+    // 超时与重试配置（支持从配置覆盖）
+    this.timeoutMs = translationConfig.timeout || 60000;
+    this.maxRetries = translationConfig.maxRetries || 3;
+    this.retryDelay = translationConfig.retryDelay || 2000;
+
+    this.logger.info('TranslationService enabled:', {
+      enabled: this.enabled,
+      targetLanguage: this.targetLanguage,
+      bilingual: this.bilingual,
+      concurrency: this.concurrency,
+      timeoutMs: this.timeoutMs,
+      maxRetries: this.maxRetries,
+      retryDelay: this.retryDelay
+    });
+
+    // 外部可注入自定义客户端（方便测试或替换实现）
+    this.client = client || null;
+
+    // Cache directory
+    this.cacheDir = this._resolveCacheDir();
+    this._ensureCacheDir();
+  }
+
+  _resolveCacheDir() {
+    if (this.pathService && typeof this.pathService.getTranslationCacheDirectory === 'function') {
+      return this.pathService.getTranslationCacheDirectory();
     }
+    return path.join(process.cwd(), '.temp', 'translation_cache');
+  }
+
+  _ensureCacheDir() {
+    if (!fs.existsSync(this.cacheDir)) {
+      fs.mkdirSync(this.cacheDir, { recursive: true });
+    }
+  }
 
     _getCacheKey(text) {
-        return crypto.createHash('md5').update(`${this.targetLanguage}:${text} `).digest('hex');
+        const mode = this.bilingual ? 'bilingual' : 'single';
+        const keyBase = `${this.targetLanguage}:${mode}:${text}`;
+        return crypto.createHash('md5').update(keyBase).digest('hex');
     }
 
     _getFromCache(text) {
@@ -142,53 +182,86 @@ export class TranslationService {
                     batches.push(uncachedElements.slice(i, i + batchSize));
                 }
 
-                this.logger.info(`Processing ${batches.length} batches for ${uncachedElements.length} items...`);
+                this.logger.info(`Starting DOM translation batches`, {
+                    totalBatches: batches.length,
+                    totalItems: uncachedElements.length,
+                    batchSize,
+                    concurrency: this.concurrency
+                });
 
-                // Use simple concurrency control
-                const activePromises = [];
-                let aborted = false;
+                // 使用 p-limit 控制并发，并为每个批次提供重试
+                const limit = pLimit(this.concurrency || 1);
+                let completedBatches = 0;
+                let failedBatches = 0;
 
-                for (let i = 0; i < batches.length; i++) {
-                    if (aborted) break;
+                const tasks = batches.map((batch, batchIndex) =>
+                    limit(async () => {
+                        const batchStartTime = Date.now();
+                        this.logger.debug(`Starting DOM batch ${batchIndex + 1}/${batches.length}`, {
+                            itemCount: batch.length
+                        });
 
-                    const batch = batches[i];
-                    const promise = this._translateBatch(batch).then(res => {
-                        // Save to cache
-                        if (res) {
-                            Object.entries(res).forEach(([id, text]) => {
-                                const originalItem = batch.find(item => item.id === id);
-                                if (originalItem) {
-                                    this._saveToCache(originalItem.text, text);
-                                    cachedTranslations[id] = text;
-                                }
+                        try {
+                            // 为每个批次添加独立的超时保护
+                            const batchTimeout = this.timeoutMs || 60000;
+                            const timeoutPromise = new Promise((_, reject) => {
+                                setTimeout(() => reject(new Error(`DOM batch ${batchIndex + 1} timeout after ${batchTimeout}ms`)), batchTimeout);
                             });
+
+                            const translatePromise = this._translateBatchWithRetry(batch);
+                            const res = await Promise.race([translatePromise, timeoutPromise]);
+
+                            if (res) {
+                                Object.entries(res).forEach(([id, text]) => {
+                                    const originalItem = batch.find(item => item.id === id);
+                                    if (originalItem) {
+                                        this._saveToCache(originalItem.text, text);
+                                        cachedTranslations[id] = text;
+                                    }
+                                });
+                            }
+
+                            completedBatches++;
+                            this.logger.info(`DOM batch ${batchIndex + 1}/${batches.length} completed`, {
+                                elapsed: Date.now() - batchStartTime,
+                                progress: `${completedBatches}/${batches.length}`
+                            });
+                        } catch (err) {
+                            failedBatches++;
+                            this.logger.error(`DOM batch ${batchIndex + 1}/${batches.length} failed after retries`, {
+                                error: err.message,
+                                elapsed: Date.now() - batchStartTime,
+                                progress: `${completedBatches}/${batches.length}`
+                            });
+                        } finally {
+                            // 轻微延迟，避免打爆速率限制
+                            await delay(200);
                         }
-                    }).catch(err => {
-                        this.logger.error(`Batch ${i + 1} failed`, { error: err.message });
-                        // If timeout or severe error, abort remaining batches to save time
-                        if (err.message.includes('timed out')) {
-                            aborted = true;
-                        }
+                    })
+                );
+
+                // 为整个批处理过程添加总超时
+                const totalTimeout = (this.timeoutMs || 60000) * batches.length;
+                const totalTimeoutPromise = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error(`Total DOM translation timeout after ${totalTimeout}ms`)), totalTimeout);
+                });
+
+                try {
+                    await Promise.race([Promise.all(tasks), totalTimeoutPromise]);
+                    this.logger.info('All DOM translation batches completed', {
+                        completed: completedBatches,
+                        failed: failedBatches,
+                        total: batches.length
                     });
-
-                    activePromises.push(promise);
-
-                    if (activePromises.length >= this.concurrency) {
-                        await Promise.race(activePromises);
-                        // Remove finished promises
-                        // A bit complex to remove exact promise, so we just wait for one
-                        // Simplification: just await all if we hit limit, or use a proper pool.
-                        // For simplicity in this context without external libs like p-limit:
-                        // We'll just await the oldest one.
-                        const oldest = activePromises.shift();
-                        await oldest;
-                    }
-
-                    // Small delay to avoid rate limits
-                    await delay(200);
+                } catch (err) {
+                    this.logger.warn('DOM translation batches did not complete in time', {
+                        error: err.message,
+                        completed: completedBatches,
+                        failed: failedBatches,
+                        total: batches.length
+                    });
+                    // 即使超时，也继续处理已完成的翻译
                 }
-
-                await Promise.all(activePromises);
             }
 
             // 4. Apply all translations (cached + new)
@@ -222,85 +295,282 @@ export class TranslationService {
     }
 
     /**
+     * Translate Markdown content instead of DOM.
+     * 保留 frontmatter 和代码块，只翻译普通文本段落。
+     * @param {string} markdownContent
+     * @returns {Promise<string>}
+     */
+    async translateMarkdown(markdownContent) {
+        if (!this.enabled) {
+            this.logger.debug('Translation disabled for markdown, returning original');
+            return markdownContent;
+        }
+
+        if (!markdownContent || typeof markdownContent !== 'string') {
+            return markdownContent;
+        }
+
+        const lines = markdownContent.split('\n');
+        const outputLines = [];
+        const segments = [];
+        let currentTextLines = [];
+        let inFrontmatter = false;
+        let inCodeBlock = false;
+
+        const flushCurrentSegment = () => {
+            if (currentTextLines.length === 0) return;
+            const text = currentTextLines.join('\n').trim();
+            currentTextLines = [];
+            if (!text) return;
+
+            const id = `md-${segments.length}`;
+            segments.push({ id, text });
+            outputLines.push(`__MD_SEGMENT_${id}__`);
+        };
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const trimmed = line.trim();
+
+            // 处理文件开头的 YAML frontmatter
+            if (i === 0 && trimmed === '---') {
+                inFrontmatter = true;
+                outputLines.push(line);
+                continue;
+            }
+
+            if (inFrontmatter) {
+                outputLines.push(line);
+                if (trimmed === '---') {
+                    inFrontmatter = false;
+                }
+                continue;
+            }
+
+            // 处理代码块 fence（``` 或 ~~~）
+            const fenceMatch = trimmed.match(/^(```|~~~)/);
+            if (fenceMatch) {
+                flushCurrentSegment();
+                inCodeBlock = !inCodeBlock;
+                outputLines.push(line);
+                continue;
+            }
+
+            if (inCodeBlock) {
+                outputLines.push(line);
+                continue;
+            }
+
+            // 空行：结束当前段落
+            if (trimmed === '') {
+                flushCurrentSegment();
+                outputLines.push(line);
+                continue;
+            }
+
+            // 结构性行（标题/列表项）尽量作为单独段落，方便上下文清晰
+            const isHeading = /^#{1,6}\s+/.test(trimmed);
+            const isListItem =
+                /^(\*|\-|\+)\s+/.test(trimmed) || /^\d+\.\s+/.test(trimmed);
+
+            if ((isHeading || isListItem) && currentTextLines.length > 0) {
+                flushCurrentSegment();
+            }
+
+            // 其他行：加入可翻译段落
+            currentTextLines.push(line);
+        }
+
+        // 结束时刷新残留段落
+        flushCurrentSegment();
+
+        if (segments.length === 0) {
+            return markdownContent;
+        }
+
+        // 查缓存
+        const cachedTranslations = {};
+        const uncachedSegments = [];
+
+        for (const seg of segments) {
+            const cached = this._getFromCache(seg.text);
+            if (cached) {
+                cachedTranslations[seg.id] = cached;
+            } else {
+                uncachedSegments.push(seg);
+            }
+        }
+
+        this.logger.info('Markdown translation segments', {
+            total: segments.length,
+            fromCache: segments.length - uncachedSegments.length,
+            uncached: uncachedSegments.length
+        });
+
+        // 处理未命中缓存的段落
+        if (uncachedSegments.length > 0) {
+            const batchSize = 5; // 减小批次大小，降低超时风险
+            const batches = [];
+            for (let i = 0; i < uncachedSegments.length; i += batchSize) {
+                batches.push(uncachedSegments.slice(i, i + batchSize));
+            }
+
+            this.logger.info(`Starting Markdown translation batches`, {
+                totalBatches: batches.length,
+                batchSize,
+                concurrency: this.concurrency
+            });
+
+            const limit = pLimit(this.concurrency || 1);
+            let completedBatches = 0;
+            let failedBatches = 0;
+
+            const tasks = batches.map((batch, batchIndex) =>
+                limit(async () => {
+                    const batchStartTime = Date.now();
+                    this.logger.debug(`Starting batch ${batchIndex + 1}/${batches.length}`, {
+                        segmentCount: batch.length
+                    });
+
+                    try {
+                        // 为每个批次添加独立的超时保护
+                        const batchTimeout = this.timeoutMs || 60000;
+                        const timeoutPromise = new Promise((_, reject) => {
+                            setTimeout(() => reject(new Error(`Batch ${batchIndex + 1} timeout after ${batchTimeout}ms`)), batchTimeout);
+                        });
+
+                        const translatePromise = this._translateBatchWithRetry(batch);
+                        const res = await Promise.race([translatePromise, timeoutPromise]);
+
+                        if (res) {
+                            Object.entries(res).forEach(([id, translated]) => {
+                                const originalItem = batch.find(item => item.id === id);
+                                if (originalItem) {
+                                    this._saveToCache(originalItem.text, translated);
+                                    cachedTranslations[id] = translated;
+                                }
+                            });
+                        }
+
+                        completedBatches++;
+                        this.logger.info(`Batch ${batchIndex + 1}/${batches.length} completed`, {
+                            elapsed: Date.now() - batchStartTime,
+                            progress: `${completedBatches}/${batches.length}`
+                        });
+                    } catch (err) {
+                        failedBatches++;
+                        this.logger.error(`Batch ${batchIndex + 1}/${batches.length} failed after retries`, {
+                            error: err.message,
+                            elapsed: Date.now() - batchStartTime,
+                            progress: `${completedBatches}/${batches.length}`
+                        });
+                    } finally {
+                        await delay(200);
+                    }
+                })
+            );
+
+            // 为整个批处理过程添加总超时
+            const totalTimeout = (this.timeoutMs || 60000) * batches.length;
+            const totalTimeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error(`Total translation timeout after ${totalTimeout}ms`)), totalTimeout);
+            });
+
+            try {
+                await Promise.race([Promise.all(tasks), totalTimeoutPromise]);
+                this.logger.info('All Markdown translation batches completed', {
+                    completed: completedBatches,
+                    failed: failedBatches,
+                    total: batches.length
+                });
+            } catch (err) {
+                this.logger.warn('Markdown translation batches did not complete in time', {
+                    error: err.message,
+                    completed: completedBatches,
+                    failed: failedBatches,
+                    total: batches.length
+                });
+                // 即使超时，也继续处理已完成的翻译
+            }
+        }
+
+        // 重建 Markdown：用翻译结果替换占位符
+        const idToOriginal = {};
+        for (const seg of segments) {
+            idToOriginal[seg.id] = seg.text;
+        }
+
+        const finalLines = outputLines.map(line => {
+            const match = line.match(/^__MD_SEGMENT_(.+)__$/);
+            if (!match) return line;
+
+            const id = match[1];
+            const original = idToOriginal[id] || '';
+            const translated = cachedTranslations[id] || original;
+
+            if (this.bilingual) {
+                return `${original}\n\n${translated}`;
+            }
+
+            return translated;
+        });
+
+        return finalLines.join('\n');
+    }
+
+    /**
      * Translate a batch of elements using spawn
      * @param {Array} batch 
      * @returns {Promise<Object>} Map of id -> translated text
      */
-    async _translateBatch(batch) {
-        const inputMap = {};
-        batch.forEach((item) => {
-            inputMap[item.id] = item.text;
-        });
+  async _translateBatch(batch) {
+    const inputMap = {};
+    batch.forEach((item) => {
+      inputMap[item.id] = item.text;
+    });
 
-        const instructions = `
+    const instructions = `
 You are a professional technical translator. Translate the following JSON object values into ${this.targetLanguage}.
 Keep the keys unchanged.
-Do not translate code, variable names, or technical terms that should remain in English.
-Output ONLY the valid JSON object with translated values. No markdown formatting, no explanations.
+The values may contain Markdown formatting (headings, lists, links, emphasis) or code snippets.
+Preserve all Markdown syntax characters (such as #, *, -, _, [, ], (, ), and backticks) and code fencing; only translate the human language text.
+Do not translate code identifiers, API names, or URLs.
+Output ONLY the valid JSON object with translated values. Do not wrap the result in additional Markdown, code fences, or explanations.
 `;
 
-        const jsonInput = JSON.stringify(inputMap, null, 2);
+    if (!this.client) {
+      this.client = new GeminiClient({
+        timeoutMs: this.timeoutMs,
+        logger: this.logger
+      });
+    }
 
-        return new Promise((resolve, reject) => {
-            // Pass instructions as argument, JSON via stdin
-            const child = spawn('gemini', [instructions]);
+    return this.client.translateJson({
+      instructions,
+      inputMap
+    });
+  }
 
-            // Set a timeout for the translation process
-            const timeout = setTimeout(() => {
-                child.kill();
-                reject(new Error('Translation timed out'));
-            }, 20000); // 20 seconds timeout
-
-            let stdout = '';
-            let stderr = '';
-
-            // Write JSON to stdin
-            child.stdin.write(jsonInput);
-            child.stdin.end();
-
-            child.stdout.on('data', (data) => {
-                stdout += data.toString();
-            });
-
-            child.stderr.on('data', (data) => {
-                stderr += data.toString();
-            });
-
-            child.on('close', (code) => {
-                clearTimeout(timeout);
-                if (code !== 0) {
-                    this.logger.error('gemini-cli exited with error', { code, stderr });
-                    // Don't reject, just return empty so other batches proceed? 
-                    // Or reject to handle in caller.
-                    reject(new Error(`gemini-cli exited with code ${code}: ${stderr}`));
-                    return;
+    /**
+     * 带重试的批量翻译封装
+     * @param {Array} batch
+     * @returns {Promise<Object>} Map of id -> translated text
+     */
+    async _translateBatchWithRetry(batch) {
+        return retry(
+            () => this._translateBatch(batch),
+            {
+                maxAttempts: this.maxRetries,
+                delay: this.retryDelay,
+                backoff: 2,
+                onRetry: (attempt, error) => {
+                    this.logger.warn('Retrying translation batch', {
+                        attempt,
+                        maxAttempts: this.maxRetries,
+                        error: error.message
+                    });
                 }
-
-                try {
-                    let outputJsonStr = stdout.trim();
-                    // Robust JSON extraction
-                    const firstBrace = outputJsonStr.indexOf('{');
-                    const lastBrace = outputJsonStr.lastIndexOf('}');
-
-                    if (firstBrace !== -1 && lastBrace !== -1) {
-                        outputJsonStr = outputJsonStr.substring(firstBrace, lastBrace + 1);
-                    } else {
-                        throw new Error('No JSON object found in output');
-                    }
-
-                    const translatedMap = JSON.parse(outputJsonStr);
-                    resolve(translatedMap);
-                } catch (e) {
-                    this.logger.warn('Failed to parse translation JSON', { error: e.message, output: stdout.substring(0, 200) });
-                    resolve(null); // Return null on parse error
-                }
-            });
-
-            child.on('error', (err) => {
-                clearTimeout(timeout);
-                this.logger.error('gemini spawn error', { error: err.message });
-                reject(err);
-            });
-        });
+            }
+        );
     }
 }

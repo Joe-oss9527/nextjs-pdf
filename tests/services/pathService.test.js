@@ -327,4 +327,26 @@ describe('PathService', () => {
       });
     });
   });
+
+  describe('getTranslationCacheDirectory', () => {
+    test('应该在临时目录下生成翻译缓存目录', () => {
+      const dir = pathService.getTranslationCacheDirectory();
+      expect(dir).toBe(
+        path.join(path.resolve('.temp'), 'translation_cache')
+      );
+    });
+
+    test('应该拒绝越界的缓存目录', () => {
+      const unsafeService = new PathService({
+        pdfDir: '/home/user/pdfs',
+        output: {
+          tempDirectory: '/../outside'
+        }
+      });
+
+      expect(() => unsafeService.getTranslationCacheDirectory()).toThrow(
+        'Unsafe translation cache directory'
+      );
+    });
+  });
 });

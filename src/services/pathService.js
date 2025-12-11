@@ -183,4 +183,22 @@ export class PathService {
       originalName: parsed.originalName
     };
   }
+
+  /**
+   * 获取翻译缓存目录
+   * 确保路径位于当前工作目录之下，防止越界访问
+   */
+  getTranslationCacheDirectory() {
+    const baseTempDir = this.getTempDirectory();
+    const cacheDir = path.join(baseTempDir, 'translation_cache');
+
+    const rootDir = path.resolve(process.cwd());
+    const resolved = path.resolve(cacheDir);
+
+    if (!resolved.startsWith(rootDir)) {
+      throw new Error(`Unsafe translation cache directory: ${resolved}`);
+    }
+
+    return resolved;
+  }
 }
