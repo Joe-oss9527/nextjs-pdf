@@ -21,16 +21,16 @@ describe('PythonMergeService', () => {
           info: jest.fn(),
           warn: jest.fn(),
           warning: jest.fn(),
-          error: jest.fn()
+          error: jest.fn(),
         };
-        
+
         this.pythonConfig = {
           executable: config.python?.executable || config.pythonExecutable || 'python3',
           timeout: config.python?.timeout || config.pythonTimeout || 300000,
           maxBuffer: config.maxBuffer || 10485760,
-          encoding: 'utf-8'
+          encoding: 'utf-8',
         };
-        
+
         this.isRunning = false;
         this.currentProcess = null;
         this.statistics = {
@@ -41,9 +41,9 @@ describe('PythonMergeService', () => {
           totalPagesProcessed: 0,
           averageExecutionTime: 0,
           lastRunTime: null,
-          errors: []
+          errors: [],
         };
-        
+
         // Mock EventEmitter methods
         this._events = {};
         this.on = jest.fn((event, handler) => {
@@ -52,20 +52,22 @@ describe('PythonMergeService', () => {
         });
         this.emit = jest.fn((event, ...args) => {
           if (this._events[event]) {
-            this._events[event].forEach(handler => handler(...args));
+            this._events[event].forEach((handler) => handler(...args));
           }
         });
         this.removeAllListeners = jest.fn();
       }
 
       async validateEnvironment() {
-        return mockFsAccess().then(() => {
-          this.logger.info('Python环境验证成功: Python 3.9.0');
-          this.logger.info('PyMuPDF依赖验证成功');
-          return true;
-        }).catch(error => {
-          throw new Error(`Python环境验证失败: ${error.message}`);
-        });
+        return mockFsAccess()
+          .then(() => {
+            this.logger.info('Python环境验证成功: Python 3.9.0');
+            this.logger.info('PyMuPDF依赖验证成功');
+            return true;
+          })
+          .catch((error) => {
+            throw new Error(`Python环境验证失败: ${error.message}`);
+          });
       }
 
       async validateConfig(configPath = 'config.json') {
@@ -89,42 +91,42 @@ describe('PythonMergeService', () => {
 
         try {
           this.emit('mergeStarted', { options, startTime });
-          
+
           const args = ['pdf_merger.py'];
           if (options.config) args.push('--config', options.config);
           if (options.directory) args.push('--directory', options.directory);
           if (options.verbose) args.push('--verbose');
 
           this.logger.info(`开始PDF合并任务: ${args.join(' ')}`);
-          
+
           const result = await this._executePythonWithProgress(args);
           const mergeResult = this._parseResult(result);
-          
+
           this._updateStatistics(mergeResult, Date.now() - startTime);
-          
+
           this.emit('mergeCompleted', {
             success: true,
             result: mergeResult,
-            executionTime: Date.now() - startTime
+            executionTime: Date.now() - startTime,
           });
-          
+
           this.logger.info(`PDF合并任务完成: 处理 ${mergeResult.filesProcessed} 个文件`);
-          
+
           return mergeResult;
         } catch (error) {
           this.statistics.failedRuns++;
           this.statistics.errors.push({
             timestamp: new Date(),
             error: error.message,
-            options
+            options,
           });
-          
+
           this.emit('mergeError', {
             error: error.message,
             options,
-            executionTime: Date.now() - startTime
+            executionTime: Date.now() - startTime,
           });
-          
+
           this.logger.error(`PDF合并任务失败: ${error.message}`);
           throw error;
         } finally {
@@ -136,9 +138,9 @@ describe('PythonMergeService', () => {
       async mergeBatch(directories = [], options = {}) {
         const results = [];
         const errors = [];
-        
+
         this.emit('batchStarted', { directories, options });
-        
+
         for (const directory of directories) {
           try {
             const result = await this.mergePDFs({ ...options, directory });
@@ -147,15 +149,15 @@ describe('PythonMergeService', () => {
             errors.push({ directory, error: error.message, success: false });
           }
         }
-        
+
         const batchResult = {
           total: directories.length,
           successful: results.length,
           failed: errors.length,
           results,
-          errors
+          errors,
         };
-        
+
         this.emit('batchCompleted', batchResult);
         return batchResult;
       }
@@ -164,10 +166,10 @@ describe('PythonMergeService', () => {
         if (!this.isRunning || !this.currentProcess) {
           return false;
         }
-        
+
         this.currentProcess.kill('SIGTERM');
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
         this.emit('mergeStopped');
         this.logger.info('PDF合并任务已停止');
         return true;
@@ -177,22 +179,26 @@ describe('PythonMergeService', () => {
         return {
           isRunning: this.isRunning,
           statistics: { ...this.statistics },
-          config: this.pythonConfig
+          config: this.pythonConfig,
         };
       }
 
       getStatistics() {
         return {
           ...this.statistics,
-          successRate: this.statistics.totalRuns > 0 
-            ? (this.statistics.successfulRuns / this.statistics.totalRuns * 100).toFixed(2) + '%'
-            : '0%',
-          averageFilesPerRun: this.statistics.successfulRuns > 0
-            ? Math.round(this.statistics.totalFilesProcessed / this.statistics.successfulRuns)
-            : 0,
-          averagePagesPerRun: this.statistics.successfulRuns > 0
-            ? Math.round(this.statistics.totalPagesProcessed / this.statistics.successfulRuns)
-            : 0
+          successRate:
+            this.statistics.totalRuns > 0
+              ? ((this.statistics.successfulRuns / this.statistics.totalRuns) * 100).toFixed(2) +
+                '%'
+              : '0%',
+          averageFilesPerRun:
+            this.statistics.successfulRuns > 0
+              ? Math.round(this.statistics.totalFilesProcessed / this.statistics.successfulRuns)
+              : 0,
+          averagePagesPerRun:
+            this.statistics.successfulRuns > 0
+              ? Math.round(this.statistics.totalPagesProcessed / this.statistics.successfulRuns)
+              : 0,
         };
       }
 
@@ -210,14 +216,14 @@ describe('PythonMergeService', () => {
 
       async _executePythonWithProgress(args) {
         this.currentProcess = { kill: jest.fn() };
-        
+
         // Simulate progress
         setTimeout(() => {
           this.emit('progress', { current: 5, total: 10, percentage: 50 });
         }, 10);
-        
+
         const result = await mockSpawn(args);
-        
+
         // Mimic the real implementation behavior - reject on non-zero exit code
         if (result.exitCode !== 0) {
           const error = new Error(`Python脚本执行失败: 退出码 ${result.exitCode}`);
@@ -227,11 +233,11 @@ describe('PythonMergeService', () => {
             exitCode: result.exitCode,
             stdout: result.stdout.trim(),
             stderr: result.stderr.trim(),
-            args
+            args,
           };
           throw error;
         }
-        
+
         return result;
       }
 
@@ -241,21 +247,21 @@ describe('PythonMergeService', () => {
           if (jsonMatch) {
             return JSON.parse(jsonMatch[0]);
           }
-          
+
           // Parse text output
           const filesProcessed = result.stdout.match(/处理文件数:\s*(\d+)/)?.[1] || 0;
           const totalPages = result.stdout.match(/总页数:\s*(\d+)/)?.[1] || 0;
           const mergedFiles = [];
           const fileMatch = result.stdout.match(/([^\s]+\.pdf)/g);
           if (fileMatch) mergedFiles.push(...fileMatch);
-          
+
           return {
             success: result.exitCode === 0,
             mergedFiles,
             filesProcessed: parseInt(filesProcessed),
             totalPages: parseInt(totalPages),
             stdout: result.stdout,
-            stderr: result.stderr
+            stderr: result.stderr,
           };
         } catch (error) {
           return {
@@ -264,7 +270,7 @@ describe('PythonMergeService', () => {
             filesProcessed: 0,
             totalPages: 0,
             stdout: result.stdout,
-            stderr: result.stderr
+            stderr: result.stderr,
           };
         }
       }
@@ -274,11 +280,15 @@ describe('PythonMergeService', () => {
           this.statistics.successfulRuns++;
           this.statistics.totalFilesProcessed += result.filesProcessed || 0;
           this.statistics.totalPagesProcessed += result.totalPages || 0;
-          
-          const totalTime = this.statistics.averageExecutionTime * (this.statistics.successfulRuns - 1) + executionTime;
-          this.statistics.averageExecutionTime = Math.round(totalTime / this.statistics.successfulRuns);
+
+          const totalTime =
+            this.statistics.averageExecutionTime * (this.statistics.successfulRuns - 1) +
+            executionTime;
+          this.statistics.averageExecutionTime = Math.round(
+            totalTime / this.statistics.successfulRuns
+          );
         }
-        
+
         if (this.statistics.errors.length > 10) {
           this.statistics.errors = this.statistics.errors.slice(-10);
         }
@@ -290,16 +300,16 @@ describe('PythonMergeService', () => {
       return Promise.resolve({
         exitCode: 0,
         stdout: '{"success": true, "filesProcessed": 10, "totalPages": 50}',
-        stderr: ''
+        stderr: '',
       });
     });
-    
+
     mockFsAccess = jest.fn(() => Promise.resolve());
 
     pythonMergeService = new PythonMergeService({
-      python: { executable: 'python3', timeout: 5000 }
+      python: { executable: 'python3', timeout: 5000 },
     });
-    
+
     mockLogger = pythonMergeService.logger;
   });
 
@@ -310,12 +320,12 @@ describe('PythonMergeService', () => {
   describe('constructor', () => {
     it('should initialize with default config', () => {
       const service = new PythonMergeService();
-      
+
       expect(service.pythonConfig).toMatchObject({
         executable: 'python3',
         timeout: 300000,
         maxBuffer: 10485760,
-        encoding: 'utf-8'
+        encoding: 'utf-8',
       });
       expect(service.isRunning).toBe(false);
     });
@@ -323,9 +333,9 @@ describe('PythonMergeService', () => {
     it('should merge custom config', () => {
       const service = new PythonMergeService({
         pythonExecutable: 'python',
-        pythonTimeout: 10000
+        pythonTimeout: 10000,
       });
-      
+
       expect(service.pythonConfig.executable).toBe('python');
       expect(service.pythonConfig.timeout).toBe(10000);
     });
@@ -334,7 +344,7 @@ describe('PythonMergeService', () => {
   describe('validateEnvironment', () => {
     it('should validate environment successfully', async () => {
       const result = await pythonMergeService.validateEnvironment();
-      
+
       expect(result).toBe(true);
       expect(mockLogger.info).toHaveBeenCalledWith(expect.stringContaining('Python环境验证成功'));
       expect(mockLogger.info).toHaveBeenCalledWith('PyMuPDF依赖验证成功');
@@ -342,16 +352,15 @@ describe('PythonMergeService', () => {
 
     it('should handle validation failure', async () => {
       mockFsAccess.mockRejectedValue(new Error('File not found'));
-      
-      await expect(pythonMergeService.validateEnvironment())
-        .rejects.toThrow('Python环境验证失败');
+
+      await expect(pythonMergeService.validateEnvironment()).rejects.toThrow('Python环境验证失败');
     });
   });
 
   describe('validateConfig', () => {
     it('should validate config successfully', async () => {
       const result = await pythonMergeService.validateConfig('config.json');
-      
+
       expect(result).toBe(true);
       expect(mockLogger.info).toHaveBeenCalledWith('配置文件验证成功');
     });
@@ -360,11 +369,10 @@ describe('PythonMergeService', () => {
       mockSpawn.mockResolvedValueOnce({
         exitCode: 1,
         stdout: '',
-        stderr: 'Invalid config'
+        stderr: 'Invalid config',
       });
-      
-      await expect(pythonMergeService.validateConfig())
-        .rejects.toThrow('配置验证失败');
+
+      await expect(pythonMergeService.validateConfig()).rejects.toThrow('配置验证失败');
     });
   });
 
@@ -373,7 +381,7 @@ describe('PythonMergeService', () => {
       const options = {
         config: 'config.json',
         directory: './pdfs',
-        verbose: true
+        verbose: true,
       };
 
       const result = await pythonMergeService.mergePDFs(options);
@@ -381,7 +389,7 @@ describe('PythonMergeService', () => {
       expect(result).toMatchObject({
         success: true,
         filesProcessed: 10,
-        totalPages: 50
+        totalPages: 50,
       });
       expect(pythonMergeService.statistics.successfulRuns).toBe(1);
       expect(mockLogger.info).toHaveBeenCalledWith(expect.stringContaining('PDF合并任务完成'));
@@ -391,26 +399,24 @@ describe('PythonMergeService', () => {
       mockSpawn.mockResolvedValueOnce({
         exitCode: 1,
         stdout: '',
-        stderr: 'Merge failed'
+        stderr: 'Merge failed',
       });
 
-      await expect(pythonMergeService.mergePDFs())
-        .rejects.toThrow();
-      
+      await expect(pythonMergeService.mergePDFs()).rejects.toThrow();
+
       expect(pythonMergeService.statistics.failedRuns).toBe(1);
     });
 
     it('should prevent concurrent runs', async () => {
       pythonMergeService.isRunning = true;
 
-      await expect(pythonMergeService.mergePDFs())
-        .rejects.toThrow('PDF合并任务正在运行中');
+      await expect(pythonMergeService.mergePDFs()).rejects.toThrow('PDF合并任务正在运行中');
     });
 
     it('should emit events', async () => {
       const startListener = jest.fn();
       const completeListener = jest.fn();
-      
+
       pythonMergeService.on('mergeStarted', startListener);
       pythonMergeService.on('mergeCompleted', completeListener);
 
@@ -424,23 +430,27 @@ describe('PythonMergeService', () => {
   describe('mergeBatch', () => {
     it('should merge multiple directories', async () => {
       const directories = ['./pdfs1', './pdfs2'];
-      
+
       const result = await pythonMergeService.mergeBatch(directories);
 
       expect(result).toMatchObject({
         total: 2,
         successful: 2,
-        failed: 0
+        failed: 0,
       });
     });
 
     it('should handle partial failures', async () => {
       const directories = ['./pdfs1', './pdfs2'];
-      
+
       // Clear the default mock and set up specific responses
       mockSpawn.mockReset();
       mockSpawn
-        .mockResolvedValueOnce({ exitCode: 0, stdout: '{"success": true, "filesProcessed": 5, "totalPages": 25}', stderr: '' })
+        .mockResolvedValueOnce({
+          exitCode: 0,
+          stdout: '{"success": true, "filesProcessed": 5, "totalPages": 25}',
+          stderr: '',
+        })
         .mockResolvedValueOnce({ exitCode: 1, stdout: '', stderr: 'Error' });
 
       const result = await pythonMergeService.mergeBatch(directories);
@@ -448,7 +458,7 @@ describe('PythonMergeService', () => {
       expect(result).toMatchObject({
         total: 2,
         successful: 1,
-        failed: 1
+        failed: 1,
       });
       expect(result.errors).toHaveLength(1);
       expect(result.errors[0].directory).toBe('./pdfs2');
@@ -481,7 +491,7 @@ describe('PythonMergeService', () => {
 
       expect(status).toMatchObject({
         isRunning: true,
-        statistics: expect.objectContaining({ totalRuns: 10 })
+        statistics: expect.objectContaining({ totalRuns: 10 }),
       });
     });
   });
@@ -496,7 +506,7 @@ describe('PythonMergeService', () => {
         totalPagesProcessed: 500,
         averageExecutionTime: 5000,
         lastRunTime: new Date(),
-        errors: []
+        errors: [],
       };
 
       const stats = pythonMergeService.getStatistics();
@@ -505,7 +515,7 @@ describe('PythonMergeService', () => {
         totalRuns: 10,
         successRate: '80.00%',
         averageFilesPerRun: 13,
-        averagePagesPerRun: 63
+        averagePagesPerRun: 63,
       });
     });
   });
@@ -522,7 +532,7 @@ describe('PythonMergeService', () => {
   describe('_executePython timeout handling', () => {
     beforeEach(() => {
       // Override the mock _executePython to test real timeout behavior
-      pythonMergeService._executePython = function(args) {
+      pythonMergeService._executePython = function (args) {
         return new Promise((resolve, reject) => {
           let settled = false;
           let timeoutHandle = null;
@@ -550,7 +560,7 @@ describe('PythonMergeService', () => {
               if (mockProcess._errorHandler) {
                 mockProcess._errorHandler(error);
               }
-            }
+            },
           };
 
           let stdout = '';
@@ -577,7 +587,7 @@ describe('PythonMergeService', () => {
               resolve({
                 exitCode: code,
                 stdout: stdout.trim(),
-                stderr: stderr.trim()
+                stderr: stderr.trim(),
               });
             }
           });
@@ -591,7 +601,7 @@ describe('PythonMergeService', () => {
               reject({
                 message: `Python进程执行失败: ${error.message}`,
                 code: 'PYTHON_EXECUTION_FAILED',
-                details: { args, error: error.message }
+                details: { args, error: error.message },
               });
             }
           });
@@ -605,7 +615,7 @@ describe('PythonMergeService', () => {
               reject({
                 message: 'Python脚本执行超时',
                 code: 'EXECUTION_TIMEOUT',
-                details: { args, timeout: this.pythonConfig.timeout }
+                details: { args, timeout: this.pythonConfig.timeout },
               });
             }
           }, this.pythonConfig.timeout);
@@ -625,7 +635,7 @@ describe('PythonMergeService', () => {
       const promise = pythonMergeService._executePython(['test.py']);
 
       // Wait a bit, then trigger successful close
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
       pythonMergeService._testMockProcess._triggerClose(0);
 
       await promise;
@@ -641,11 +651,11 @@ describe('PythonMergeService', () => {
       const promise = pythonMergeService._executePython(['test.py']);
 
       // Wait a bit, then trigger error
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
       pythonMergeService._testMockProcess._triggerError(new Error('ENOENT'));
 
       await expect(promise).rejects.toMatchObject({
-        code: 'PYTHON_EXECUTION_FAILED'
+        code: 'PYTHON_EXECUTION_FAILED',
       });
 
       expect(clearTimeoutSpy).toHaveBeenCalled();
@@ -666,7 +676,7 @@ describe('PythonMergeService', () => {
 
       // Should reject with timeout error
       await expect(promise).rejects.toMatchObject({
-        code: 'EXECUTION_TIMEOUT'
+        code: 'EXECUTION_TIMEOUT',
       });
 
       // Now try to emit close event (should not throw or cause issues)

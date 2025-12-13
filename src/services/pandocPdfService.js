@@ -25,19 +25,19 @@ export class PandocPdfService {
     try {
       this.logger?.info?.('开始使用 Pandoc 将 Markdown 文件转换为 PDF', {
         markdownPath,
-        outputPath
+        outputPath,
       });
 
       await this._runPandoc(markdownPath, outputPath, options);
 
       this.logger?.info?.('Pandoc Markdown 文件转换 PDF 完成', {
-        outputPath
+        outputPath,
       });
     } catch (error) {
       this.logger?.error?.('Pandoc Markdown 文件转换 PDF 失败', {
         markdownPath,
         outputPath,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
@@ -52,7 +52,7 @@ export class PandocPdfService {
   async convertContentToPdf(markdownContent, outputPath, options = {}) {
     try {
       this.logger?.info?.('开始使用 Pandoc 将 Markdown 内容转换为 PDF', {
-        outputPath
+        outputPath,
       });
 
       // 创建临时文件
@@ -76,12 +76,12 @@ export class PandocPdfService {
       }
 
       this.logger?.info?.('Pandoc Markdown 内容转换 PDF 完成', {
-        outputPath
+        outputPath,
       });
     } catch (error) {
       this.logger?.error?.('Pandoc Markdown 内容转换 PDF 失败', {
         outputPath,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
@@ -117,7 +117,7 @@ export class PandocPdfService {
           this.logger?.error?.('Pandoc 转换失败', {
             code,
             stderr: stderr.substring(0, 500),
-            stdout: stdout.substring(0, 500)
+            stdout: stdout.substring(0, 500),
           });
           reject(error);
           return;
@@ -134,7 +134,7 @@ export class PandocPdfService {
 
       child.on('error', (err) => {
         this.logger?.error?.('Pandoc spawn 错误', {
-          error: err.message
+          error: err.message,
         });
         reject(err);
       });
@@ -152,15 +152,18 @@ export class PandocPdfService {
   _buildPandocArgs(inputPath, outputPath, options = {}) {
     const markdownPdfConfig = {
       ...(this.config.markdownPdf || {}),
-      ...(options || {})
+      ...(options || {}),
     };
 
     const args = [
       inputPath,
-      '-o', outputPath,
+      '-o',
+      outputPath,
       '--pdf-engine=xelatex', // 使用 xelatex 支持中文
-      '--variable', 'CJKmainfont=Arial Unicode MS', // 主字体（支持中文）
-      '--variable', 'geometry:margin=1in' // 页边距
+      '--variable',
+      'CJKmainfont=Arial Unicode MS', // 主字体（支持中文）
+      '--variable',
+      'geometry:margin=1in', // 页边距
     ];
 
     // 添加其他选项

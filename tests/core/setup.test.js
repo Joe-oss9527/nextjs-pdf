@@ -1,9 +1,9 @@
 import { jest } from '@jest/globals';
-import { 
-  setupContainer, 
-  createContainer, 
-  getContainerHealth, 
-  shutdownContainer 
+import {
+  setupContainer,
+  createContainer,
+  getContainerHealth,
+  shutdownContainer,
 } from '../../src/core/setup.js';
 import Container from '../../src/core/container.js';
 
@@ -15,72 +15,72 @@ jest.mock('../../src/utils/logger.js', () => ({
     info: jest.fn(),
     warn: jest.fn(),
     error: jest.fn(),
-    name
-  }))
+    name,
+  })),
 }));
 jest.mock('../../src/config/configValidator.js', () => ({
-  validateConfig: jest.fn()
+  validateConfig: jest.fn(),
 }));
 
 // Mock all service classes
 jest.mock('../../src/config/configLoader.js', () => ({
   ConfigLoader: jest.fn().mockImplementation(() => ({
-    load: jest.fn().mockResolvedValue({ test: true })
-  }))
+    load: jest.fn().mockResolvedValue({ test: true }),
+  })),
 }));
 jest.mock('../../src/services/fileService.js', () => ({
-  FileService: jest.fn()
+  FileService: jest.fn(),
 }));
 jest.mock('../../src/services/pathService.js', () => ({
-  PathService: jest.fn()
+  PathService: jest.fn(),
 }));
 jest.mock('../../src/services/metadataService.js', () => ({
-  MetadataService: jest.fn()
+  MetadataService: jest.fn(),
 }));
 jest.mock('../../src/services/stateManager.js', () => ({
   StateManager: jest.fn().mockImplementation(() => ({
-    load: jest.fn().mockResolvedValue()
-  }))
+    load: jest.fn().mockResolvedValue(),
+  })),
 }));
 jest.mock('../../src/services/progressTracker.js', () => ({
-  ProgressTracker: jest.fn()
+  ProgressTracker: jest.fn(),
 }));
 jest.mock('../../src/services/queueManager.js', () => ({
-  QueueManager: jest.fn()
+  QueueManager: jest.fn(),
 }));
 jest.mock('../../src/services/browserPool.js', () => ({
   BrowserPool: jest.fn().mockImplementation(() => ({
-    initialize: jest.fn().mockResolvedValue()
-  }))
+    initialize: jest.fn().mockResolvedValue(),
+  })),
 }));
 jest.mock('../../src/services/pageManager.js', () => ({
-  PageManager: jest.fn()
+  PageManager: jest.fn(),
 }));
 jest.mock('../../src/services/imageService.js', () => ({
-  ImageService: jest.fn()
+  ImageService: jest.fn(),
 }));
 jest.mock('../../src/services/pdfStyleService.js', () => ({
-  PDFStyleService: jest.fn()
+  PDFStyleService: jest.fn(),
 }));
 jest.mock('../../src/services/translationService.js', () => ({
-  TranslationService: jest.fn()
+  TranslationService: jest.fn(),
 }));
 jest.mock('../../src/services/markdownService.js', () => ({
-  MarkdownService: jest.fn()
+  MarkdownService: jest.fn(),
 }));
 jest.mock('../../src/services/markdownToPdfService.js', () => ({
-  MarkdownToPdfService: jest.fn()
+  MarkdownToPdfService: jest.fn(),
 }));
 jest.mock('../../src/services/pandocPdfService.js', () => ({
-  PandocPdfService: jest.fn()
+  PandocPdfService: jest.fn(),
 }));
 jest.mock('../../src/core/scraper.js', () => ({
   Scraper: jest.fn().mockImplementation(() => ({
-    initialize: jest.fn().mockResolvedValue()
-  }))
+    initialize: jest.fn().mockResolvedValue(),
+  })),
 }));
 jest.mock('../../src/services/PythonMergeService.js', () => ({
-  PythonMergeService: jest.fn()
+  PythonMergeService: jest.fn(),
 }));
 
 describe('setup', () => {
@@ -89,7 +89,7 @@ describe('setup', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Create mock container
     mockContainer = {
       register: jest.fn(),
@@ -98,13 +98,13 @@ describe('setup', () => {
       getStats: jest.fn().mockReturnValue({
         registeredServices: 15,
         instances: 5,
-        singletons: 15
+        singletons: 15,
       }),
       getHealth: jest.fn().mockReturnValue({
         healthy: true,
-        services: []
+        services: [],
       }),
-      dispose: jest.fn().mockResolvedValue()
+      dispose: jest.fn().mockResolvedValue(),
     };
 
     Container.mockImplementation(() => mockContainer);
@@ -116,125 +116,193 @@ describe('setup', () => {
 
       expect(container).toBe(mockContainer);
       expect(Container).toHaveBeenCalledTimes(1);
-      
+
       // Verify all services are registered
-      expect(mockContainer.register).toHaveBeenCalledWith('config', expect.any(Function), expect.objectContaining({
-        singleton: true,
-        dependencies: [],
-        lifecycle: 'singleton'
-      }));
-      
-      expect(mockContainer.register).toHaveBeenCalledWith('logger', expect.any(Function), expect.objectContaining({
-        singleton: true,
-        dependencies: [],
-        lifecycle: 'singleton'
-      }));
+      expect(mockContainer.register).toHaveBeenCalledWith(
+        'config',
+        expect.any(Function),
+        expect.objectContaining({
+          singleton: true,
+          dependencies: [],
+          lifecycle: 'singleton',
+        })
+      );
 
-      expect(mockContainer.register).toHaveBeenCalledWith('fileService', expect.any(Function), expect.objectContaining({
-        singleton: true,
-        dependencies: ['logger'],
-        lifecycle: 'singleton'
-      }));
+      expect(mockContainer.register).toHaveBeenCalledWith(
+        'logger',
+        expect.any(Function),
+        expect.objectContaining({
+          singleton: true,
+          dependencies: [],
+          lifecycle: 'singleton',
+        })
+      );
 
-      expect(mockContainer.register).toHaveBeenCalledWith('pathService', expect.any(Function), expect.objectContaining({
-        singleton: true,
-        dependencies: ['config'],
-        lifecycle: 'singleton'
-      }));
+      expect(mockContainer.register).toHaveBeenCalledWith(
+        'fileService',
+        expect.any(Function),
+        expect.objectContaining({
+          singleton: true,
+          dependencies: ['logger'],
+          lifecycle: 'singleton',
+        })
+      );
 
-      expect(mockContainer.register).toHaveBeenCalledWith('metadataService', expect.any(Function), expect.objectContaining({
-        singleton: true,
-        dependencies: ['fileService', 'pathService', 'logger'],
-        lifecycle: 'singleton'
-      }));
+      expect(mockContainer.register).toHaveBeenCalledWith(
+        'pathService',
+        expect.any(Function),
+        expect.objectContaining({
+          singleton: true,
+          dependencies: ['config'],
+          lifecycle: 'singleton',
+        })
+      );
 
-      expect(mockContainer.register).toHaveBeenCalledWith('stateManager', expect.any(Function), expect.objectContaining({
-        singleton: true,
-        dependencies: ['fileService', 'pathService', 'logger'],
-        lifecycle: 'singleton'
-      }));
+      expect(mockContainer.register).toHaveBeenCalledWith(
+        'metadataService',
+        expect.any(Function),
+        expect.objectContaining({
+          singleton: true,
+          dependencies: ['fileService', 'pathService', 'logger'],
+          lifecycle: 'singleton',
+        })
+      );
 
-      expect(mockContainer.register).toHaveBeenCalledWith('progressTracker', expect.any(Function), expect.objectContaining({
-        singleton: true,
-        dependencies: ['logger'],
-        lifecycle: 'singleton'
-      }));
+      expect(mockContainer.register).toHaveBeenCalledWith(
+        'stateManager',
+        expect.any(Function),
+        expect.objectContaining({
+          singleton: true,
+          dependencies: ['fileService', 'pathService', 'logger'],
+          lifecycle: 'singleton',
+        })
+      );
 
-      expect(mockContainer.register).toHaveBeenCalledWith('queueManager', expect.any(Function), expect.objectContaining({
-        singleton: true,
-        dependencies: ['config', 'logger'],
-        lifecycle: 'singleton'
-      }));
+      expect(mockContainer.register).toHaveBeenCalledWith(
+        'progressTracker',
+        expect.any(Function),
+        expect.objectContaining({
+          singleton: true,
+          dependencies: ['logger'],
+          lifecycle: 'singleton',
+        })
+      );
 
-      expect(mockContainer.register).toHaveBeenCalledWith('browserPool', expect.any(Function), expect.objectContaining({
-        singleton: true,
-        dependencies: ['config', 'logger'],
-        lifecycle: 'singleton'
-      }));
+      expect(mockContainer.register).toHaveBeenCalledWith(
+        'queueManager',
+        expect.any(Function),
+        expect.objectContaining({
+          singleton: true,
+          dependencies: ['config', 'logger'],
+          lifecycle: 'singleton',
+        })
+      );
 
-      expect(mockContainer.register).toHaveBeenCalledWith('pageManager', expect.any(Function), expect.objectContaining({
-        singleton: true,
-        dependencies: ['browserPool', 'config', 'logger'],
-        lifecycle: 'singleton'
-      }));
+      expect(mockContainer.register).toHaveBeenCalledWith(
+        'browserPool',
+        expect.any(Function),
+        expect.objectContaining({
+          singleton: true,
+          dependencies: ['config', 'logger'],
+          lifecycle: 'singleton',
+        })
+      );
 
-      expect(mockContainer.register).toHaveBeenCalledWith('imageService', expect.any(Function), expect.objectContaining({
-        singleton: true,
-        dependencies: ['config', 'logger'],
-        lifecycle: 'singleton'
-      }));
+      expect(mockContainer.register).toHaveBeenCalledWith(
+        'pageManager',
+        expect.any(Function),
+        expect.objectContaining({
+          singleton: true,
+          dependencies: ['browserPool', 'config', 'logger'],
+          lifecycle: 'singleton',
+        })
+      );
 
-      expect(mockContainer.register).toHaveBeenCalledWith('pdfStyleService', expect.any(Function), expect.objectContaining({
-        singleton: true,
-        dependencies: ['config'],
-        lifecycle: 'singleton'
-      }));
+      expect(mockContainer.register).toHaveBeenCalledWith(
+        'imageService',
+        expect.any(Function),
+        expect.objectContaining({
+          singleton: true,
+          dependencies: ['config', 'logger'],
+          lifecycle: 'singleton',
+        })
+      );
 
-      expect(mockContainer.register).toHaveBeenCalledWith('translationService', expect.any(Function), expect.objectContaining({
-        singleton: true,
-        dependencies: ['config', 'pathService', 'logger'],
-        lifecycle: 'singleton'
-      }));
+      expect(mockContainer.register).toHaveBeenCalledWith(
+        'pdfStyleService',
+        expect.any(Function),
+        expect.objectContaining({
+          singleton: true,
+          dependencies: ['config'],
+          lifecycle: 'singleton',
+        })
+      );
 
-      expect(mockContainer.register).toHaveBeenCalledWith('markdownService', expect.any(Function), expect.objectContaining({
-        singleton: true,
-        dependencies: ['config', 'logger'],
-        lifecycle: 'singleton'
-      }));
+      expect(mockContainer.register).toHaveBeenCalledWith(
+        'translationService',
+        expect.any(Function),
+        expect.objectContaining({
+          singleton: true,
+          dependencies: ['config', 'pathService', 'logger'],
+          lifecycle: 'singleton',
+        })
+      );
 
-      expect(mockContainer.register).toHaveBeenCalledWith('markdownToPdfService', expect.any(Function), expect.objectContaining({
-        singleton: true,
-        dependencies: ['config', 'logger'],
-        lifecycle: 'singleton'
-      }));
+      expect(mockContainer.register).toHaveBeenCalledWith(
+        'markdownService',
+        expect.any(Function),
+        expect.objectContaining({
+          singleton: true,
+          dependencies: ['config', 'logger'],
+          lifecycle: 'singleton',
+        })
+      );
 
-      expect(mockContainer.register).toHaveBeenCalledWith('scraper', expect.any(Function), expect.objectContaining({
-        singleton: true,
-        dependencies: [
-          'config',
-          'logger',
-          'browserPool',
-          'pageManager',
-          'fileService',
-          'pathService',
-          'metadataService',
-          'stateManager',
-          'progressTracker',
-          'queueManager',
-          'imageService',
-          'pdfStyleService',
-          'translationService',
-          'markdownService',
-          'markdownToPdfService'
-        ],
-        lifecycle: 'singleton'
-      }));
+      expect(mockContainer.register).toHaveBeenCalledWith(
+        'markdownToPdfService',
+        expect.any(Function),
+        expect.objectContaining({
+          singleton: true,
+          dependencies: ['config', 'logger'],
+          lifecycle: 'singleton',
+        })
+      );
 
-      expect(mockContainer.register).toHaveBeenCalledWith('pythonMergeService', expect.any(Function), expect.objectContaining({
-        singleton: true,
-        dependencies: ['config', 'logger'],
-        lifecycle: 'singleton'
-      }));
+      expect(mockContainer.register).toHaveBeenCalledWith(
+        'scraper',
+        expect.any(Function),
+        expect.objectContaining({
+          singleton: true,
+          dependencies: [
+            'config',
+            'logger',
+            'browserPool',
+            'pageManager',
+            'fileService',
+            'pathService',
+            'metadataService',
+            'stateManager',
+            'progressTracker',
+            'queueManager',
+            'imageService',
+            'pdfStyleService',
+            'translationService',
+            'markdownService',
+            'markdownToPdfService',
+          ],
+          lifecycle: 'singleton',
+        })
+      );
+
+      expect(mockContainer.register).toHaveBeenCalledWith(
+        'pythonMergeService',
+        expect.any(Function),
+        expect.objectContaining({
+          singleton: true,
+          dependencies: ['config', 'logger'],
+          lifecycle: 'singleton',
+        })
+      );
 
       // Verify total number of services registered
       expect(mockContainer.register).toHaveBeenCalledTimes(17);
@@ -245,7 +313,7 @@ describe('setup', () => {
       expect(mockContainer.get).toHaveBeenCalledWith('logger');
       expect(mockContainer.get).toHaveBeenCalledWith('fileService');
       expect(mockContainer.get).toHaveBeenCalledWith('pathService');
-      
+
       // Verify stats were retrieved
       expect(mockContainer.getStats).toHaveBeenCalled();
     });
@@ -257,7 +325,7 @@ describe('setup', () => {
       });
 
       await expect(setupContainer()).rejects.toThrow('Setup failed');
-      
+
       // Verify cleanup was attempted
       expect(mockContainer.dispose).toHaveBeenCalled();
     });
@@ -265,14 +333,14 @@ describe('setup', () => {
     it('should log error if disposal fails during setup error', async () => {
       const setupError = new Error('Setup failed');
       const disposeError = new Error('Dispose failed');
-      
+
       mockContainer.validateDependencies.mockImplementation(() => {
         throw setupError;
       });
       mockContainer.dispose.mockRejectedValue(disposeError);
 
       await expect(setupContainer()).rejects.toThrow('Setup failed');
-      
+
       // Verify both errors were handled
       expect(mockContainer.dispose).toHaveBeenCalled();
     });
@@ -283,29 +351,29 @@ describe('setup', () => {
 
       // Test config service factory
       const configFactory = mockContainer.register.mock.calls.find(
-        call => call[0] === 'config'
+        (call) => call[0] === 'config'
       )[1];
-      
+
       const { ConfigLoader } = await import('../../src/config/configLoader.js');
       const { validateConfig } = await import('../../src/config/configValidator.js');
-      
+
       const config = await configFactory();
       expect(ConfigLoader).toHaveBeenCalled();
       expect(validateConfig).toHaveBeenCalledWith({ test: true });
 
       // Test logger service factory
       const loggerFactory = mockContainer.register.mock.calls.find(
-        call => call[0] === 'logger'
+        (call) => call[0] === 'logger'
       )[1];
-      
+
       const logger = loggerFactory();
       expect(logger.name).toBe('App');
 
       // Test fileService factory
       const fileServiceFactory = mockContainer.register.mock.calls.find(
-        call => call[0] === 'fileService'
+        (call) => call[0] === 'fileService'
       )[1];
-      
+
       const { FileService } = await import('../../src/services/fileService.js');
       const mockLoggerService = { name: 'test' };
       fileServiceFactory(mockLoggerService);
@@ -313,9 +381,9 @@ describe('setup', () => {
 
       // Test pathService factory
       const pathServiceFactory = mockContainer.register.mock.calls.find(
-        call => call[0] === 'pathService'
+        (call) => call[0] === 'pathService'
       )[1];
-      
+
       const { PathService } = await import('../../src/services/pathService.js');
       const mockConfig = { outputDir: 'test' };
       pathServiceFactory(mockConfig);
@@ -323,41 +391,41 @@ describe('setup', () => {
 
       // Test queueManager factory with config
       const queueManagerFactory = mockContainer.register.mock.calls.find(
-        call => call[0] === 'queueManager'
+        (call) => call[0] === 'queueManager'
       )[1];
-      
+
       const { QueueManager } = await import('../../src/services/queueManager.js');
       queueManagerFactory({ concurrency: 10 }, mockLoggerService);
       expect(QueueManager).toHaveBeenCalledWith({
         concurrency: 10,
         timeout: 0, // Disabled queue timeout - operations have their own timeouts
-        logger: mockLoggerService
+        logger: mockLoggerService,
       });
 
       // Test imageService factory with config
       const imageServiceFactory = mockContainer.register.mock.calls.find(
-        call => call[0] === 'imageService'
+        (call) => call[0] === 'imageService'
       )[1];
-      
+
       const { ImageService } = await import('../../src/services/imageService.js');
       imageServiceFactory({ imageTimeout: 20000 }, mockLoggerService);
       expect(ImageService).toHaveBeenCalledWith({
         defaultTimeout: 20000,
-        logger: mockLoggerService
+        logger: mockLoggerService,
       });
 
       // Test pdfStyleService factory with config
       const pdfStyleServiceFactory = mockContainer.register.mock.calls.find(
-        call => call[0] === 'pdfStyleService'
+        (call) => call[0] === 'pdfStyleService'
       )[1];
-      
+
       const { PDFStyleService } = await import('../../src/services/pdfStyleService.js');
       pdfStyleServiceFactory({
         pdf: {
           theme: 'dark',
           fontSize: '16px',
-          preserveCodeHighlighting: false
-        }
+          preserveCodeHighlighting: false,
+        },
       });
       expect(PDFStyleService).toHaveBeenCalledWith({
         theme: 'dark',
@@ -365,52 +433,56 @@ describe('setup', () => {
         enableCodeWrap: true,
         fontSize: '16px',
         fontFamily: 'system-ui, -apple-system, sans-serif',
-        codeFont: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace'
+        codeFont: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
       });
 
       // Test translationService factory
       const translationServiceFactory = mockContainer.register.mock.calls.find(
-        call => call[0] === 'translationService'
+        (call) => call[0] === 'translationService'
       )[1];
 
       const { TranslationService } = await import('../../src/services/translationService.js');
       const mockPathService = { getTranslationCacheDirectory: jest.fn() };
-      translationServiceFactory({ translation: { enabled: true } }, mockPathService, mockLoggerService);
+      translationServiceFactory(
+        { translation: { enabled: true } },
+        mockPathService,
+        mockLoggerService
+      );
       expect(TranslationService).toHaveBeenCalledWith({
         config: { translation: { enabled: true } },
         pathService: mockPathService,
-        logger: mockLoggerService
+        logger: mockLoggerService,
       });
 
       // Test markdownService factory
       const markdownServiceFactory = mockContainer.register.mock.calls.find(
-        call => call[0] === 'markdownService'
+        (call) => call[0] === 'markdownService'
       )[1];
 
       const { MarkdownService } = await import('../../src/services/markdownService.js');
       markdownServiceFactory(mockConfig, mockLoggerService);
       expect(MarkdownService).toHaveBeenCalledWith({
         config: mockConfig,
-        logger: mockLoggerService
+        logger: mockLoggerService,
       });
 
       // Test markdownToPdfService factory
       const markdownToPdfServiceFactory = mockContainer.register.mock.calls.find(
-        call => call[0] === 'markdownToPdfService'
+        (call) => call[0] === 'markdownToPdfService'
       )[1];
 
       const { PandocPdfService } = await import('../../src/services/pandocPdfService.js');
       markdownToPdfServiceFactory(mockConfig, mockLoggerService);
       expect(PandocPdfService).toHaveBeenCalledWith({
         config: mockConfig,
-        logger: mockLoggerService
+        logger: mockLoggerService,
       });
 
       // Test scraper factory
       const scraperFactory = mockContainer.register.mock.calls.find(
-        call => call[0] === 'scraper'
+        (call) => call[0] === 'scraper'
       )[1];
-      
+
       const { Scraper } = await import('../../src/core/scraper.js');
       const services = [
         mockConfig,
@@ -427,9 +499,9 @@ describe('setup', () => {
         'pdfStyleService',
         'translationService',
         'markdownService',
-        'markdownToPdfService'
+        'markdownToPdfService',
       ];
-      
+
       await scraperFactory(...services);
       expect(Scraper).toHaveBeenCalledWith({
         config: mockConfig,
@@ -446,7 +518,7 @@ describe('setup', () => {
         pdfStyleService: 'pdfStyleService',
         translationService: 'translationService',
         markdownService: 'markdownService',
-        markdownToPdfService: 'markdownToPdfService'
+        markdownToPdfService: 'markdownToPdfService',
       });
     });
   });
@@ -454,7 +526,7 @@ describe('setup', () => {
   describe('createContainer', () => {
     it('should call setupContainer', async () => {
       const container = await createContainer();
-      
+
       expect(container).toBe(mockContainer);
       expect(Container).toHaveBeenCalledTimes(1);
     });
@@ -463,10 +535,10 @@ describe('setup', () => {
   describe('getContainerHealth', () => {
     it('should return container health information', () => {
       const health = getContainerHealth(mockContainer);
-      
+
       expect(health).toEqual({
         healthy: true,
-        services: []
+        services: [],
       });
       expect(mockContainer.getHealth).toHaveBeenCalled();
     });
@@ -475,14 +547,14 @@ describe('setup', () => {
   describe('shutdownContainer', () => {
     it('should dispose container successfully', async () => {
       await shutdownContainer(mockContainer);
-      
+
       expect(mockContainer.dispose).toHaveBeenCalled();
     });
 
     it('should handle disposal errors', async () => {
       const disposeError = new Error('Disposal failed');
       mockContainer.dispose.mockRejectedValue(disposeError);
-      
+
       await expect(shutdownContainer(mockContainer)).rejects.toThrow('Disposal failed');
     });
   });
@@ -493,34 +565,34 @@ describe('setup', () => {
 
       // Test queueManager with no concurrency
       const queueManagerFactory = mockContainer.register.mock.calls.find(
-        call => call[0] === 'queueManager'
+        (call) => call[0] === 'queueManager'
       )[1];
-      
+
       const { QueueManager } = await import('../../src/services/queueManager.js');
       queueManagerFactory({}, {});
       expect(QueueManager).toHaveBeenCalledWith({
         concurrency: 5,
         timeout: 0, // Disabled queue timeout - operations have their own timeouts
-        logger: {}
+        logger: {},
       });
 
       // Test imageService with no timeout
       const imageServiceFactory = mockContainer.register.mock.calls.find(
-        call => call[0] === 'imageService'
+        (call) => call[0] === 'imageService'
       )[1];
-      
+
       const { ImageService } = await import('../../src/services/imageService.js');
       imageServiceFactory({}, {});
       expect(ImageService).toHaveBeenCalledWith({
         defaultTimeout: 15000,
-        logger: {}
+        logger: {},
       });
 
       // Test pdfStyleService with empty config
       const pdfStyleServiceFactory = mockContainer.register.mock.calls.find(
-        call => call[0] === 'pdfStyleService'
+        (call) => call[0] === 'pdfStyleService'
       )[1];
-      
+
       const { PDFStyleService } = await import('../../src/services/pdfStyleService.js');
       pdfStyleServiceFactory({});
       expect(PDFStyleService).toHaveBeenCalledWith({
@@ -529,7 +601,7 @@ describe('setup', () => {
         enableCodeWrap: true,
         fontSize: '14px',
         fontFamily: 'system-ui, -apple-system, sans-serif',
-        codeFont: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace'
+        codeFont: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
       });
     });
 
@@ -538,27 +610,27 @@ describe('setup', () => {
 
       // Test stateManager async factory
       const stateManagerFactory = mockContainer.register.mock.calls.find(
-        call => call[0] === 'stateManager'
+        (call) => call[0] === 'stateManager'
       )[1];
-      
+
       const { StateManager } = await import('../../src/services/stateManager.js');
       const stateManager = await stateManagerFactory('file', 'path', 'logger');
-      
+
       expect(StateManager).toHaveBeenCalledWith('file', 'path', 'logger');
       expect(stateManager.load).toHaveBeenCalled();
 
       // Test browserPool async factory
       const browserPoolFactory = mockContainer.register.mock.calls.find(
-        call => call[0] === 'browserPool'
+        (call) => call[0] === 'browserPool'
       )[1];
-      
+
       const { BrowserPool } = await import('../../src/services/browserPool.js');
       const browserPool = await browserPoolFactory({ concurrency: 3 }, 'logger');
-      
+
       expect(BrowserPool).toHaveBeenCalledWith({
         maxBrowsers: 3,
         headless: true,
-        logger: 'logger'
+        logger: 'logger',
       });
       expect(browserPool.initialize).toHaveBeenCalled();
     });

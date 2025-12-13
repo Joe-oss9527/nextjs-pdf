@@ -21,10 +21,7 @@ export class ConfigLoader {
 
       // 转换相对路径为绝对路径
       if (!path.isAbsolute(parsedConfig.pdfDir)) {
-        parsedConfig.pdfDir = path.resolve(
-          path.dirname(this.configPath),
-          parsedConfig.pdfDir
-        );
+        parsedConfig.pdfDir = path.resolve(path.dirname(this.configPath), parsedConfig.pdfDir);
       }
 
       // 添加默认的allowedDomains如果不存在

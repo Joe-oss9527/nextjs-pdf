@@ -29,10 +29,10 @@ function validateSafePath(filePath) {
 
 // 设备配置映射
 const DEVICE_PROFILES = {
-  'kindle7': 'kindle7.json',
-  'paperwhite': 'kindle-paperwhite.json',
-  'oasis': 'kindle-oasis.json',
-  'scribe': 'kindle-scribe.json'
+  kindle7: 'kindle7.json',
+  paperwhite: 'kindle-paperwhite.json',
+  oasis: 'kindle-oasis.json',
+  scribe: 'kindle-scribe.json',
 };
 
 // 获取命令行参数
@@ -51,19 +51,19 @@ function deepMerge(target, source, visited = new WeakSet()) {
   // 基本类型检查
   if (!target || typeof target !== 'object') target = {};
   if (!source || typeof source !== 'object') return target;
-  
+
   // 循环引用检查
   if (visited.has(source)) {
     throw new Error('Circular reference detected in configuration');
   }
   visited.add(source);
-  
+
   const result = { ...target };
-  
+
   for (const key in source) {
     if (Object.prototype.hasOwnProperty.call(source, key)) {
       const value = source[key];
-      
+
       if (value && typeof value === 'object' && !Array.isArray(value)) {
         // 递归合并对象
         result[key] = deepMerge(result[key] || {}, value, visited);
@@ -73,7 +73,7 @@ function deepMerge(target, source, visited = new WeakSet()) {
       }
     }
   }
-  
+
   return result;
 }
 
@@ -86,7 +86,7 @@ function validateConfigStructure(config) {
   if (!config || typeof config !== 'object') {
     return false;
   }
-  
+
   // 基本结构验证
   const requiredFields = ['rootURL', 'baseUrl', 'pdfDir'];
   for (const field of requiredFields) {
@@ -95,10 +95,9 @@ function validateConfigStructure(config) {
       return false;
     }
   }
-  
+
   return true;
 }
-
 
 // 帮助信息
 function showHelp() {
@@ -197,9 +196,9 @@ function useConfig(deviceName) {
     // 安全地保存配置
     const configContent = JSON.stringify(mergedConfig, null, 2);
     fs.writeFileSync(CONFIG_FILE, configContent, { encoding: 'utf8', mode: 0o644 });
-    
+
     console.log(`✅ 已切换到 ${deviceName} 配置`);
-    
+
     // 显示配置详情
     if (deviceConfig.pdf) {
       console.log('\n应用的PDF设置:');
@@ -210,7 +209,6 @@ function useConfig(deviceName) {
     if (deviceConfig.output?.finalPdfDirectory) {
       console.log(`  - 输出目录: ${deviceConfig.output.finalPdfDirectory}`);
     }
-
   } catch (error) {
     console.error('❌ 配置文件处理失败:', error.message);
     return;
@@ -244,13 +242,14 @@ function resetConfig() {
     delete resetConfig.pdf.preferCSSPageSize;
     delete resetConfig.pdf.tagged;
     delete resetConfig.pdf.bookmarks;
-    
+
     // 重置为默认值
     resetConfig.pdf.fontSize = '14px';
-    resetConfig.pdf.fontFamily = 'system-ui, -apple-system, BlinkMacSystemFont, \'Segoe UI\', sans-serif';
-    resetConfig.pdf.codeFont = 'SFMono-Regular, Consolas, \'Liberation Mono\', Menlo, monospace';
+    resetConfig.pdf.fontFamily =
+      "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+    resetConfig.pdf.codeFont = "SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace";
     resetConfig.pdf.format = 'A4';
-    
+
     // 移除自定义margins，恢复默认
     delete resetConfig.pdf.margin;
   }
@@ -272,10 +271,10 @@ function showCurrentConfig() {
   }
 
   const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
-  
+
   console.log('\n当前配置状态:');
   console.log('=====================================');
-  
+
   if (config.pdf) {
     console.log('PDF设置:');
     console.log(`  - 字体大小: ${config.pdf.fontSize || '14px'}`);
@@ -285,17 +284,17 @@ function showCurrentConfig() {
     console.log(`  - 代码行长度: ${config.pdf.maxCodeLineLength || '80'}`);
     console.log(`  - Kindle优化: ${config.pdf.kindleOptimized ? '✅ 已启用' : '❌ 未启用'}`);
     console.log(`  - PDF书签: ${config.pdf.bookmarks !== false ? '✅ 已启用' : '❌ 未启用'}`);
-    
+
     if (config.pdf.kindleOptimized && config.pdf.deviceProfile) {
       console.log(`  - 设备配置: 📱 ${config.pdf.deviceProfile}`);
     }
   }
-  
+
   if (config.output) {
     console.log('\n输出设置:');
     console.log(`  - PDF目录: ${config.output.finalPdfDirectory || 'finalPdf'}`);
   }
-  
+
   console.log('=====================================');
 }
 
@@ -303,10 +302,10 @@ function showCurrentConfig() {
 function listConfigs() {
   console.log('\n可用配置:');
   console.log('=====================================');
-  
+
   for (const [name, file] of Object.entries(DEVICE_PROFILES)) {
     const profileFile = path.join(PROFILES_DIR, file);
-    
+
     if (fs.existsSync(profileFile)) {
       const config = JSON.parse(fs.readFileSync(profileFile, 'utf8'));
       console.log(`\n📱 ${name}:`);
@@ -337,24 +336,24 @@ function main() {
         useConfig(device);
       }
       break;
-    
+
     case 'reset':
       resetConfig();
       break;
-    
+
     case 'list':
       listConfigs();
       break;
-    
+
     case 'current':
       showCurrentConfig();
       break;
-    
+
     case 'help':
     case undefined:
       showHelp();
       break;
-    
+
     default:
       console.error(`❌ 未知命令: ${command}`);
       showHelp();

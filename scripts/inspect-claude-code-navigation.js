@@ -19,7 +19,7 @@ async function inspectNavigation() {
   try {
     browser = await puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
 
     page = await browser.newPage();
@@ -31,11 +31,11 @@ async function inspectNavigation() {
 
     await page.goto(url, {
       waitUntil: 'domcontentloaded',
-      timeout: 30000
+      timeout: 30000,
     });
 
     // 等待动态内容加载
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     console.log('✅ 页面加载完成');
 
@@ -44,7 +44,7 @@ async function inspectNavigation() {
       const results = {
         allLinks: [],
         sidebarStructure: [],
-        possibleSectionTitles: []
+        possibleSectionTitles: [],
       };
 
       // 1. 尝试查找侧边栏
@@ -53,7 +53,7 @@ async function inspectNavigation() {
         '[class*="sidebar"]',
         'nav[aria-label*="Main"]',
         'nav[aria-label*="Primary"]',
-        '[role="navigation"]'
+        '[role="navigation"]',
       ];
 
       let sidebar = null;
@@ -63,7 +63,7 @@ async function inspectNavigation() {
           results.sidebarStructure.push({
             selector,
             found: true,
-            html: sidebar.innerHTML.substring(0, 500)
+            html: sidebar.innerHTML.substring(0, 500),
           });
           break;
         }
@@ -71,7 +71,7 @@ async function inspectNavigation() {
 
       // 2. 查找所有 /docs/en/ 开头的链接
       const links = document.querySelectorAll('a[href*="/docs/en/"]');
-      links.forEach(link => {
+      links.forEach((link) => {
         const href = link.href;
         const text = link.textContent?.trim() || '';
         const parent = link.parentElement;
@@ -82,19 +82,19 @@ async function inspectNavigation() {
           href,
           text,
           parentTag,
-          parentClass: parentClass.substring(0, 50)
+          parentClass: parentClass.substring(0, 50),
         });
       });
 
       // 3. 查找可能的section标题（h2, h3, 或者导航分组标题）
       const headings = document.querySelectorAll('h1, h2, h3, [role="heading"]');
-      headings.forEach(heading => {
+      headings.forEach((heading) => {
         const text = heading.textContent?.trim();
         if (text && text.length > 2 && text.length < 50) {
           results.possibleSectionTitles.push({
             text,
             tag: heading.tagName,
-            role: heading.getAttribute('role')
+            role: heading.getAttribute('role'),
           });
         }
       });
@@ -104,7 +104,7 @@ async function inspectNavigation() {
         '[class*="nav-group"]',
         '[class*="sidebar-group"]',
         '[class*="menu-group"]',
-        '[data-section]'
+        '[data-section]',
       ];
 
       for (const selector of sectionGroupSelectors) {
@@ -113,10 +113,12 @@ async function inspectNavigation() {
           results.sidebarStructure.push({
             selector,
             count: groups.length,
-            sample: Array.from(groups).slice(0, 2).map(g => ({
-              text: g.textContent?.trim().substring(0, 100),
-              html: g.innerHTML.substring(0, 200)
-            }))
+            sample: Array.from(groups)
+              .slice(0, 2)
+              .map((g) => ({
+                text: g.textContent?.trim().substring(0, 100),
+                html: g.innerHTML.substring(0, 200),
+              })),
           });
         }
       }
@@ -129,15 +131,17 @@ async function inspectNavigation() {
 
     console.log('\n1️⃣ 侧边栏检测:');
     if (navStructure.sidebarStructure.length > 0) {
-      navStructure.sidebarStructure.forEach(item => {
-        console.log(`   - ${item.selector}: ${item.found ? '✅ 找到' : `❌ 未找到 (${item.count || 0}个)`}`);
+      navStructure.sidebarStructure.forEach((item) => {
+        console.log(
+          `   - ${item.selector}: ${item.found ? '✅ 找到' : `❌ 未找到 (${item.count || 0}个)`}`
+        );
       });
     } else {
       console.log('   ⚠️  未找到明确的侧边栏元素');
     }
 
     console.log('\n2️⃣ /docs/en/ 链接 (前20个):');
-    navStructure.allLinks.slice(0, 20).forEach(link => {
+    navStructure.allLinks.slice(0, 20).forEach((link) => {
       console.log(`   - ${link.text}`);
       console.log(`     URL: ${link.href}`);
       console.log(`     Parent: <${link.parentTag}> ${link.parentClass}`);
@@ -146,7 +150,7 @@ async function inspectNavigation() {
     console.log(`\n   总计: ${navStructure.allLinks.length} 个链接`);
 
     console.log('\n3️⃣ 可能的Section标题 (前15个):');
-    navStructure.possibleSectionTitles.slice(0, 15).forEach(title => {
+    navStructure.possibleSectionTitles.slice(0, 15).forEach((title) => {
       console.log(`   - [${title.tag}${title.role ? ` role="${title.role}"` : ''}] ${title.text}`);
     });
 
@@ -159,7 +163,7 @@ async function inspectNavigation() {
       'https://code.claude.com/docs/en/setup',
       'https://code.claude.com/docs/en/settings',
       'https://code.claude.com/docs/en/cli-reference',
-      'https://code.claude.com/docs/en/legal-and-compliance'
+      'https://code.claude.com/docs/en/legal-and-compliance',
     ];
 
     for (const entryUrl of entryPoints) {
@@ -168,9 +172,9 @@ async function inspectNavigation() {
       try {
         await page.goto(entryUrl, {
           waitUntil: 'domcontentloaded',
-          timeout: 15000
+          timeout: 15000,
         });
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise((resolve) => setTimeout(resolve, 2000));
 
         const pageInfo = await page.evaluate(() => {
           // 提取页面主标题
@@ -203,7 +207,6 @@ async function inspectNavigation() {
 
     console.log('\n' + '='.repeat(60));
     console.log('✅ 检查完成');
-
   } catch (error) {
     console.error('\n❌ 检查失败:', error.message);
     throw error;
@@ -213,7 +216,7 @@ async function inspectNavigation() {
   }
 }
 
-inspectNavigation().catch(error => {
+inspectNavigation().catch((error) => {
   console.error('Fatal error:', error);
   process.exit(1);
 });

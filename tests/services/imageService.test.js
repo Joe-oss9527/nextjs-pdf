@@ -11,14 +11,14 @@ describe('ImageService', () => {
       debug: jest.fn(),
       info: jest.fn(),
       warn: jest.fn(),
-      error: jest.fn()
+      error: jest.fn(),
     };
 
     mockPage = {
       url: jest.fn().mockReturnValue('https://example.com'),
       evaluateOnNewDocument: jest.fn(),
       evaluate: jest.fn(),
-      isClosed: jest.fn().mockReturnValue(false)
+      isClosed: jest.fn().mockReturnValue(false),
     };
 
     imageService = new ImageService({
@@ -27,7 +27,7 @@ describe('ImageService', () => {
       checkInterval: 100,
       scrollDistance: 300,
       scrollDelay: 50,
-      maxScrollAttempts: 2
+      maxScrollAttempts: 2,
     });
   });
 
@@ -38,7 +38,7 @@ describe('ImageService', () => {
   describe('constructor', () => {
     it('should initialize with default options', () => {
       const service = new ImageService();
-      
+
       expect(service.options.defaultTimeout).toBe(15000);
       expect(service.options.checkInterval).toBe(500);
       expect(service.options.scrollDistance).toBe(300);
@@ -61,7 +61,7 @@ describe('ImageService', () => {
         imagesFailed: 0,
         lazyImagesTriggered: 0,
         scrollOperations: 0,
-        totalLoadTime: 0
+        totalLoadTime: 0,
       });
     });
   });
@@ -70,13 +70,10 @@ describe('ImageService', () => {
     it('should setup image observer on page', async () => {
       await imageService.setupImageObserver(mockPage);
 
-      expect(mockPage.evaluateOnNewDocument).toHaveBeenCalledWith(
-        expect.any(Function),
-        {
-          observerRootMargin: '500px',
-          enableIntersectionObserver: true
-        }
-      );
+      expect(mockPage.evaluateOnNewDocument).toHaveBeenCalledWith(expect.any(Function), {
+        observerRootMargin: '500px',
+        enableIntersectionObserver: true,
+      });
       expect(mockLogger.debug).toHaveBeenCalledWith('图片观察器设置完成');
     });
 
@@ -92,10 +89,11 @@ describe('ImageService', () => {
     it('should handle setup errors', async () => {
       mockPage.evaluateOnNewDocument.mockRejectedValue(new Error('Setup failed'));
 
-      await expect(imageService.setupImageObserver(mockPage))
-        .rejects.toThrow('Setup failed');
-      
-      expect(mockLogger.error).toHaveBeenCalledWith('设置图片观察器失败', { error: 'Setup failed' });
+      await expect(imageService.setupImageObserver(mockPage)).rejects.toThrow('Setup failed');
+
+      expect(mockLogger.error).toHaveBeenCalledWith('设置图片观察器失败', {
+        error: 'Setup failed',
+      });
     });
   });
 
@@ -113,7 +111,7 @@ describe('ImageService', () => {
           failed: 0,
           pending: 2,
           stats: { loaded: 1, failed: 0 },
-          allLoaded: false
+          allLoaded: false,
         })
         .mockResolvedValueOnce({
           total: 3,
@@ -121,7 +119,7 @@ describe('ImageService', () => {
           failed: 0,
           pending: 1,
           stats: { loaded: 2, failed: 0 },
-          allLoaded: false
+          allLoaded: false,
         })
         .mockResolvedValueOnce({
           total: 3,
@@ -129,7 +127,7 @@ describe('ImageService', () => {
           failed: 0,
           pending: 0,
           stats: { loaded: 3, failed: 0 },
-          allLoaded: true
+          allLoaded: true,
         });
 
       const result = await imageService.waitForImages(mockPage);
@@ -148,7 +146,7 @@ describe('ImageService', () => {
         failed: 1,
         pending: 0,
         stats: { loaded: 2, failed: 1 },
-        allLoaded: true
+        allLoaded: true,
       });
 
       const result = await imageService.waitForImages(mockPage);
@@ -165,7 +163,7 @@ describe('ImageService', () => {
         failed: 0,
         pending: 2,
         stats: { loaded: 1, failed: 0 },
-        allLoaded: false
+        allLoaded: false,
       });
 
       const result = await imageService.waitForImages(mockPage, { defaultTimeout: 200 });
@@ -184,16 +182,18 @@ describe('ImageService', () => {
         failed: 0,
         pending: 0,
         stats: { loaded: 2, failed: 0 },
-        allLoaded: true
+        allLoaded: true,
       });
 
       await imageService.waitForImages(mockPage);
 
-      expect(progressListener).toHaveBeenCalledWith(expect.objectContaining({
-        total: 2,
-        loaded: 2,
-        elapsedTime: expect.any(Number)
-      }));
+      expect(progressListener).toHaveBeenCalledWith(
+        expect.objectContaining({
+          total: 2,
+          loaded: 2,
+          elapsedTime: expect.any(Number),
+        })
+      );
     });
 
     it('should stop waiting when image count stabilizes', async () => {
@@ -203,12 +203,12 @@ describe('ImageService', () => {
         failed: 0,
         pending: 1,
         stats: { loaded: 2, failed: 0 },
-        allLoaded: false
+        allLoaded: false,
       });
 
-      const result = await imageService.waitForImages(mockPage, { 
+      const result = await imageService.waitForImages(mockPage, {
         defaultTimeout: 5000,
-        checkInterval: 50 
+        checkInterval: 50,
       });
 
       expect(result).toBe(false);
@@ -221,7 +221,9 @@ describe('ImageService', () => {
       const result = await imageService.waitForImages(mockPage);
 
       expect(result).toBe(false);
-      expect(mockLogger.error).toHaveBeenCalledWith('等待图片加载时发生错误', { error: 'Evaluation failed' });
+      expect(mockLogger.error).toHaveBeenCalledWith('等待图片加载时发生错误', {
+        error: 'Evaluation failed',
+      });
     });
   });
 
@@ -233,8 +235,8 @@ describe('ImageService', () => {
         scrollSteps: [
           { position: 0, duration: 50 },
           { position: 300, duration: 50 },
-          { position: 600, duration: 50 }
-        ]
+          { position: 600, duration: 50 },
+        ],
       };
 
       mockPage.evaluate.mockResolvedValue(scrollResult);
@@ -253,7 +255,7 @@ describe('ImageService', () => {
       mockPage.evaluate.mockResolvedValue({
         totalHeight: 1000,
         viewportHeight: 500,
-        scrollSteps: []
+        scrollSteps: [],
       });
 
       await imageService.scrollPage(mockPage);
@@ -264,10 +266,11 @@ describe('ImageService', () => {
     it('should handle scroll errors', async () => {
       mockPage.evaluate.mockRejectedValue(new Error('Scroll failed'));
 
-      await expect(imageService.scrollPage(mockPage))
-        .rejects.toThrow('Scroll failed');
-      
-      expect(mockLogger.error).toHaveBeenCalledWith('滚动页面时发生错误', { error: 'Scroll failed' });
+      await expect(imageService.scrollPage(mockPage)).rejects.toThrow('Scroll failed');
+
+      expect(mockLogger.error).toHaveBeenCalledWith('滚动页面时发生错误', {
+        error: 'Scroll failed',
+      });
     });
   });
 
@@ -276,16 +279,16 @@ describe('ImageService', () => {
       // Mock scrollPage and waitForImages
       jest.spyOn(imageService, 'scrollPage').mockResolvedValue({
         totalHeight: 2000,
-        scrollSteps: []
+        scrollSteps: [],
       });
-      
+
       jest.spyOn(imageService, 'waitForImages').mockResolvedValue(true);
     });
 
     it('should trigger lazy loading successfully', async () => {
       mockPage.evaluate.mockResolvedValue({
         totalLazyImages: 5,
-        triggered: 5
+        triggered: 5,
       });
 
       const result = await imageService.triggerLazyLoading(mockPage);
@@ -293,7 +296,7 @@ describe('ImageService', () => {
       expect(result).toMatchObject({
         totalLazyImages: 5,
         triggered: 5,
-        allImagesLoaded: true
+        allImagesLoaded: true,
       });
       expect(imageService.stats.lazyImagesTriggered).toBe(5);
       expect(imageService.scrollPage).toHaveBeenCalled();
@@ -306,24 +309,25 @@ describe('ImageService', () => {
 
       mockPage.evaluate.mockResolvedValue({
         totalLazyImages: 3,
-        triggered: 3
+        triggered: 3,
       });
 
       await imageService.triggerLazyLoading(mockPage);
 
       expect(listener).toHaveBeenCalledWith({
         totalLazyImages: 3,
-        triggered: 3
+        triggered: 3,
       });
     });
 
     it('should handle trigger errors', async () => {
       imageService.scrollPage.mockRejectedValue(new Error('Scroll failed'));
 
-      await expect(imageService.triggerLazyLoading(mockPage))
-        .rejects.toThrow('Scroll failed');
-      
-      expect(mockLogger.error).toHaveBeenCalledWith('触发懒加载时发生错误', { error: 'Scroll failed' });
+      await expect(imageService.triggerLazyLoading(mockPage)).rejects.toThrow('Scroll failed');
+
+      expect(mockLogger.error).toHaveBeenCalledWith('触发懒加载时发生错误', {
+        error: 'Scroll failed',
+      });
     });
   });
 
@@ -334,7 +338,7 @@ describe('ImageService', () => {
       jest.spyOn(imageService, 'triggerLazyLoading').mockResolvedValue({
         totalLazyImages: 3,
         triggered: 3,
-        allImagesLoaded: true
+        allImagesLoaded: true,
       });
       jest.spyOn(imageService, 'scrollPage').mockResolvedValue({});
     });
@@ -345,7 +349,7 @@ describe('ImageService', () => {
       expect(result).toMatchObject({
         success: true,
         allImagesLoaded: true,
-        lazyImagesTriggered: 3
+        lazyImagesTriggered: 3,
       });
       expect(imageService.setupImageObserver).toHaveBeenCalledWith(mockPage);
       expect(imageService.triggerLazyLoading).toHaveBeenCalled();
@@ -357,7 +361,7 @@ describe('ImageService', () => {
       imageService.triggerLazyLoading.mockResolvedValueOnce({
         totalLazyImages: 3,
         triggered: 3,
-        allImagesLoaded: false  // This triggers the retry logic
+        allImagesLoaded: false, // This triggers the retry logic
       });
 
       imageService.waitForImages
@@ -379,7 +383,7 @@ describe('ImageService', () => {
 
       expect(result).toMatchObject({
         success: false,
-        error: 'Setup failed'
+        error: 'Setup failed',
       });
       expect(mockLogger.error).toHaveBeenCalledWith('页面图片处理失败', expect.any(Object));
     });
@@ -390,9 +394,11 @@ describe('ImageService', () => {
 
       await imageService.processPageImages(mockPage);
 
-      expect(listener).toHaveBeenCalledWith(expect.objectContaining({
-        success: true
-      }));
+      expect(listener).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+        })
+      );
     });
   });
 
@@ -427,7 +433,9 @@ describe('ImageService', () => {
 
       await imageService.cleanup(mockPage);
 
-      expect(mockLogger.warn).toHaveBeenCalledWith('清理图片服务资源时发生错误', { error: 'Cleanup failed' });
+      expect(mockLogger.warn).toHaveBeenCalledWith('清理图片服务资源时发生错误', {
+        error: 'Cleanup failed',
+      });
     });
   });
 
@@ -457,7 +465,9 @@ describe('ImageService', () => {
       const result = await imageService.cleanupPage(mockPage);
 
       expect(result).toBe(false);
-      expect(mockLogger.debug).toHaveBeenCalledWith('页面清理失败（可能页面已关闭）', { error: 'Page closed' });
+      expect(mockLogger.debug).toHaveBeenCalledWith('页面清理失败（可能页面已关闭）', {
+        error: 'Page closed',
+      });
     });
   });
 
@@ -489,7 +499,9 @@ describe('ImageService', () => {
 
       await imageService.dispose();
 
-      expect(mockLogger.error).toHaveBeenCalledWith('图片服务全局清理失败', { error: 'Dispose failed' });
+      expect(mockLogger.error).toHaveBeenCalledWith('图片服务全局清理失败', {
+        error: 'Dispose failed',
+      });
     });
   });
 
@@ -501,7 +513,7 @@ describe('ImageService', () => {
         imagesFailed: 2,
         lazyImagesTriggered: 5,
         scrollOperations: 3,
-        totalLoadTime: 1000
+        totalLoadTime: 1000,
       };
 
       const stats = imageService.getStats();
@@ -510,7 +522,7 @@ describe('ImageService', () => {
         imagesProcessed: 10,
         imagesLoaded: 8,
         imagesFailed: 2,
-        averageLoadTime: 100
+        averageLoadTime: 100,
       });
     });
 
@@ -534,7 +546,7 @@ describe('ImageService', () => {
         imagesFailed: 0,
         lazyImagesTriggered: 0,
         scrollOperations: 0,
-        totalLoadTime: 0
+        totalLoadTime: 0,
       });
     });
 

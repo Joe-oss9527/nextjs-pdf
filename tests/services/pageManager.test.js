@@ -19,11 +19,11 @@ describe('PageManager', () => {
       evaluateOnNewDocument: jest.fn(),
       close: jest.fn(),
       isClosed: jest.fn().mockReturnValue(false),
-      on: jest.fn()
+      on: jest.fn(),
     };
 
     mockBrowser = {
-      newPage: jest.fn().mockResolvedValue(mockPage)
+      newPage: jest.fn().mockResolvedValue(mockPage),
     };
 
     mockBrowserPool = {
@@ -31,22 +31,22 @@ describe('PageManager', () => {
       releaseBrowser: jest.fn(),
       getStatus: jest.fn().mockReturnValue({
         busyBrowsers: 1,
-        availableBrowsers: 2
-      })
+        availableBrowsers: 2,
+      }),
     };
 
     mockLogger = {
       debug: jest.fn(),
       info: jest.fn(),
       warn: jest.fn(),
-      error: jest.fn()
+      error: jest.fn(),
     };
 
     pageManager = new PageManager(mockBrowserPool, {
       logger: mockLogger,
       defaultTimeout: 30000,
       navigationTimeout: 30000,
-      viewport: { width: 1920, height: 1080 }
+      viewport: { width: 1920, height: 1080 },
     });
   });
 
@@ -57,7 +57,7 @@ describe('PageManager', () => {
   describe('constructor', () => {
     it('should initialize with default options', () => {
       const pm = new PageManager(mockBrowserPool);
-      
+
       expect(pm.browserPool).toBe(mockBrowserPool);
       expect(pm.options.defaultTimeout).toBe(30000);
       expect(pm.options.navigationTimeout).toBe(30000);
@@ -73,11 +73,11 @@ describe('PageManager', () => {
         navigationTimeout: 45000,
         enableRequestInterception: false,
         blockedResourceTypes: ['image', 'media'],
-        userAgent: 'Custom User Agent'
+        userAgent: 'Custom User Agent',
       };
 
       const pm = new PageManager(mockBrowserPool, customOptions);
-      
+
       expect(pm.options.defaultTimeout).toBe(60000);
       expect(pm.options.navigationTimeout).toBe(45000);
       expect(pm.options.enableRequestInterception).toBe(false);
@@ -103,24 +103,21 @@ describe('PageManager', () => {
 
     it('should throw error if page manager is closed', async () => {
       pageManager.isClosed = true;
-      
-      await expect(pageManager.createPage('test-page'))
-        .rejects.toThrow('页面管理器已关闭');
+
+      await expect(pageManager.createPage('test-page')).rejects.toThrow('页面管理器已关闭');
     });
 
     it('should throw error if page ID already exists', async () => {
       await pageManager.createPage('test-page');
-      
-      await expect(pageManager.createPage('test-page'))
-        .rejects.toThrow('页面 test-page 已存在');
+
+      await expect(pageManager.createPage('test-page')).rejects.toThrow('页面 test-page 已存在');
     });
 
     it('should release browser on page creation failure', async () => {
       mockBrowser.newPage.mockRejectedValue(new Error('Page creation failed'));
 
-      await expect(pageManager.createPage('test-page'))
-        .rejects.toThrow(NetworkError);
-      
+      await expect(pageManager.createPage('test-page')).rejects.toThrow(NetworkError);
+
       expect(mockBrowserPool.releaseBrowser).toHaveBeenCalledWith(mockBrowser);
       expect(pageManager.stats.errors).toBe(1);
     });
@@ -140,8 +137,8 @@ describe('PageManager', () => {
           createdAt: expect.any(Number),
           lastActivity: expect.any(Number),
           requestCount: 0,
-          errorCount: 0
-        })
+          errorCount: 0,
+        }),
       });
     });
   });
@@ -151,7 +148,7 @@ describe('PageManager', () => {
       await pageManager.configurePage(mockPage, {
         userAgent: 'Custom UA',
         defaultTimeout: 45000,
-        navigationTimeout: 60000
+        navigationTimeout: 60000,
       });
 
       expect(mockPage.setUserAgent).toHaveBeenCalledWith('Custom UA');
@@ -164,17 +161,17 @@ describe('PageManager', () => {
         resourceType: jest.fn().mockReturnValue('image'),
         url: jest.fn().mockReturnValue('https://example.com/image.jpg'),
         abort: jest.fn(),
-        continue: jest.fn()
+        continue: jest.fn(),
       };
 
       await pageManager.configurePage(mockPage, {
         enableRequestInterception: true,
-        blockedResourceTypes: ['image']
+        blockedResourceTypes: ['image'],
       });
 
       expect(mockPage.setRequestInterception).toHaveBeenCalledWith(true);
 
-      const requestHandler = mockPage.on.mock.calls.find(call => call[0] === 'request')[1];
+      const requestHandler = mockPage.on.mock.calls.find((call) => call[0] === 'request')[1];
       requestHandler(mockRequest);
 
       expect(mockRequest.abort).toHaveBeenCalled();
@@ -186,15 +183,15 @@ describe('PageManager', () => {
         resourceType: jest.fn().mockReturnValue('script'),
         url: jest.fn().mockReturnValue('https://google-analytics.com/ga.js'),
         abort: jest.fn(),
-        continue: jest.fn()
+        continue: jest.fn(),
       };
 
       await pageManager.configurePage(mockPage, {
         enableRequestInterception: true,
-        blockedResourceTypes: []
+        blockedResourceTypes: [],
       });
 
-      const requestHandler = mockPage.on.mock.calls.find(call => call[0] === 'request')[1];
+      const requestHandler = mockPage.on.mock.calls.find((call) => call[0] === 'request')[1];
       requestHandler(mockRequest);
 
       expect(mockRequest.abort).toHaveBeenCalled();
@@ -216,11 +213,13 @@ describe('PageManager', () => {
       const errorListener = jest.fn();
       pageManager.on('page-error', errorListener);
 
-      const errorHandler = mockPage.on.mock.calls.find(call => call[0] === 'error')[1];
+      const errorHandler = mockPage.on.mock.calls.find((call) => call[0] === 'error')[1];
       const error = new Error('Page crashed');
       errorHandler(error);
 
-      expect(mockLogger.error).toHaveBeenCalledWith('页面错误 [test-page]', { error: 'Page crashed' });
+      expect(mockLogger.error).toHaveBeenCalledWith('页面错误 [test-page]', {
+        error: 'Page crashed',
+      });
       expect(errorListener).toHaveBeenCalledWith({ id: 'test-page', error });
       expect(pageManager.stats.errors).toBe(1);
     });
@@ -229,11 +228,13 @@ describe('PageManager', () => {
       const jsErrorListener = jest.fn();
       pageManager.on('page-js-error', jsErrorListener);
 
-      const pageerrorHandler = mockPage.on.mock.calls.find(call => call[0] === 'pageerror')[1];
+      const pageerrorHandler = mockPage.on.mock.calls.find((call) => call[0] === 'pageerror')[1];
       const error = new Error('Uncaught TypeError');
       pageerrorHandler(error);
 
-      expect(mockLogger.warn).toHaveBeenCalledWith('页面JS错误 [test-page]', { error: 'Uncaught TypeError' });
+      expect(mockLogger.warn).toHaveBeenCalledWith('页面JS错误 [test-page]', {
+        error: 'Uncaught TypeError',
+      });
       expect(jsErrorListener).toHaveBeenCalledWith({ id: 'test-page', error });
     });
 
@@ -241,11 +242,13 @@ describe('PageManager', () => {
       const jsErrorListener = jest.fn();
       pageManager.on('page-js-error', jsErrorListener);
 
-      const pageerrorHandler = mockPage.on.mock.calls.find(call => call[0] === 'pageerror')[1];
+      const pageerrorHandler = mockPage.on.mock.calls.find((call) => call[0] === 'pageerror')[1];
       const error = new Error('Invariant: attempted to hard navigate to the same URL');
       pageerrorHandler(error);
 
-      expect(mockLogger.debug).toHaveBeenCalledWith('忽略的JS错误 [test-page]', { error: error.message });
+      expect(mockLogger.debug).toHaveBeenCalledWith('忽略的JS错误 [test-page]', {
+        error: error.message,
+      });
       expect(jsErrorListener).not.toHaveBeenCalled();
     });
 
@@ -253,28 +256,28 @@ describe('PageManager', () => {
       const crashListener = jest.fn();
       pageManager.on('page-crash', crashListener);
 
-      const crashHandler = mockPage.on.mock.calls.find(call => call[0] === 'crash')[1];
+      const crashHandler = mockPage.on.mock.calls.find((call) => call[0] === 'crash')[1];
       crashHandler();
 
       expect(mockLogger.error).toHaveBeenCalledWith('页面崩溃 [test-page]');
       expect(crashListener).toHaveBeenCalledWith({ id: 'test-page' });
-      
-      await new Promise(resolve => setTimeout(resolve, 10));
+
+      await new Promise((resolve) => setTimeout(resolve, 10));
       expect(mockPage.close).toHaveBeenCalled();
     });
 
     it('should track page requests', async () => {
       // First ensure the page is created and the event handler is set up
       // We already create the page in beforeEach
-      
+
       // Find the page request event handler that was registered during setupPageEvents
       const setupEventsCalls = mockPage.on.mock.calls;
-      const requestEventCall = setupEventsCalls.find(call => call[0] === 'request');
-      
+      const requestEventCall = setupEventsCalls.find((call) => call[0] === 'request');
+
       // The handler is the second item after the handler in configurePage
-      const requestHandlers = setupEventsCalls.filter(call => call[0] === 'request');
+      const requestHandlers = setupEventsCalls.filter((call) => call[0] === 'request');
       expect(requestHandlers.length).toBeGreaterThan(1); // One from configurePage, one from setupPageEvents
-      
+
       const trackingHandler = requestHandlers[requestHandlers.length - 1][1];
       trackingHandler({});
 
@@ -287,17 +290,17 @@ describe('PageManager', () => {
       const responseListener = jest.fn();
       pageManager.on('page-response', responseListener);
 
-      const responseHandler = mockPage.on.mock.calls.find(call => call[0] === 'response')[1];
+      const responseHandler = mockPage.on.mock.calls.find((call) => call[0] === 'response')[1];
       const mockResponse = {
         url: jest.fn().mockReturnValue('https://example.com'),
-        status: jest.fn().mockReturnValue(200)
+        status: jest.fn().mockReturnValue(200),
       };
       responseHandler(mockResponse);
 
       expect(responseListener).toHaveBeenCalledWith({
         id: 'test-page',
         url: 'https://example.com',
-        status: 200
+        status: 200,
       });
     });
   });
@@ -319,7 +322,7 @@ describe('PageManager', () => {
     it('should return page info if exists', async () => {
       await pageManager.createPage('test-page');
       const pageInfo = pageManager.getPageInfo('test-page');
-      
+
       expect(pageInfo).toMatchObject({
         id: 'test-page',
         page: mockPage,
@@ -327,7 +330,7 @@ describe('PageManager', () => {
         createdAt: expect.any(Number),
         lastActivity: expect.any(Number),
         requestCount: 0,
-        errorCount: 0
+        errorCount: 0,
       });
     });
 
@@ -358,25 +361,27 @@ describe('PageManager', () => {
 
     it('should handle already closed page', async () => {
       mockPage.isClosed.mockReturnValue(true);
-      
+
       await pageManager.closePage('test-page');
-      
+
       expect(mockPage.close).not.toHaveBeenCalled();
       expect(mockBrowserPool.releaseBrowser).toHaveBeenCalledWith(mockBrowser);
     });
 
     it('should warn if page does not exist', async () => {
       await pageManager.closePage('non-existent');
-      
+
       expect(mockLogger.warn).toHaveBeenCalledWith('页面 [non-existent] 不存在，无法关闭');
     });
 
     it('should handle page close errors gracefully', async () => {
       mockPage.close.mockRejectedValue(new Error('Close failed'));
-      
+
       await pageManager.closePage('test-page');
-      
-      expect(mockLogger.warn).toHaveBeenCalledWith('关闭页面失败 [test-page]', { error: 'Close failed' });
+
+      expect(mockLogger.warn).toHaveBeenCalledWith('关闭页面失败 [test-page]', {
+        error: 'Close failed',
+      });
       expect(mockBrowserPool.releaseBrowser).toHaveBeenCalledWith(mockBrowser);
       expect(pageManager.pages.has('test-page')).toBe(false);
     });
@@ -398,15 +403,17 @@ describe('PageManager', () => {
 
     it('should handle errors when closing pages', async () => {
       await pageManager.createPage('page1');
-      
+
       // Clear previous mock calls to logger
       mockLogger.warn.mockClear();
-      
+
       mockPage.close.mockRejectedValue(new Error('Close failed'));
 
       await pageManager.closeAll();
 
-      expect(mockLogger.warn).toHaveBeenCalledWith('关闭页面失败 [page1]', { error: 'Close failed' });
+      expect(mockLogger.warn).toHaveBeenCalledWith('关闭页面失败 [page1]', {
+        error: 'Close failed',
+      });
     });
   });
 
@@ -453,7 +460,7 @@ describe('PageManager', () => {
           errors: 0,
           active: 2,
           totalRequests: 2,
-          blockedRequests: 0
+          blockedRequests: 0,
         },
         pages: expect.arrayContaining([
           expect.objectContaining({
@@ -462,9 +469,9 @@ describe('PageManager', () => {
             lastActivity: expect.any(Number),
             requestCount: 0,
             errorCount: 0,
-            idleTime: expect.any(Number)
-          })
-        ])
+            idleTime: expect.any(Number),
+          }),
+        ]),
       });
     });
   });
@@ -472,7 +479,7 @@ describe('PageManager', () => {
   describe('close', () => {
     it('should close page manager', async () => {
       await pageManager.createPage('page1');
-      
+
       const closedListener = jest.fn();
       pageManager.on('closed', closedListener);
 
@@ -485,10 +492,10 @@ describe('PageManager', () => {
 
     it('should not close twice', async () => {
       await pageManager.close();
-      
+
       // Clear mock calls before second close
       mockLogger.info.mockClear();
-      
+
       await pageManager.close();
 
       expect(mockLogger.info).not.toHaveBeenCalled(); // Second close should not log
@@ -499,7 +506,7 @@ describe('PageManager', () => {
     it('should create multiple pages', async () => {
       const configs = [
         { id: 'page1', options: { userAgent: 'UA1' } },
-        { id: 'page2', options: { userAgent: 'UA2' } }
+        { id: 'page2', options: { userAgent: 'UA2' } },
       ];
 
       const results = await pageManager.createPages(configs);
@@ -515,10 +522,7 @@ describe('PageManager', () => {
         .mockResolvedValueOnce(mockPage)
         .mockRejectedValueOnce(new Error('Creation failed'));
 
-      const configs = [
-        { id: 'page1' },
-        { id: 'page2' }
-      ];
+      const configs = [{ id: 'page1' }, { id: 'page2' }];
 
       const results = await pageManager.createPages(configs);
 
@@ -531,7 +535,7 @@ describe('PageManager', () => {
   describe('restartPage', () => {
     it('should restart existing page', async () => {
       await pageManager.createPage('page1', { userAgent: 'Original UA' });
-      
+
       const newMockPage = { ...mockPage };
       mockBrowser.newPage.mockResolvedValue(newMockPage);
 
@@ -543,8 +547,9 @@ describe('PageManager', () => {
     });
 
     it('should throw if page does not exist', async () => {
-      await expect(pageManager.restartPage('non-existent'))
-        .rejects.toThrow('页面 non-existent 不存在');
+      await expect(pageManager.restartPage('non-existent')).rejects.toThrow(
+        '页面 non-existent 不存在'
+      );
     });
   });
 
@@ -554,14 +559,20 @@ describe('PageManager', () => {
     });
 
     it('should block analytics domains', () => {
-      expect(pageManager.shouldBlockRequest('https://google-analytics.com/ga.js', 'script')).toBe(true);
-      expect(pageManager.shouldBlockRequest('https://googletagmanager.com/gtm.js', 'script')).toBe(true);
+      expect(pageManager.shouldBlockRequest('https://google-analytics.com/ga.js', 'script')).toBe(
+        true
+      );
+      expect(pageManager.shouldBlockRequest('https://googletagmanager.com/gtm.js', 'script')).toBe(
+        true
+      );
       expect(pageManager.shouldBlockRequest('https://facebook.com/tr', 'image')).toBe(true);
     });
 
     it('should allow normal resources', () => {
       expect(pageManager.shouldBlockRequest('https://example.com/app.js', 'script')).toBe(false);
-      expect(pageManager.shouldBlockRequest('https://example.com/style.css', 'stylesheet')).toBe(false);
+      expect(pageManager.shouldBlockRequest('https://example.com/style.css', 'stylesheet')).toBe(
+        false
+      );
     });
   });
 

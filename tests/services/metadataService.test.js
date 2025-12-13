@@ -13,17 +13,17 @@ describe('MetadataService', () => {
       readJson: jest.fn(),
       writeJson: jest.fn(),
       appendToJsonArray: jest.fn(),
-      removeFromJsonArray: jest.fn()
+      removeFromJsonArray: jest.fn(),
     };
 
     mockPathService = {
-      getMetadataPath: jest.fn((type) => `/metadata/${type}.json`)
+      getMetadataPath: jest.fn((type) => `/metadata/${type}.json`),
     };
 
     mockLogger = {
       debug: jest.fn(),
       info: jest.fn(),
-      warn: jest.fn()
+      warn: jest.fn(),
     };
 
     metadataService = new MetadataService(mockFileService, mockPathService, mockLogger);
@@ -31,28 +31,27 @@ describe('MetadataService', () => {
 
   describe('saveArticleTitle', () => {
     test('应该保存文章标题', async () => {
-      mockFileService.readJson.mockResolvedValue({ '1': '旧标题' });
+      mockFileService.readJson.mockResolvedValue({ 1: '旧标题' });
 
       await metadataService.saveArticleTitle(2, '新文章标题');
 
       expect(mockPathService.getMetadataPath).toHaveBeenCalledWith('articleTitles');
       expect(mockFileService.readJson).toHaveBeenCalledWith('/metadata/articleTitles.json', {});
-      expect(mockFileService.writeJson).toHaveBeenCalledWith(
-        '/metadata/articleTitles.json',
-        { '1': '旧标题', '2': '新文章标题' }
-      );
+      expect(mockFileService.writeJson).toHaveBeenCalledWith('/metadata/articleTitles.json', {
+        1: '旧标题',
+        2: '新文章标题',
+      });
       expect(mockLogger.info).toHaveBeenCalledWith('保存文章标题: [2] 新文章标题');
     });
 
     test('应该覆盖已存在的标题', async () => {
-      mockFileService.readJson.mockResolvedValue({ '1': '旧标题' });
+      mockFileService.readJson.mockResolvedValue({ 1: '旧标题' });
 
       await metadataService.saveArticleTitle(1, '更新的标题');
 
-      expect(mockFileService.writeJson).toHaveBeenCalledWith(
-        '/metadata/articleTitles.json',
-        { '1': '更新的标题' }
-      );
+      expect(mockFileService.writeJson).toHaveBeenCalledWith('/metadata/articleTitles.json', {
+        1: '更新的标题',
+      });
     });
 
     test('应该在空对象上保存标题', async () => {
@@ -60,16 +59,15 @@ describe('MetadataService', () => {
 
       await metadataService.saveArticleTitle(1, '第一个标题');
 
-      expect(mockFileService.writeJson).toHaveBeenCalledWith(
-        '/metadata/articleTitles.json',
-        { '1': '第一个标题' }
-      );
+      expect(mockFileService.writeJson).toHaveBeenCalledWith('/metadata/articleTitles.json', {
+        1: '第一个标题',
+      });
     });
   });
 
   describe('getArticleTitles', () => {
     test('应该获取所有文章标题', async () => {
-      const titles = { '1': '标题1', '2': '标题2' };
+      const titles = { 1: '标题1', 2: '标题2' };
       mockFileService.readJson.mockResolvedValue(titles);
 
       const result = await metadataService.getArticleTitles();
@@ -97,19 +95,15 @@ describe('MetadataService', () => {
       await metadataService.logFailedLink('http://example.com', 5, error);
 
       expect(mockPathService.getMetadataPath).toHaveBeenCalledWith('failed');
-      expect(mockFileService.appendToJsonArray).toHaveBeenCalledWith(
-        '/metadata/failed.json',
-        {
-          url: 'http://example.com',
-          index: 5,
-          error: 'Network error',
-          timestamp: '2024-03-15T10:00:00.000Z'
-        }
-      );
-      expect(mockLogger.warn).toHaveBeenCalledWith(
-        '记录失败链接: http://example.com',
-        { error: 'Network error' }
-      );
+      expect(mockFileService.appendToJsonArray).toHaveBeenCalledWith('/metadata/failed.json', {
+        url: 'http://example.com',
+        index: 5,
+        error: 'Network error',
+        timestamp: '2024-03-15T10:00:00.000Z',
+      });
+      expect(mockLogger.warn).toHaveBeenCalledWith('记录失败链接: http://example.com', {
+        error: 'Network error',
+      });
 
       Date.mockRestore();
     });
@@ -120,20 +114,20 @@ describe('MetadataService', () => {
       expect(mockFileService.appendToJsonArray).toHaveBeenCalledWith(
         '/metadata/failed.json',
         expect.objectContaining({
-          error: 'String error'
+          error: 'String error',
         })
       );
     });
 
     test('应该处理没有message的错误对象', async () => {
       const errorWithoutMessage = { code: 'ENOTFOUND' };
-      
+
       await metadataService.logFailedLink('http://example.com', 5, errorWithoutMessage);
 
       expect(mockFileService.appendToJsonArray).toHaveBeenCalledWith(
         '/metadata/failed.json',
         expect.objectContaining({
-          error: '[object Object]'  // String(errorWithoutMessage) returns '[object Object]'
+          error: '[object Object]', // String(errorWithoutMessage) returns '[object Object]'
         })
       );
     });
@@ -143,7 +137,7 @@ describe('MetadataService', () => {
     test('应该获取所有失败的链接', async () => {
       const failedLinks = [
         { url: 'http://example1.com', error: 'Error 1' },
-        { url: 'http://example2.com', error: 'Error 2' }
+        { url: 'http://example2.com', error: 'Error 2' },
       ];
       mockFileService.readJson.mockResolvedValue(failedLinks);
 
@@ -191,22 +185,23 @@ describe('MetadataService', () => {
 
       expect(mockPathService.getMetadataPath).toHaveBeenCalledWith('imageLoadFailures');
       expect(mockFileService.readJson).toHaveBeenCalledWith('/metadata/imageLoadFailures.json', []);
-      expect(mockFileService.writeJson).toHaveBeenCalledWith(
-        '/metadata/imageLoadFailures.json',
-        [{
+      expect(mockFileService.writeJson).toHaveBeenCalledWith('/metadata/imageLoadFailures.json', [
+        {
           url: 'http://example.com/image.jpg',
           index: 3,
-          timestamp: '2024-03-15T10:00:00.000Z'
-        }]
+          timestamp: '2024-03-15T10:00:00.000Z',
+        },
+      ]);
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        '记录图片加载失败: http://example.com/image.jpg'
       );
-      expect(mockLogger.warn).toHaveBeenCalledWith('记录图片加载失败: http://example.com/image.jpg');
 
       Date.mockRestore();
     });
 
     test('应该避免重复记录', async () => {
       mockFileService.readJson.mockResolvedValue([
-        { url: 'http://example.com/image.jpg', index: 3 }
+        { url: 'http://example.com/image.jpg', index: 3 },
       ]);
 
       await metadataService.logImageLoadFailure('http://example.com/image.jpg', 3);
@@ -217,7 +212,7 @@ describe('MetadataService', () => {
 
     test('应该允许相同URL但不同index的记录', async () => {
       mockFileService.readJson.mockResolvedValue([
-        { url: 'http://example.com/image.jpg', index: 3 }
+        { url: 'http://example.com/image.jpg', index: 3 },
       ]);
 
       await metadataService.logImageLoadFailure('http://example.com/image.jpg', 5);
@@ -228,8 +223,8 @@ describe('MetadataService', () => {
           { url: 'http://example.com/image.jpg', index: 3 },
           expect.objectContaining({
             url: 'http://example.com/image.jpg',
-            index: 5
-          })
+            index: 5,
+          }),
         ])
       );
     });
@@ -239,7 +234,7 @@ describe('MetadataService', () => {
     test('应该获取图片加载失败列表', async () => {
       const failures = [
         { url: 'http://example.com/img1.jpg', index: 1 },
-        { url: 'http://example.com/img2.jpg', index: 2 }
+        { url: 'http://example.com/img2.jpg', index: 2 },
       ];
       mockFileService.readJson.mockResolvedValue(failures);
 
@@ -254,7 +249,7 @@ describe('MetadataService', () => {
   describe('saveUrlMapping', () => {
     test('应该保存URL到文件路径的映射', async () => {
       mockFileService.readJson.mockResolvedValue({
-        'http://old.com': { path: '/pdfs/old.pdf' }
+        'http://old.com': { path: '/pdfs/old.pdf' },
       });
       const mockDate = new Date('2024-03-15T10:00:00Z');
       jest.spyOn(global, 'Date').mockImplementation(() => mockDate);
@@ -263,23 +258,20 @@ describe('MetadataService', () => {
 
       expect(mockPathService.getMetadataPath).toHaveBeenCalledWith('urlMapping');
       expect(mockFileService.readJson).toHaveBeenCalledWith('/metadata/urlMapping.json', {});
-      expect(mockFileService.writeJson).toHaveBeenCalledWith(
-        '/metadata/urlMapping.json',
-        {
-          'http://old.com': { path: '/pdfs/old.pdf' },
-          'http://example.com': {
-            path: '/pdfs/example.pdf',
-            timestamp: '2024-03-15T10:00:00.000Z'
-          }
-        }
-      );
+      expect(mockFileService.writeJson).toHaveBeenCalledWith('/metadata/urlMapping.json', {
+        'http://old.com': { path: '/pdfs/old.pdf' },
+        'http://example.com': {
+          path: '/pdfs/example.pdf',
+          timestamp: '2024-03-15T10:00:00.000Z',
+        },
+      });
 
       Date.mockRestore();
     });
 
     test('应该覆盖已存在的映射', async () => {
       mockFileService.readJson.mockResolvedValue({
-        'http://example.com': { path: '/pdfs/old-path.pdf' }
+        'http://example.com': { path: '/pdfs/old-path.pdf' },
       });
 
       await metadataService.saveUrlMapping('http://example.com', '/pdfs/new-path.pdf');
@@ -288,8 +280,8 @@ describe('MetadataService', () => {
         '/metadata/urlMapping.json',
         expect.objectContaining({
           'http://example.com': expect.objectContaining({
-            path: '/pdfs/new-path.pdf'
-          })
+            path: '/pdfs/new-path.pdf',
+          }),
         })
       );
     });
@@ -299,7 +291,7 @@ describe('MetadataService', () => {
     test('应该获取URL映射', async () => {
       const mapping = {
         'http://example1.com': { path: '/pdfs/1.pdf' },
-        'http://example2.com': { path: '/pdfs/2.pdf' }
+        'http://example2.com': { path: '/pdfs/2.pdf' },
       };
       mockFileService.readJson.mockResolvedValue(mapping);
 

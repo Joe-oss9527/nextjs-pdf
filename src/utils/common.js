@@ -1,5 +1,5 @@
 // src/utils/common.js
-export const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+export const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * Apply jitter to a delay value based on the specified strategy
@@ -20,7 +20,7 @@ export const applyJitter = (baseDelay, strategy = 'decorrelated', prevDelay = nu
 
     case 'equal':
       // Equal jitter: delay/2 + random(0, delay/2)
-      return (baseDelay / 2) + (Math.random() * baseDelay / 2);
+      return baseDelay / 2 + (Math.random() * baseDelay) / 2;
 
     case 'decorrelated':
     default:
@@ -52,7 +52,7 @@ export const retry = async (fn, options = {}) => {
     backoff = 2,
     maxDelay = 30000,
     jitterStrategy = 'decorrelated',
-    onRetry
+    onRetry,
   } = options;
 
   let lastError;
@@ -90,18 +90,12 @@ export const retry = async (fn, options = {}) => {
 
 // 保留原有的isIgnored函数
 export const isIgnored = (url, ignoreURLs) => {
-  return ignoreURLs.some(ignored => url.includes(ignored));
+  return ignoreURLs.some((ignored) => url.includes(ignored));
 };
 
 // 🆕 新增：创建带有进度回调的重试函数
 export const retryWithProgress = async (fn, options = {}) => {
-  const {
-    maxAttempts = 3,
-    delay: delayMs = 1000,
-    backoff = 2,
-    onProgress,
-    onRetry
-  } = options;
+  const { maxAttempts = 3, delay: delayMs = 1000, backoff = 2, onProgress, onRetry } = options;
 
   let lastError;
 

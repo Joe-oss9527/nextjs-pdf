@@ -14,14 +14,14 @@ puppeteer.use(StealthPlugin());
 export class BrowserPool extends EventEmitter {
   constructor(options = {}) {
     super();
-    
+
     this.options = {
       maxBrowsers: options.maxBrowsers || 1,
       headless: options.headless !== false,
       launchOptions: options.launchOptions || {},
       retryLimit: options.retryLimit || 3,
       retryDelay: options.retryDelay || 5000,
-      ...options
+      ...options,
     };
 
     this.logger = options.logger;
@@ -32,14 +32,14 @@ export class BrowserPool extends EventEmitter {
     this.disconnectedBrowsers = [];
     this.isInitialized = false;
     this.isClosed = false;
-    
+
     // 统计信息
     this.stats = {
       created: 0,
       disconnected: 0,
       errors: 0,
       totalRequests: 0,
-      activeRequests: 0
+      activeRequests: 0,
     };
   }
 
@@ -55,7 +55,7 @@ export class BrowserPool extends EventEmitter {
     try {
       this.logger?.info('开始初始化浏览器池', {
         maxBrowsers: this.options.maxBrowsers,
-        headless: this.options.headless
+        headless: this.options.headless,
       });
 
       // 创建初始浏览器实例
@@ -66,7 +66,7 @@ export class BrowserPool extends EventEmitter {
           this.availableBrowsers.push(browser);
         } catch (error) {
           this.logger?.error(`创建第 ${i + 1} 个浏览器实例失败`, {
-            error: error.message
+            error: error.message,
           });
           // 如果连一个浏览器都创建不了，抛出错误
           if (this.browsers.length === 0) {
@@ -78,13 +78,12 @@ export class BrowserPool extends EventEmitter {
       this.isInitialized = true;
       this.logger?.info('浏览器池初始化完成', {
         totalBrowsers: this.browsers.length,
-        availableBrowsers: this.availableBrowsers.length
+        availableBrowsers: this.availableBrowsers.length,
       });
 
       this.emit('initialized', {
-        totalBrowsers: this.browsers.length
+        totalBrowsers: this.browsers.length,
       });
-
     } catch (error) {
       this.logger?.error('浏览器池初始化失败', { error: error.message });
       throw new NetworkError('浏览器池初始化失败', { cause: error });
@@ -114,10 +113,10 @@ export class BrowserPool extends EventEmitter {
           '--window-size=1920,1080',
           '--start-maximized',
           '--disable-notifications',
-          '--disable-popup-blocking'
+          '--disable-popup-blocking',
         ],
         ignoreDefaultArgs: ['--enable-automation'],
-        ...this.options.launchOptions
+        ...this.options.launchOptions,
       };
 
       const browser = await puppeteer.launch(launchOptions);
@@ -138,12 +137,11 @@ export class BrowserPool extends EventEmitter {
       });
 
       this.logger?.debug('创建了新的浏览器实例', {
-        browserId: browser.process()?.pid || 'unknown'
+        browserId: browser.process()?.pid || 'unknown',
       });
 
       this.emit('browser-created', { browser });
       return browser;
-
     } catch (error) {
       this.stats.errors++;
       this.logger?.error('创建浏览器失败', { error: error.message });
@@ -170,12 +168,12 @@ export class BrowserPool extends EventEmitter {
     if (this.availableBrowsers.length > 0) {
       const browser = this.availableBrowsers.shift();
       this.busyBrowsers.push(browser);
-      
+
       this.emit('browser-acquired', {
         browserId: browser.process()?.pid || 'unknown',
         available: this.availableBrowsers.length,
         busy: this.busyBrowsers.length,
-        stats: { ...this.stats }
+        stats: { ...this.stats },
       });
 
       return browser;
@@ -190,9 +188,9 @@ export class BrowserPool extends EventEmitter {
    */
   async waitForAvailableBrowser() {
     const maxWaitTime = 45000; // 45秒总超时
-    const checkInterval = 500;   // 500ms检查间隔
+    const checkInterval = 500; // 500ms检查间隔
     const startTime = Date.now();
-    
+
     return new Promise((resolve, reject) => {
       const cleanup = () => {
         this.stats.activeRequests = Math.max(0, this.stats.activeRequests - 1);
@@ -216,7 +214,7 @@ export class BrowserPool extends EventEmitter {
               maxWaitTime: maxWaitTime,
               available: this.availableBrowsers.length,
               busy: this.busyBrowsers.length,
-              total: this.browsers.length
+              total: this.browsers.length,
             });
             reject(new Error(`获取浏览器超时 (${elapsed}ms)`));
             return;
@@ -225,12 +223,12 @@ export class BrowserPool extends EventEmitter {
           // 如果有可用浏览器
           if (this.availableBrowsers.length > 0) {
             const browser = this.availableBrowsers.shift();
-            
+
             // 检查浏览器是否还连接
             if (!browser.isConnected()) {
               this.logger?.warn('发现断开的浏览器，尝试重新创建');
               await this.handleBrowserDisconnect(browser);
-              
+
               // 尝试创建新浏览器替换
               try {
                 const newBrowser = await this.createBrowser();
@@ -239,20 +237,20 @@ export class BrowserPool extends EventEmitter {
               } catch (error) {
                 this.logger?.error('重新创建浏览器失败', { error: error.message });
               }
-              
+
               // 继续等待
               setTimeout(checkAvailable, checkInterval);
               return;
             }
 
             this.busyBrowsers.push(browser);
-            
+
             this.emit('browser-acquired', {
               browserId: browser.process()?.pid || 'unknown',
               available: this.availableBrowsers.length,
               busy: this.busyBrowsers.length,
               waitTime: elapsed,
-              stats: { ...this.stats }
+              stats: { ...this.stats },
             });
 
             resolve(browser);
@@ -266,13 +264,13 @@ export class BrowserPool extends EventEmitter {
               const newBrowser = await this.createBrowser();
               this.browsers.push(newBrowser);
               this.busyBrowsers.push(newBrowser);
-              
+
               this.emit('browser-acquired', {
                 browserId: newBrowser.process()?.pid || 'unknown',
                 available: this.availableBrowsers.length,
                 busy: this.busyBrowsers.length,
                 waitTime: elapsed,
-                created: true
+                created: true,
               });
 
               resolve(newBrowser);
@@ -284,7 +282,6 @@ export class BrowserPool extends EventEmitter {
 
           // 继续等待
           setTimeout(checkAvailable, checkInterval);
-
         } catch (error) {
           cleanup();
           reject(error);
@@ -315,12 +312,12 @@ export class BrowserPool extends EventEmitter {
     // 检查浏览器是否还连接
     if (browser.isConnected()) {
       this.availableBrowsers.push(browser);
-      
+
       this.emit('browser-released', {
         browserId: browser.process()?.pid || 'unknown',
         available: this.availableBrowsers.length,
         busy: this.busyBrowsers.length,
-        stats: { ...this.stats }
+        stats: { ...this.stats },
       });
     } else {
       this.logger?.warn('释放的浏览器已断开连接');
@@ -334,9 +331,9 @@ export class BrowserPool extends EventEmitter {
    */
   async handleBrowserDisconnect(browser) {
     this.stats.disconnected++;
-    
+
     this.logger?.warn('浏览器断开连接', {
-      browserId: browser.process()?.pid || 'unknown'
+      browserId: browser.process()?.pid || 'unknown',
     });
 
     // 记录断开的浏览器
@@ -362,7 +359,7 @@ export class BrowserPool extends EventEmitter {
 
     this.emit('browser-disconnected', {
       browserId: browser.process()?.pid || 'unknown',
-      totalBrowsers: this.browsers.length
+      totalBrowsers: this.browsers.length,
     });
 
     // 如果浏览器池还在运行，尝试创建新的浏览器实例替代
@@ -371,13 +368,12 @@ export class BrowserPool extends EventEmitter {
         const newBrowser = await this.createBrowser();
         this.browsers.push(newBrowser);
         this.availableBrowsers.push(newBrowser);
-        
-        this.logger?.info('创建了新的浏览器实例替代断开的实例');
-        
-        this.emit('browser-replaced', {
-          newBrowserId: newBrowser.process()?.pid || 'unknown'
-        });
 
+        this.logger?.info('创建了新的浏览器实例替代断开的实例');
+
+        this.emit('browser-replaced', {
+          newBrowserId: newBrowser.process()?.pid || 'unknown',
+        });
       } catch (error) {
         this.logger?.error('创建替代浏览器失败', { error: error.message });
         this.emit('browser-replace-failed', { error: error.message });
@@ -396,7 +392,7 @@ export class BrowserPool extends EventEmitter {
       availableBrowsers: this.availableBrowsers.length,
       busyBrowsers: this.busyBrowsers.length,
       maxBrowsers: this.options.maxBrowsers,
-      stats: { ...this.stats }
+      stats: { ...this.stats },
     };
   }
 
@@ -435,15 +431,13 @@ export class BrowserPool extends EventEmitter {
    * 清理无效的浏览器实例
    */
   async cleanup() {
-    const invalidBrowsers = this.browsers.filter(browser => !browser.isConnected());
-    
+    const invalidBrowsers = this.browsers.filter((browser) => !browser.isConnected());
+
     if (invalidBrowsers.length > 0) {
       this.logger?.info(`清理 ${invalidBrowsers.length} 个无效浏览器实例`);
-      
+
       // Use Promise.all to wait for all disconnect handlers
-      await Promise.all(
-        invalidBrowsers.map(browser => this.handleBrowserDisconnect(browser))
-      );
+      await Promise.all(invalidBrowsers.map((browser) => this.handleBrowserDisconnect(browser)));
     }
   }
 

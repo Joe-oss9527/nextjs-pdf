@@ -27,12 +27,12 @@ async function testConfigValidation() {
     allowedDomains: ['code.claude.com'],
     sectionEntryPoints: [
       'https://code.claude.com/docs/en/overview',
-      'https://code.claude.com/docs/en/sub-agents'
+      'https://code.claude.com/docs/en/sub-agents',
     ],
     sectionTitles: {
       'https://code.claude.com/docs/en/overview': 'Getting started',
-      'https://code.claude.com/docs/en/sub-agents': 'Build with Claude Code'
-    }
+      'https://code.claude.com/docs/en/sub-agents': 'Build with Claude Code',
+    },
   };
 
   try {
@@ -68,12 +68,16 @@ async function testMetadataService() {
 
     const testConfig = {
       pdfDir: tempDir,
-      metadata: { directory: 'metadata' }
+      metadata: { directory: 'metadata' },
     };
 
     const fileService = new FileService(createLogger('FileService'));
     const pathService = new PathService(testConfig, createLogger('PathService'));
-    const metadataService = new MetadataService(fileService, pathService, createLogger('MetadataService'));
+    const metadataService = new MetadataService(
+      fileService,
+      pathService,
+      createLogger('MetadataService')
+    );
 
     // 测试数据
     const testStructure = {
@@ -84,23 +88,21 @@ async function testMetadataService() {
           entryUrl: 'https://code.claude.com/docs/en/overview',
           pages: [
             { index: '0', url: 'https://code.claude.com/docs/en/overview', order: 0 },
-            { index: '1', url: 'https://code.claude.com/docs/en/installation', order: 1 }
-          ]
+            { index: '1', url: 'https://code.claude.com/docs/en/installation', order: 1 },
+          ],
         },
         {
           index: 1,
           title: 'Build with Claude Code',
           entryUrl: 'https://code.claude.com/docs/en/sub-agents',
-          pages: [
-            { index: '2', url: 'https://code.claude.com/docs/en/sub-agents', order: 0 }
-          ]
-        }
+          pages: [{ index: '2', url: 'https://code.claude.com/docs/en/sub-agents', order: 0 }],
+        },
       ],
       urlToSection: {
         'https://code.claude.com/docs/en/overview': 0,
         'https://code.claude.com/docs/en/installation': 0,
-        'https://code.claude.com/docs/en/sub-agents': 1
-      }
+        'https://code.claude.com/docs/en/sub-agents': 1,
+      },
     };
 
     // 保存
@@ -124,14 +126,15 @@ async function testMetadataService() {
     if (loaded.sections?.length === testStructure.sections.length) {
       console.log('✅ Section数量匹配');
     } else {
-      throw new Error(`Section数量不匹配: 期望${testStructure.sections.length}, 实际${loaded.sections?.length}`);
+      throw new Error(
+        `Section数量不匹配: 期望${testStructure.sections.length}, 实际${loaded.sections?.length}`
+      );
     }
 
     // 清理
     await fs.rm(tempDir, { recursive: true, force: true });
     console.log('✅ MetadataService测试通过');
     return true;
-
   } catch (error) {
     console.error('❌ MetadataService测试失败:', error.message);
     // 清理
@@ -152,14 +155,12 @@ async function testSectionStructureFormat() {
         index: 0,
         title: 'Section Title',
         entryUrl: 'https://example.com/section1',
-        pages: [
-          { index: '0', url: 'https://example.com/page1', order: 0 }
-        ]
-      }
+        pages: [{ index: '0', url: 'https://example.com/page1', order: 0 }],
+      },
     ],
     urlToSection: {
-      'https://example.com/page1': 0
-    }
+      'https://example.com/page1': 0,
+    },
   };
 
   console.log('预期的JSON结构：');
@@ -182,7 +183,7 @@ async function main() {
   console.log('📊 测试结果汇总');
   console.log('='.repeat(50));
 
-  const passed = results.filter(r => r).length;
+  const passed = results.filter((r) => r).length;
   const total = results.length;
 
   console.log(`通过: ${passed}/${total}`);
@@ -197,7 +198,7 @@ async function main() {
   }
 }
 
-main().catch(error => {
+main().catch((error) => {
   console.error('❌ 测试执行失败:', error);
   process.exit(1);
 });

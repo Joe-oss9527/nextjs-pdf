@@ -12,22 +12,22 @@ describe('StateManager', () => {
     // Mock dependencies
     mockFileService = {
       readJson: jest.fn(),
-      writeJson: jest.fn()
+      writeJson: jest.fn(),
     };
 
     mockPathService = {
-      getMetadataPath: jest.fn((type) => `/metadata/${type}.json`)
+      getMetadataPath: jest.fn((type) => `/metadata/${type}.json`),
     };
 
     mockLogger = {
       info: jest.fn(),
       warn: jest.fn(),
       error: jest.fn(),
-      debug: jest.fn()
+      debug: jest.fn(),
     };
 
     stateManager = new StateManager(mockFileService, mockPathService, mockLogger);
-    
+
     // Clear all timers
     jest.clearAllTimers();
     jest.useFakeTimers();
@@ -59,11 +59,11 @@ describe('StateManager', () => {
       const mockProgress = {
         processedUrls: ['url1', 'url2'],
         failedUrls: [{ url: 'url3', error: 'Error' }],
-        urlToIndex: { 'url1': 1, 'url2': 2 },
-        startTime: '2024-03-15T10:00:00Z'
+        urlToIndex: { url1: 1, url2: 2 },
+        startTime: '2024-03-15T10:00:00Z',
       };
       const mockImageFailures = [{ url: 'img1.jpg' }];
-      const mockUrlMapping = { 'url1': { path: '/path1' } };
+      const mockUrlMapping = { url1: { path: '/path1' } };
 
       mockFileService.readJson
         .mockResolvedValueOnce(mockProgress)
@@ -100,10 +100,9 @@ describe('StateManager', () => {
 
       const emittedError = await errorPromise;
       expect(emittedError).toBe(error);
-      expect(mockLogger.warn).toHaveBeenCalledWith(
-        '状态加载失败，使用空状态',
-        { error: 'Read error' }
-      );
+      expect(mockLogger.warn).toHaveBeenCalledWith('状态加载失败，使用空状态', {
+        error: 'Read error',
+      });
     });
 
     test('应该处理空的状态数据', async () => {
@@ -143,24 +142,22 @@ describe('StateManager', () => {
         expect.objectContaining({
           processedUrls: ['url1'],
           failedUrls: [{ url: 'url2', error: 'Network error' }],
-          urlToIndex: { 'url1': 1 },
+          urlToIndex: { url1: 1 },
           startTime: new Date('2024-03-15T10:00:00Z'),
           savedAt: expect.any(String),
-          stats: expect.any(Object)
+          stats: expect.any(Object),
         })
       );
 
       // 验证图片失败记录保存
-      expect(mockFileService.writeJson).toHaveBeenCalledWith(
-        '/metadata/imageLoadFailures.json',
-        [{ url: 'img1.jpg', timestamp: expect.any(String) }]
-      );
+      expect(mockFileService.writeJson).toHaveBeenCalledWith('/metadata/imageLoadFailures.json', [
+        { url: 'img1.jpg', timestamp: expect.any(String) },
+      ]);
 
       // 验证URL映射保存
-      expect(mockFileService.writeJson).toHaveBeenCalledWith(
-        '/metadata/urlMapping.json',
-        { 'url1': { path: '/path1', timestamp: expect.any(String) } }
-      );
+      expect(mockFileService.writeJson).toHaveBeenCalledWith('/metadata/urlMapping.json', {
+        url1: { path: '/path1', timestamp: expect.any(String) },
+      });
 
       await savedPromise;
       expect(stateManager.state.lastSaveTime).toBeDefined();
@@ -171,7 +168,7 @@ describe('StateManager', () => {
       mockFileService.writeJson.mockClear();
 
       await stateManager.save();
-      
+
       expect(mockFileService.writeJson).not.toHaveBeenCalled();
     });
 
@@ -180,7 +177,7 @@ describe('StateManager', () => {
       mockFileService.writeJson.mockClear();
 
       await stateManager.save(true);
-      
+
       expect(mockFileService.writeJson).toHaveBeenCalled();
     });
 
@@ -196,10 +193,7 @@ describe('StateManager', () => {
 
       const emittedError = await errorPromise;
       expect(emittedError).toBe(error);
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        '状态保存失败',
-        { error: 'Write error' }
-      );
+      expect(mockLogger.error).toHaveBeenCalledWith('状态保存失败', { error: 'Write error' });
     });
   });
 
@@ -208,15 +202,12 @@ describe('StateManager', () => {
       stateManager.startAutoSave();
 
       expect(stateManager.autoSaveTimer).toBeDefined();
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        '启动自动保存',
-        { 间隔: '30秒' }
-      );
+      expect(mockLogger.info).toHaveBeenCalledWith('启动自动保存', { 间隔: '30秒' });
     });
 
     test('应该定期自动保存', async () => {
       const saveSpy = jest.spyOn(stateManager, 'save').mockResolvedValue();
-      
+
       stateManager.startAutoSave();
 
       // 快进30秒
@@ -230,7 +221,7 @@ describe('StateManager', () => {
       const firstTimer = stateManager.autoSaveTimer;
 
       stateManager.startAutoSave();
-      
+
       expect(stateManager.autoSaveTimer).toBe(firstTimer);
     });
 
@@ -244,17 +235,14 @@ describe('StateManager', () => {
 
     test('应该处理自动保存错误', async () => {
       const saveSpy = jest.spyOn(stateManager, 'save').mockRejectedValue(new Error('Save error'));
-      
+
       stateManager.startAutoSave();
       jest.advanceTimersByTime(30000);
 
       // 等待异步操作
       await Promise.resolve();
 
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        '自动保存失败',
-        { error: 'Save error' }
-      );
+      expect(mockLogger.error).toHaveBeenCalledWith('自动保存失败', { error: 'Save error' });
     });
   });
 
@@ -286,7 +274,7 @@ describe('StateManager', () => {
       return processedPromise.then((event) => {
         expect(event).toEqual({
           url: 'http://example.com',
-          total: 1
+          total: 1,
         });
       });
     });
@@ -312,7 +300,7 @@ describe('StateManager', () => {
       return failedPromise.then((event) => {
         expect(event).toEqual({
           url: 'http://example.com',
-          error: 'Network error'
+          error: 'Network error',
         });
       });
     });
@@ -325,7 +313,7 @@ describe('StateManager', () => {
 
       expect(failed).toEqual([
         ['url1', 'Error 1'],
-        ['url2', 'Error 2']
+        ['url2', 'Error 2'],
       ]);
     });
 
@@ -340,7 +328,6 @@ describe('StateManager', () => {
     });
   });
 
-
   describe('图片加载失败管理', () => {
     test('markImageLoadFailure应该记录失败', () => {
       const failurePromise = new Promise((resolve) => {
@@ -353,7 +340,7 @@ describe('StateManager', () => {
 
       return failurePromise.then((event) => {
         expect(event).toEqual({
-          url: 'http://example.com/image.jpg'
+          url: 'http://example.com/image.jpg',
         });
       });
     });
@@ -381,7 +368,7 @@ describe('StateManager', () => {
         imageLoadFailures: 1,
         successRate: '66.67',
         startTime: stateManager.state.startTime,
-        elapsed: expect.any(Number)
+        elapsed: expect.any(Number),
       });
       expect(stats.elapsed).toBeGreaterThan(0);
     });
@@ -397,7 +384,7 @@ describe('StateManager', () => {
         imageLoadFailures: 0,
         successRate: 0,
         startTime: null,
-        elapsed: 0
+        elapsed: 0,
       });
     });
   });
@@ -461,15 +448,12 @@ describe('StateManager', () => {
           failedUrls: [{ url: 'url2', error: 'Error' }],
           imageLoadFailures: ['img1'],
           processedFiles: [{ url: 'url1', path: '/path1' }],
-          generatedAt: expect.any(String)
+          generatedAt: expect.any(String),
         })
       );
 
       expect(report.summary).toBeDefined();
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        '导出状态报告',
-        { path: '/reports/test.json' }
-      );
+      expect(mockLogger.info).toHaveBeenCalledWith('导出状态报告', { path: '/reports/test.json' });
     });
   });
 });

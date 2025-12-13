@@ -19,7 +19,7 @@ describe('BrowserPool', () => {
       on: jest.fn(),
       close: jest.fn(),
       isConnected: jest.fn().mockReturnValue(true),
-      process: jest.fn().mockReturnValue({ pid: pid + browserCount++ })
+      process: jest.fn().mockReturnValue({ pid: pid + browserCount++ }),
     };
   };
 
@@ -31,7 +31,7 @@ describe('BrowserPool', () => {
       debug: jest.fn(),
       info: jest.fn(),
       warn: jest.fn(),
-      error: jest.fn()
+      error: jest.fn(),
     };
 
     // Configure mocks
@@ -39,13 +39,13 @@ describe('BrowserPool', () => {
     puppeteer.use.mockReturnValue(undefined);
     StealthPlugin.mockReturnValue({
       name: 'stealth',
-      _isPuppeteerExtraPlugin: true
+      _isPuppeteerExtraPlugin: true,
     });
 
     browserPool = new BrowserPool({
       logger: mockLogger,
       maxBrowsers: 2,
-      headless: true
+      headless: true,
     });
   });
 
@@ -73,7 +73,7 @@ describe('BrowserPool', () => {
         disconnected: 0,
         errors: 0,
         totalRequests: 0,
-        activeRequests: 0
+        activeRequests: 0,
       });
     });
   });
@@ -107,7 +107,10 @@ describe('BrowserPool', () => {
 
       expect(browserPool.browsers).toHaveLength(1);
       expect(browserPool.isInitialized).toBe(true);
-      expect(mockLogger.error).toHaveBeenCalledWith('创建第 2 个浏览器实例失败', expect.any(Object));
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        '创建第 2 个浏览器实例失败',
+        expect.any(Object)
+      );
     });
 
     it('should throw if no browsers can be created', async () => {
@@ -135,11 +138,13 @@ describe('BrowserPool', () => {
       expect(browser).toHaveProperty('isConnected');
       expect(browser).toHaveProperty('on');
       expect(browser).toHaveProperty('process');
-      expect(puppeteer.launch).toHaveBeenCalledWith(expect.objectContaining({
-        headless: true,
-        defaultViewport: { width: 1920, height: 1080 },
-        args: expect.arrayContaining(['--no-sandbox', '--disable-gpu'])
-      }));
+      expect(puppeteer.launch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          headless: true,
+          defaultViewport: { width: 1920, height: 1080 },
+          args: expect.arrayContaining(['--no-sandbox', '--disable-gpu']),
+        })
+      );
       expect(browserPool.stats.created).toBe(1);
     });
 
@@ -202,12 +207,14 @@ describe('BrowserPool', () => {
 
       await browserPool.getBrowser();
 
-      expect(listener).toHaveBeenCalledWith(expect.objectContaining({
-        stats: expect.objectContaining({
-          totalRequests: 1,
-          activeRequests: 1
+      expect(listener).toHaveBeenCalledWith(
+        expect.objectContaining({
+          stats: expect.objectContaining({
+            totalRequests: 1,
+            activeRequests: 1,
+          }),
         })
-      }));
+      );
     });
   });
 
@@ -242,11 +249,13 @@ describe('BrowserPool', () => {
       const browser = await browserPool.getBrowser();
       await browserPool.releaseBrowser(browser);
 
-      expect(listener).toHaveBeenCalledWith(expect.objectContaining({
-        stats: expect.objectContaining({
-          activeRequests: 0
+      expect(listener).toHaveBeenCalledWith(
+        expect.objectContaining({
+          stats: expect.objectContaining({
+            activeRequests: 0,
+          }),
         })
-      }));
+      );
     });
   });
 
@@ -259,7 +268,7 @@ describe('BrowserPool', () => {
       await browserPool.close();
 
       expect(browserPool.isClosed).toBe(true);
-      expect(browserPool.browsers.every(browser => browser.close)).toBe(true);
+      expect(browserPool.browsers.every((browser) => browser.close)).toBe(true);
     });
 
     it('should not close twice', async () => {

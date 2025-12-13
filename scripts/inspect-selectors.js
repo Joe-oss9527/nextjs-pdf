@@ -7,7 +7,7 @@ puppeteer.use(StealthPlugin());
 async function inspectSelectors() {
   const browser = await puppeteer.launch({
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
 
   const page = await browser.newPage();
@@ -15,11 +15,11 @@ async function inspectSelectors() {
   console.log('Loading page...');
   await page.goto('https://code.claude.com/docs/en/overview', {
     waitUntil: 'domcontentloaded',
-    timeout: 15000
+    timeout: 15000,
   });
 
   // 等待动态内容加载
-  await new Promise(resolve => setTimeout(resolve, 3000));
+  await new Promise((resolve) => setTimeout(resolve, 3000));
 
   console.log('\n=== Checking Content Selectors ===\n');
 
@@ -31,15 +31,15 @@ async function inspectSelectors() {
     '.docs-content',
     '#content-area',
     '[id*="content"]',
-    '[class*="content"]'
+    '[class*="content"]',
   ];
 
   for (const selector of selectors) {
     const element = await page.$(selector);
     if (element) {
-      const text = await element.evaluate(el => el.textContent?.substring(0, 100));
-      const className = await element.evaluate(el => el.className);
-      const id = await element.evaluate(el => el.id);
+      const text = await element.evaluate((el) => el.textContent?.substring(0, 100));
+      const className = await element.evaluate((el) => el.className);
+      const id = await element.evaluate((el) => el.id);
       console.log(`✓ Found: ${selector}`);
       console.log(`  - ID: "${id}"`);
       console.log(`  - Class: "${className}"`);
@@ -58,13 +58,13 @@ async function inspectSelectors() {
     '[data-component*="SideNav"] a[href]',
     '[class*="sidebar"] a[href]',
     '[id*="sidebar"] a[href]',
-    'a[href^="/docs/en/"]'
+    'a[href^="/docs/en/"]',
   ];
 
   for (const selector of navSelectors) {
     const elements = await page.$$(selector);
     if (elements.length > 0) {
-      const firstHref = await elements[0].evaluate(el => el.href);
+      const firstHref = await elements[0].evaluate((el) => el.href);
       console.log(`✓ Found ${elements.length} links: ${selector}`);
       console.log(`  - First link: ${firstHref}`);
       console.log('');

@@ -36,7 +36,9 @@ export class Scraper extends EventEmitter {
     this.isRunning = false;
     this.startTime = null;
 
-    this.logger.info('Scraper constructor called', { hasTranslationService: !!this.translationService });
+    this.logger.info('Scraper constructor called', {
+      hasTranslationService: !!this.translationService,
+    });
 
     // 绑定事件处理
     this._bindEvents();
@@ -50,7 +52,7 @@ export class Scraper extends EventEmitter {
     this.stateManager.on('stateLoaded', (state) => {
       this.logger.info('爬虫状态已加载', {
         processedCount: state.processedUrls.size,
-        failedCount: state.failedUrls.size
+        failedCount: state.failedUrls.size,
       });
     });
 
@@ -104,11 +106,10 @@ export class Scraper extends EventEmitter {
       this.isInitialized = true;
       this.logger.info('爬虫初始化完成');
       this.emit('initialized');
-
     } catch (error) {
       this.logger.error('爬虫初始化失败', {
         error: error.message,
-        stack: error.stack
+        stack: error.stack,
       });
       throw error;
     }
@@ -125,14 +126,18 @@ export class Scraper extends EventEmitter {
     this.logger.debug('Checking targetUrls', { targetUrls: this.config.targetUrls });
 
     // 1. 优先检查 targetUrls 配置 (Explicit URLs mode)
-    if (this.config.targetUrls && Array.isArray(this.config.targetUrls) && this.config.targetUrls.length > 0) {
+    if (
+      this.config.targetUrls &&
+      Array.isArray(this.config.targetUrls) &&
+      this.config.targetUrls.length > 0
+    ) {
       this.logger.info('使用配置中的目标URL列表', { count: this.config.targetUrls.length });
 
       const sectionInfo = {
         index: 0,
         title: 'Custom Selection',
         entryUrl: this.config.rootURL,
-        urls: this.config.targetUrls
+        urls: this.config.targetUrls,
       };
 
       return this._processCollectedUrls([sectionInfo]);
@@ -166,7 +171,7 @@ export class Scraper extends EventEmitter {
             index: sectionIndex,
             title: sectionTitle,
             entryUrl: entryUrl,
-            pages: []
+            pages: [],
           };
 
           // 记录该section的所有URL及其顺序
@@ -178,7 +183,7 @@ export class Scraper extends EventEmitter {
             urlToSectionMap.set(url, {
               sectionIndex,
               orderInSection,
-              rawIndex: startIndex
+              rawIndex: startIndex,
             });
           });
 
@@ -187,13 +192,12 @@ export class Scraper extends EventEmitter {
           this.logger.info(`Section ${sectionIndex + 1}/${entryPoints.length} 收集完成`, {
             title: sectionTitle,
             entryUrl,
-            urlCount: entryUrls.length
+            urlCount: entryUrls.length,
           });
-
         } catch (entryError) {
           this.logger.error('入口URL收集失败，将跳过该入口', {
             entryUrl,
-            error: entryError.message
+            error: entryError.message,
           });
 
           // 即使失败也添加一个空section占位
@@ -201,23 +205,21 @@ export class Scraper extends EventEmitter {
             index: sectionIndex,
             title: `Section ${sectionIndex + 1}`,
             entryUrl: entryUrl,
-            pages: []
+            pages: [],
           });
         }
       }
       this.logger.info(`提取到 ${rawUrls.length} 个原始URL，分属 ${sections.length} 个section`, {
-        entryPointCount: entryPoints.length
+        entryPointCount: entryPoints.length,
       });
 
       return this._processCollectedUrls(sections, urlToSectionMap, rawUrls);
-
     } catch (error) {
       this.logger.error('URL收集失败', {
         error: error.message,
-        stack: error.stack
+        stack: error.stack,
       });
       throw new NetworkError('URL收集失败', this.config.rootURL, error);
-
     } finally {
       if (page) {
         // 🔧 修复：在关闭页面前清理图片服务
@@ -225,7 +227,7 @@ export class Scraper extends EventEmitter {
           await this.imageService.cleanupPage(page);
         } catch (cleanupError) {
           this.logger?.debug('URL收集页面的图片服务清理失败（非致命错误）', {
-            error: cleanupError.message
+            error: cleanupError.message,
           });
         }
         await this.pageManager.closePage('url-collector');
@@ -245,13 +247,13 @@ export class Scraper extends EventEmitter {
       urlToSectionMap = new Map();
       rawUrls = [];
 
-      sections.forEach(section => {
+      sections.forEach((section) => {
         if (section.urls) {
           section.urls.forEach((url, order) => {
             rawUrls.push(url);
             urlToSectionMap.set(url, {
               sectionIndex: section.index,
-              orderInSection: order
+              orderInSection: order,
             });
           });
           // 清理临时 urls 字段
@@ -278,13 +280,16 @@ export class Scraper extends EventEmitter {
           const existing = normalizedUrls.get(hash);
           const currentMapping = urlToSectionMap.get(url);
 
-          if (existing.sectionIndex !== currentMapping?.sectionIndex &&
+          if (
+            existing.sectionIndex !== currentMapping?.sectionIndex &&
             existing.sectionIndex !== undefined &&
-            currentMapping?.sectionIndex !== undefined) {
+            currentMapping?.sectionIndex !== undefined
+          ) {
             sectionConflicts.push({
               url: normalized,
               existingSection: sections[existing.sectionIndex]?.title || existing.sectionIndex,
-              conflictSection: sections[currentMapping.sectionIndex]?.title || currentMapping.sectionIndex
+              conflictSection:
+                sections[currentMapping.sectionIndex]?.title || currentMapping.sectionIndex,
             });
           }
           return;
@@ -299,7 +304,7 @@ export class Scraper extends EventEmitter {
             normalized: normalized,
             index: index,
             sectionIndex: sectionMapping?.sectionIndex,
-            orderInSection: sectionMapping?.orderInSection
+            orderInSection: sectionMapping?.orderInSection,
           });
         }
       } catch (error) {
@@ -311,7 +316,7 @@ export class Scraper extends EventEmitter {
     if (sectionConflicts.length > 0) {
       this.logger.warn('检测到URL在多个section中重复', {
         conflictCount: sectionConflicts.length,
-        examples: sectionConflicts.slice(0, 3)
+        examples: sectionConflicts.slice(0, 3),
       });
 
       if (sectionConflicts.length <= 5) {
@@ -320,8 +325,8 @@ export class Scraper extends EventEmitter {
     }
 
     // 构建最终URL队列
-    this.urlQueue = Array.from(normalizedUrls.values()).map(item => item.normalized);
-    this.urlQueue.forEach(url => this.urlSet.add(url));
+    this.urlQueue = Array.from(normalizedUrls.values()).map((item) => item.normalized);
+    this.urlQueue.forEach((url) => this.urlSet.add(url));
 
     // 🔥 新增：构建section结构并填充pages信息
     const urlIndexMap = new Map(); // normalized URL -> final index
@@ -335,21 +340,21 @@ export class Scraper extends EventEmitter {
           section.pages.push({
             index: String(finalIndex), // 转为字符串以匹配articleTitles的键格式
             url: item.normalized,
-            order: item.orderInSection
+            order: item.orderInSection,
           });
         }
       }
     });
 
     // 按order排序每个section的pages
-    sections.forEach(section => {
+    sections.forEach((section) => {
       section.pages.sort((a, b) => a.order - b.order);
     });
 
     // 构建urlToSection快速查找映射
     const urlToSection = {};
-    sections.forEach(section => {
-      section.pages.forEach(page => {
+    sections.forEach((section) => {
+      section.pages.forEach((page) => {
         urlToSection[page.url] = section.index;
       });
     });
@@ -357,7 +362,7 @@ export class Scraper extends EventEmitter {
     // 🔥 新增：保存section结构到元数据
     const sectionStructure = {
       sections,
-      urlToSection
+      urlToSection,
     };
 
     // 保存到元数据服务
@@ -366,7 +371,7 @@ export class Scraper extends EventEmitter {
     // 🔥 日志增强：详细的section统计信息
     this.logger.info('Section结构已保存', {
       sectionCount: sections.length,
-      totalPages: Object.keys(urlToSection).length
+      totalPages: Object.keys(urlToSection).length,
     });
 
     // 输出每个section的详细统计
@@ -375,16 +380,16 @@ export class Scraper extends EventEmitter {
         entryUrl: section.entryUrl,
         pageCount: section.pages.length,
         firstPage: section.pages[0]?.url,
-        lastPage: section.pages[section.pages.length - 1]?.url
+        lastPage: section.pages[section.pages.length - 1]?.url,
       });
     });
 
     // 检测空section
-    const emptySections = sections.filter(s => s.pages.length === 0);
+    const emptySections = sections.filter((s) => s.pages.length === 0);
     if (emptySections.length > 0) {
       this.logger.warn('检测到空section（没有页面）', {
         emptyCount: emptySections.length,
-        titles: emptySections.map(s => s.title)
+        titles: emptySections.map((s) => s.title),
       });
     }
 
@@ -394,14 +399,14 @@ export class Scraper extends EventEmitter {
       去重后数量: this.urlQueue.length,
       重复数量: duplicates.size,
       被忽略数量: rawUrls.length - this.urlQueue.length - duplicates.size,
-      section数量: sections.length
+      section数量: sections.length,
     });
 
     // 触发事件，便于外部监听URL收集结果
     this.emit('urlsCollected', {
       totalUrls: this.urlQueue.length,
       duplicates: duplicates.size,
-      sections: sections.length
+      sections: sections.length,
     });
 
     return this.urlQueue;
@@ -415,7 +420,7 @@ export class Scraper extends EventEmitter {
     const entryPoints = [this.config.rootURL];
 
     if (Array.isArray(this.config.sectionEntryPoints)) {
-      this.config.sectionEntryPoints.forEach(url => {
+      this.config.sectionEntryPoints.forEach((url) => {
         if (typeof url === 'string' && url.trim()) {
           entryPoints.push(url.trim());
         }
@@ -432,13 +437,13 @@ export class Scraper extends EventEmitter {
         original: originalLength,
         deduplicated: deduplicated.length,
         duplicates: duplicateCount,
-        hint: 'rootURL可能与sectionEntryPoints中的某个URL重复'
+        hint: 'rootURL可能与sectionEntryPoints中的某个URL重复',
       });
 
       // 找出具体的重复项
       const seen = new Set();
       const duplicates = [];
-      entryPoints.forEach(url => {
+      entryPoints.forEach((url) => {
         if (seen.has(url)) {
           duplicates.push(url);
         } else {
@@ -464,117 +469,125 @@ export class Scraper extends EventEmitter {
     try {
       // 1. 优先使用配置中的手动映射
       if (this.config.sectionTitles && this.config.sectionTitles[entryUrl]) {
-        this.logger.debug(`使用配置的section标题: ${this.config.sectionTitles[entryUrl]}`, { entryUrl });
+        this.logger.debug(`使用配置的section标题: ${this.config.sectionTitles[entryUrl]}`, {
+          entryUrl,
+        });
         return this.config.sectionTitles[entryUrl];
       }
 
       // 2. 从导航菜单中提取标题
-      const title = await page.evaluate((targetUrl, navSelector) => {
-        try {
-          // 规范化URL以便比较
-          const normalizeUrl = (url) => {
-            try {
-              const parsed = new URL(url, window.location.href);
-              return parsed.href.replace(/\/$/, ''); // 移除尾部斜杠
-            } catch {
-              return url;
-            }
-          };
-
-          const normalizedTarget = normalizeUrl(targetUrl);
-
-          // 查找所有导航链接
-          const navLinks = document.querySelectorAll(navSelector);
-
-          // 🔥 改进：使用更严格的URL匹配逻辑
-          let bestMatch = null;
-          let bestMatchScore = -1;
-
-          for (const link of navLinks) {
-            const href = link.href || link.getAttribute('href');
-            if (!href) continue;
-
-            const normalizedHref = normalizeUrl(href);
-
-            // 计算匹配得分
-            let score = 0;
-
-            // 1. 精确匹配：最高优先级
-            if (normalizedHref === normalizedTarget) {
-              score = 1000;
-            }
-            // 2. 路径深度相同的前缀匹配：次高优先级
-            else {
+      const title = await page.evaluate(
+        (targetUrl, navSelector) => {
+          try {
+            // 规范化URL以便比较
+            const normalizeUrl = (url) => {
               try {
-                const targetPath = new URL(normalizedTarget).pathname;
-                const hrefPath = new URL(normalizedHref).pathname;
-
-                const targetDepth = targetPath.split('/').filter(Boolean).length;
-                const hrefDepth = hrefPath.split('/').filter(Boolean).length;
-
-                // 只匹配相同深度且完全相等的路径（避免误匹配相似前缀，如 overview vs overview-advanced）
-                if (targetDepth === hrefDepth && targetPath === hrefPath) {
-                  score = 500;
-                }
-                // 允许href比target短1级（用于section入口）
-                else if (targetDepth === hrefDepth + 1 && targetPath.startsWith(hrefPath + '/')) {
-                  score = 300;
-                }
-              } catch (e) {
-                // URL解析失败，跳过
-                continue;
+                const parsed = new URL(url, window.location.href);
+                return parsed.href.replace(/\/$/, ''); // 移除尾部斜杠
+              } catch {
+                return url;
               }
-            }
+            };
 
-            // 如果匹配分数更高，更新最佳匹配
-            if (score > bestMatchScore) {
-              const text = link.textContent?.trim();
+            const normalizedTarget = normalizeUrl(targetUrl);
 
-              // 如果链接本身没有文本，尝试找最近的父节点标题
-              let finalText = text;
-              if (!finalText || finalText.length < 2) {
-                let parent = link.parentElement;
-                let attempts = 0;
-                while (parent && attempts < 3) {
-                  const heading = parent.querySelector('h1, h2, h3, h4, h5, h6, [role="heading"]');
-                  if (heading) {
-                    finalText = heading.textContent?.trim();
-                    break;
+            // 查找所有导航链接
+            const navLinks = document.querySelectorAll(navSelector);
+
+            // 🔥 改进：使用更严格的URL匹配逻辑
+            let bestMatch = null;
+            let bestMatchScore = -1;
+
+            for (const link of navLinks) {
+              const href = link.href || link.getAttribute('href');
+              if (!href) continue;
+
+              const normalizedHref = normalizeUrl(href);
+
+              // 计算匹配得分
+              let score = 0;
+
+              // 1. 精确匹配：最高优先级
+              if (normalizedHref === normalizedTarget) {
+                score = 1000;
+              }
+              // 2. 路径深度相同的前缀匹配：次高优先级
+              else {
+                try {
+                  const targetPath = new URL(normalizedTarget).pathname;
+                  const hrefPath = new URL(normalizedHref).pathname;
+
+                  const targetDepth = targetPath.split('/').filter(Boolean).length;
+                  const hrefDepth = hrefPath.split('/').filter(Boolean).length;
+
+                  // 只匹配相同深度且完全相等的路径（避免误匹配相似前缀，如 overview vs overview-advanced）
+                  if (targetDepth === hrefDepth && targetPath === hrefPath) {
+                    score = 500;
                   }
-                  parent = parent.parentElement;
-                  attempts++;
+                  // 允许href比target短1级（用于section入口）
+                  else if (targetDepth === hrefDepth + 1 && targetPath.startsWith(hrefPath + '/')) {
+                    score = 300;
+                  }
+                } catch (e) {
+                  // URL解析失败，跳过
+                  continue;
                 }
               }
 
-              if (finalText && finalText.length >= 2) {
-                bestMatch = finalText;
-                bestMatchScore = score;
+              // 如果匹配分数更高，更新最佳匹配
+              if (score > bestMatchScore) {
+                const text = link.textContent?.trim();
 
-                // 如果找到精确匹配，立即返回
-                if (score === 1000) {
-                  return bestMatch;
+                // 如果链接本身没有文本，尝试找最近的父节点标题
+                let finalText = text;
+                if (!finalText || finalText.length < 2) {
+                  let parent = link.parentElement;
+                  let attempts = 0;
+                  while (parent && attempts < 3) {
+                    const heading = parent.querySelector(
+                      'h1, h2, h3, h4, h5, h6, [role="heading"]'
+                    );
+                    if (heading) {
+                      finalText = heading.textContent?.trim();
+                      break;
+                    }
+                    parent = parent.parentElement;
+                    attempts++;
+                  }
+                }
+
+                if (finalText && finalText.length >= 2) {
+                  bestMatch = finalText;
+                  bestMatchScore = score;
+
+                  // 如果找到精确匹配，立即返回
+                  if (score === 1000) {
+                    return bestMatch;
+                  }
                 }
               }
             }
-          }
 
-          // 返回最佳匹配
-          if (bestMatch) {
-            return bestMatch;
-          }
+            // 返回最佳匹配
+            if (bestMatch) {
+              return bestMatch;
+            }
 
-          // 如果导航中没找到，尝试从页面主标题提取
-          const mainHeading = document.querySelector('h1, [role="heading"][aria-level="1"]');
-          if (mainHeading) {
-            return mainHeading.textContent?.trim();
-          }
+            // 如果导航中没找到，尝试从页面主标题提取
+            const mainHeading = document.querySelector('h1, [role="heading"][aria-level="1"]');
+            if (mainHeading) {
+              return mainHeading.textContent?.trim();
+            }
 
-          return null;
-        } catch (e) {
-          console.error('提取section标题失败:', e);
-          return null;
-        }
-      }, entryUrl, this.config.navLinksSelector);
+            return null;
+          } catch (e) {
+            console.error('提取section标题失败:', e);
+            return null;
+          }
+        },
+        entryUrl,
+        this.config.navLinksSelector
+      );
 
       if (title) {
         this.logger.debug(`从导航提取到section标题: ${title}`, { entryUrl });
@@ -587,16 +600,15 @@ export class Scraper extends EventEmitter {
       const lastPart = pathParts[pathParts.length - 1];
       const fallbackTitle = lastPart
         .split('-')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ');
 
       this.logger.debug(`使用URL生成的fallback标题: ${fallbackTitle}`, { entryUrl });
       return fallbackTitle;
-
     } catch (error) {
       this.logger.warn('提取section标题失败，使用fallback', {
         entryUrl,
-        error: error.message
+        error: error.message,
       });
 
       // 返回简单的fallback
@@ -622,7 +634,10 @@ export class Scraper extends EventEmitter {
 
     while (true) {
       const startTime = Date.now();
-      this.logger.info(`开始导航到页面 [Page ${pageNum}]`, { currentUrl, waitUntil: 'domcontentloaded' });
+      this.logger.info(`开始导航到页面 [Page ${pageNum}]`, {
+        currentUrl,
+        waitUntil: 'domcontentloaded',
+      });
 
       // 1. 导航到当前页面
       await retry(
@@ -633,14 +648,14 @@ export class Scraper extends EventEmitter {
 
           const response = await page.goto(currentUrl, {
             waitUntil,
-            timeout
+            timeout,
           });
 
           const gotoEndTime = Date.now();
           this.logger.info('page.goto 完成', {
             url: currentUrl,
             duration: gotoEndTime - gotoStartTime,
-            status: response?.status()
+            status: response?.status(),
           });
 
           // 尝试等待内容加载
@@ -659,9 +674,9 @@ export class Scraper extends EventEmitter {
           onRetry: (attempt, error) => {
             this.logger.warn(`页面加载重试 ${attempt}次`, {
               url: currentUrl,
-              error: error.message
+              error: error.message,
             });
-          }
+          },
         }
       );
 
@@ -669,11 +684,11 @@ export class Scraper extends EventEmitter {
       const urls = await page.evaluate((selector) => {
         const elements = Array.from(document.querySelectorAll(selector));
         return elements
-          .map(el => {
+          .map((el) => {
             const href = el.href || el.getAttribute('href');
             return href ? href.trim() : null;
           })
-          .filter(href => href && !href.startsWith('#') && !href.startsWith('javascript:'));
+          .filter((href) => href && !href.startsWith('#') && !href.startsWith('javascript:'));
       }, this.config.navLinksSelector);
 
       this.logger.info(`Page ${pageNum} 提取到 ${urls.length} 个链接`);
@@ -695,7 +710,7 @@ export class Scraper extends EventEmitter {
       // 4. 寻找下一页链接
       const nextPageUrl = await page.evaluate((selector) => {
         // 支持多个选择器，用逗号分隔
-        const selectors = selector.split(',').map(s => s.trim());
+        const selectors = selector.split(',').map((s) => s.trim());
 
         for (const s of selectors) {
           // 尝试找到"下一页"或"Older Posts"等链接
@@ -745,7 +760,7 @@ export class Scraper extends EventEmitter {
     this.logger.debug('URL提取完成', {
       entryUrl,
       totalCount: allUrls.length,
-      pagesScanned: pageNum
+      pagesScanned: pageNum,
     });
 
     return allUrls;
@@ -758,14 +773,14 @@ export class Scraper extends EventEmitter {
     const urls = await page.evaluate((selector) => {
       // 过滤掉顶栏 tab（nav-tabs）里的链接，只保留侧边栏/正文导航
       const all = Array.from(document.querySelectorAll(selector));
-      const elements = all.filter(el => !el.closest('.nav-tabs'));
+      const elements = all.filter((el) => !el.closest('.nav-tabs'));
 
       return elements
-        .map(el => {
+        .map((el) => {
           const href = el.href || el.getAttribute('href');
           return href ? href.trim() : null;
         })
-        .filter(href => href && !href.startsWith('#') && !href.startsWith('javascript:'));
+        .filter((href) => href && !href.startsWith('#') && !href.startsWith('javascript:'));
     }, this.config.navLinksSelector);
 
     this.logger.debug('全局导航URL提取完成', { extractedCount: urls.length });
@@ -780,7 +795,7 @@ export class Scraper extends EventEmitter {
       return false;
     }
 
-    return this.config.ignoreURLs.some(pattern => {
+    return this.config.ignoreURLs.some((pattern) => {
       if (typeof pattern === 'string') {
         return url.includes(pattern);
       }
@@ -805,7 +820,7 @@ export class Scraper extends EventEmitter {
 
       // 检查允许的域名
       if (this.config.allowedDomains && this.config.allowedDomains.length > 0) {
-        const isAllowed = this.config.allowedDomains.some(domain => {
+        const isAllowed = this.config.allowedDomains.some((domain) => {
           return parsedUrl.hostname === domain || parsedUrl.hostname.endsWith('.' + domain);
         });
         if (!isAllowed) {
@@ -822,7 +837,6 @@ export class Scraper extends EventEmitter {
       }
 
       return true;
-
     } catch (error) {
       this.logger.debug('URL验证失败', { url, error: error.message });
       return false;
@@ -843,13 +857,13 @@ export class Scraper extends EventEmitter {
 
     // 移除常见的分隔符和网站名称后缀
     const separators = [
-      ' | ',    // "Overview | Claude Code" -> "Overview"
-      ' - ',    // "Overview - Claude Code" -> "Overview"
-      ' – ',    // en dash
-      ' — ',    // em dash
-      ' :: ',   // "Overview :: Docs" -> "Overview"
-      ' • ',    // bullet
-      ' / '     // "Overview / Docs" -> "Overview"
+      ' | ', // "Overview | Claude Code" -> "Overview"
+      ' - ', // "Overview - Claude Code" -> "Overview"
+      ' – ', // en dash
+      ' — ', // em dash
+      ' :: ', // "Overview :: Docs" -> "Overview"
+      ' • ', // bullet
+      ' / ', // "Overview / Docs" -> "Overview"
     ];
 
     for (const sep of separators) {
@@ -882,31 +896,31 @@ export class Scraper extends EventEmitter {
       // 1. 快速策略 - 适合简单页面
       {
         name: 'domcontentloaded',
-        options: { waitUntil: 'domcontentloaded', timeout: 15000 }
+        options: { waitUntil: 'domcontentloaded', timeout: 15000 },
       },
       // 2. 标准策略 - 等待网络空闲
       {
         name: 'networkidle2',
-        options: { waitUntil: 'networkidle2', timeout: 30000 }
+        options: { waitUntil: 'networkidle2', timeout: 30000 },
       },
       // 3. 完整策略 - 等待所有资源
       {
         name: 'networkidle0',
-        options: { waitUntil: 'networkidle0', timeout: 45000 }
+        options: { waitUntil: 'networkidle0', timeout: 45000 },
       },
       // 4. 最大容忍策略 - 仅等待页面加载
       {
         name: 'load',
-        options: { waitUntil: 'load', timeout: 60000 }
-      }
+        options: { waitUntil: 'load', timeout: 60000 },
+      },
     ];
 
     // 如果配置了首选策略（非 auto），将其移到首位
     const preferredStrategy = this.config.navigationStrategy;
     if (preferredStrategy && preferredStrategy !== 'auto') {
-      const preferred = strategies.find(s => s.name === preferredStrategy);
+      const preferred = strategies.find((s) => s.name === preferredStrategy);
       if (preferred) {
-        const others = strategies.filter(s => s.name !== preferredStrategy);
+        const others = strategies.filter((s) => s.name !== preferredStrategy);
         strategies = [preferred, ...others];
         this.logger.debug(`使用首选导航策略: ${preferredStrategy}`, { url });
       }
@@ -927,12 +941,11 @@ export class Scraper extends EventEmitter {
 
         this.logger.debug(`导航成功使用策略: ${strategy.name}`, { url });
         return { success: true, strategy: strategy.name };
-
       } catch (error) {
         lastError = error;
         this.logger.warn(`导航策略 ${strategy.name} 失败`, {
           url,
-          error: error.message
+          error: error.message,
         });
 
         // 如果是超时错误，继续尝试下一个策略
@@ -941,10 +954,12 @@ export class Scraper extends EventEmitter {
         }
 
         // 如果是其他错误，根据错误类型决定是否继续
-        if (error.message.includes('net::ERR_ABORTED') ||
-          error.message.includes('net::ERR_FAILED')) {
+        if (
+          error.message.includes('net::ERR_ABORTED') ||
+          error.message.includes('net::ERR_FAILED')
+        ) {
           // 网络错误，尝试等待一下再重试
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise((resolve) => setTimeout(resolve, 2000));
           continue;
         }
 
@@ -989,14 +1004,14 @@ export class Scraper extends EventEmitter {
       let contentFound = false;
       try {
         await page.waitForSelector(this.config.contentSelector, {
-          timeout: 10000
+          timeout: 10000,
         });
         contentFound = true;
       } catch (error) {
         this.logger.warn('内容选择器等待超时', {
           url,
           selector: this.config.contentSelector,
-          error: error.message
+          error: error.message,
         });
       }
 
@@ -1028,7 +1043,9 @@ export class Scraper extends EventEmitter {
             }
             // 2b. 尝试 .title/.page-title 等
             else {
-              const titleEl = contentElement.querySelector('title, .title, .page-title, [class*="page-title"], [class*="PageTitle"]');
+              const titleEl = contentElement.querySelector(
+                'title, .title, .page-title, [class*="page-title"], [class*="PageTitle"]'
+              );
               if (titleEl?.innerText?.trim()) {
                 title = titleEl.innerText.trim();
                 source = 'content-title-class';
@@ -1078,7 +1095,7 @@ export class Scraper extends EventEmitter {
       } catch (expandError) {
         this.logger.warn('折叠元素展开失败', {
           url,
-          error: expandError.message
+          error: expandError.message,
         });
       }
 
@@ -1096,7 +1113,9 @@ export class Scraper extends EventEmitter {
         enablePDFStyleProcessing: this.config.enablePDFStyleProcessing,
         type: typeof this.config.enablePDFStyleProcessing,
         strictCheck: this.config.enablePDFStyleProcessing === true,
-        configKeys: Object.keys(this.config).filter(k => k.includes('PDF') || k.includes('Style'))
+        configKeys: Object.keys(this.config).filter(
+          (k) => k.includes('PDF') || k.includes('Style')
+        ),
       });
 
       if (this.config.enablePDFStyleProcessing === true) {
@@ -1105,7 +1124,7 @@ export class Scraper extends EventEmitter {
         } catch (styleError) {
           this.logger.warn('PDF样式处理失败，跳过样式优化', {
             url,
-            error: styleError.message
+            error: styleError.message,
           });
           // 继续生成PDF，即使样式处理失败
         }
@@ -1114,8 +1133,8 @@ export class Scraper extends EventEmitter {
 
       // 🔥 关键修改：生成PDF时使用数字索引而不是哈希
       const pdfPath = this.pathService.getPdfPath(url, {
-        useHash: false,  // 使用索引而不是哈希
-        index: index
+        useHash: false, // 使用索引而不是哈希
+        index: index,
       });
 
       await this.fileService.ensureDirectory(path.dirname(pdfPath));
@@ -1130,7 +1149,7 @@ export class Scraper extends EventEmitter {
         try {
           this.logger.info('使用 Markdown 工作流生成 PDF', {
             url,
-            pdfPath
+            pdfPath,
           });
 
           const markdownContent = await this.markdownService.extractAndConvertPage(
@@ -1138,19 +1157,14 @@ export class Scraper extends EventEmitter {
             this.config.contentSelector
           );
 
-          const markdownWithFrontmatter = this.markdownService.addFrontmatter(
-            markdownContent,
-            {
-              title,
-              url,
-              index
-            }
-          );
+          const markdownWithFrontmatter = this.markdownService.addFrontmatter(markdownContent, {
+            title,
+            url,
+            index,
+          });
 
           const translatedMarkdown = this.translationService
-            ? await this.translationService.translateMarkdown(
-                markdownWithFrontmatter
-              )
+            ? await this.translationService.translateMarkdown(markdownWithFrontmatter)
             : markdownWithFrontmatter;
 
           const markdownOutputDir = path.join(
@@ -1158,23 +1172,11 @@ export class Scraper extends EventEmitter {
             this.config.markdown?.outputDir || 'markdown'
           );
           const baseName = path.basename(pdfPath, '.pdf');
-          const originalMarkdownPath = path.join(
-            markdownOutputDir,
-            `${baseName}.md`
-          );
-          const translatedMarkdownPath = path.join(
-            markdownOutputDir,
-            `${baseName}_translated.md`
-          );
+          const originalMarkdownPath = path.join(markdownOutputDir, `${baseName}.md`);
+          const translatedMarkdownPath = path.join(markdownOutputDir, `${baseName}_translated.md`);
 
-          await this.fileService.writeText(
-            originalMarkdownPath,
-            markdownWithFrontmatter
-          );
-          await this.fileService.writeText(
-            translatedMarkdownPath,
-            translatedMarkdown
-          );
+          await this.fileService.writeText(originalMarkdownPath, markdownWithFrontmatter);
+          await this.fileService.writeText(translatedMarkdownPath, translatedMarkdown);
 
           await this.markdownToPdfService.convertContentToPdf(
             translatedMarkdown,
@@ -1186,7 +1188,7 @@ export class Scraper extends EventEmitter {
         } catch (markdownError) {
           this.logger.warn('Markdown 工作流失败，回退到 Puppeteer PDF', {
             url,
-            error: markdownError.message
+            error: markdownError.message,
           });
 
           // 回退到原始 DOM 翻译 + Puppeteer PDF
@@ -1198,17 +1200,17 @@ export class Scraper extends EventEmitter {
             } catch (translationError) {
               this.logger.warn('翻译失败，继续生成原始PDF', {
                 url,
-                error: translationError.message
+                error: translationError.message,
               });
             }
           }
 
           this.logger.info('开始使用Puppeteer引擎生成PDF（回退模式）', {
-            pdfPath
+            pdfPath,
           });
           const fallbackPdfOptions = {
             ...this.pdfStyleService.getPDFOptions(),
-            path: pdfPath
+            path: pdfPath,
           };
           await page.pdf(fallbackPdfOptions);
           this.logger.info(`PDF已保存: ${pdfPath}`);
@@ -1223,7 +1225,7 @@ export class Scraper extends EventEmitter {
           } catch (translationError) {
             this.logger.warn('翻译失败，继续生成原始PDF', {
               url,
-              error: translationError.message
+              error: translationError.message,
             });
           }
         }
@@ -1231,7 +1233,7 @@ export class Scraper extends EventEmitter {
         this.logger.info('开始使用Puppeteer引擎生成PDF', { pdfPath });
         const pdfOptions = {
           ...this.pdfStyleService.getPDFOptions(),
-          path: pdfPath
+          path: pdfPath,
         };
         await page.pdf(pdfOptions);
         this.logger.info(`PDF已保存: ${pdfPath}`);
@@ -1250,7 +1252,7 @@ export class Scraper extends EventEmitter {
         await this.metadataService.saveArticleTitle(String(index), cleanedTitle);
         this.logger.info(`提取到标题 [${index}]: ${cleanedTitle}`, {
           source: titleInfo.source,
-          original: title !== cleanedTitle ? title : undefined
+          original: title !== cleanedTitle ? title : undefined,
         });
       } else {
         // ⚠️ 警告：标题提取失败
@@ -1258,14 +1260,17 @@ export class Scraper extends EventEmitter {
           contentSelector: this.config.contentSelector,
           source: titleInfo.source,
           titleInfo: titleInfo,
-          hint: 'PDF目录将显示文件名而非实际标题。请检查：' +
+          hint:
+            'PDF目录将显示文件名而非实际标题。请检查：' +
             '\n  1. contentSelector 是否正确匹配页面结构' +
             '\n  2. 页面是否完全加载（检查 navigationWaitUntil 配置）' +
-            '\n  3. 页面是否有 <title> 标签或 h1-h3 标题元素'
+            '\n  3. 页面是否有 <title> 标签或 h1-h3 标题元素',
         });
 
         // 记录到元数据以便后续分析
-        await this.metadataService.logFailedLink(url, index,
+        await this.metadataService.logFailedLink(
+          url,
+          index,
           new Error(`Title extraction failed: source=${titleInfo.source}`)
         );
       }
@@ -1282,20 +1287,19 @@ export class Scraper extends EventEmitter {
         index,
         title,
         pdfPath,
-        imagesLoaded
+        imagesLoaded,
       });
 
       return {
         status: 'success',
         title,
         pdfPath,
-        imagesLoaded
+        imagesLoaded,
       };
-
     } catch (error) {
       this.logger.error(`页面爬取失败 [${index + 1}]: ${url}`, {
         error: error.message,
-        stack: error.stack
+        stack: error.stack,
       });
 
       // 记录失败
@@ -1305,11 +1309,10 @@ export class Scraper extends EventEmitter {
       this.emit('pageScrapeFailed', {
         url,
         index,
-        error: error.message
+        error: error.message,
       });
 
       throw new NetworkError(`页面爬取失败: ${url}`, url, error);
-
     } finally {
       // 🔧 修复：正确的清理顺序
       if (page) {
@@ -1318,7 +1321,7 @@ export class Scraper extends EventEmitter {
           await this.imageService.cleanupPage(page);
         } catch (cleanupError) {
           this.logger?.debug('图片服务页面清理失败（非致命错误）', {
-            error: cleanupError.message
+            error: cleanupError.message,
           });
         }
 
@@ -1360,12 +1363,11 @@ export class Scraper extends EventEmitter {
 
         // 重试间隔
         await delay(this.config.retryDelay || 2000);
-
       } catch (retryError) {
         retryFailCount++;
         this.logger.error(`重试失败: ${url}`, {
           原始错误: errorInfo?.message || 'Unknown',
-          重试错误: retryError.message
+          重试错误: retryError.message,
         });
 
         // 重新标记为失败
@@ -1375,12 +1377,12 @@ export class Scraper extends EventEmitter {
 
     this.logger.info('重试完成', {
       成功: retrySuccessCount,
-      失败: retryFailCount
+      失败: retryFailCount,
     });
 
     this.emit('retryCompleted', {
       successCount: retrySuccessCount,
-      failCount: retryFailCount
+      failCount: retryFailCount,
     });
   }
 
@@ -1413,17 +1415,21 @@ export class Scraper extends EventEmitter {
 
       // 添加任务到队列
       urls.forEach((url, index) => {
-        this.queueManager.addTask(`scrape-${index}`, async () => {
-          try {
-            await this.scrapePage(url, index);
-          } catch (error) {
-            // 错误已经被记录，这里只是防止队列中断
-            this.logger.debug('队列任务失败，但已处理', { url, error: error.message });
+        this.queueManager.addTask(
+          `scrape-${index}`,
+          async () => {
+            try {
+              await this.scrapePage(url, index);
+            } catch (error) {
+              // 错误已经被记录，这里只是防止队列中断
+              this.logger.debug('队列任务失败，但已处理', { url, error: error.message });
+            }
+          },
+          {
+            url: url,
+            priority: 0,
           }
-        }, {
-          url: url,
-          priority: 0
-        });
+        );
       });
 
       // 等待所有任务完成
@@ -1450,24 +1456,22 @@ export class Scraper extends EventEmitter {
         失败数: stats.failed,
         跳过数: stats.skipped,
         耗时: `${Math.round(duration / 1000)}秒`,
-        成功率: `${((stats.processed / urls.length) * 100).toFixed(1)}%`
+        成功率: `${((stats.processed / urls.length) * 100).toFixed(1)}%`,
       });
 
       this.emit('completed', {
         totalUrls: urls.length,
         stats: stats,
-        duration: duration
+        duration: duration,
       });
-
     } catch (error) {
       this.logger.error('爬虫运行失败', {
         error: error.message,
-        stack: error.stack
+        stack: error.stack,
       });
 
       this.emit('error', error);
       throw error;
-
     } finally {
       this.isRunning = false;
 
@@ -1476,7 +1480,7 @@ export class Scraper extends EventEmitter {
         await this.cleanup();
       } catch (cleanupError) {
         this.logger.error('资源清理失败', {
-          error: cleanupError.message
+          error: cleanupError.message,
         });
       }
     }
@@ -1561,16 +1565,14 @@ export class Scraper extends EventEmitter {
 
       this.logger.info('资源清理完成');
       this.emit('cleanup');
-
     } catch (error) {
       this.logger.error('资源清理失败', {
         error: error.message,
-        stack: error.stack
+        stack: error.stack,
       });
       throw error;
     }
   }
-
 
   /**
    * 获取爬虫状态
@@ -1586,7 +1588,7 @@ export class Scraper extends EventEmitter {
       totalUrls: this.urlQueue.length,
       progress: stats,
       queue: queueStats,
-      uptime: this.startTime ? Date.now() - this.startTime : 0
+      uptime: this.startTime ? Date.now() - this.startTime : 0,
     };
   }
 }

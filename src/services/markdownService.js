@@ -17,7 +17,7 @@ export class MarkdownService {
       headingStyle: 'atx',
       codeBlockStyle: 'fenced',
       bulletListMarker: '-',
-      ...options.turndownOptions
+      ...options.turndownOptions,
     };
 
     this.turndown = new TurndownService(turndownOptions);
@@ -25,19 +25,13 @@ export class MarkdownService {
     // 保留代码块语言标识（```js``` 等）
     this.turndown.addRule('fencedCodeBlockWithLanguage', {
       filter: (node) => {
-        return (
-          node.nodeName === 'PRE' &&
-          node.firstChild &&
-          node.firstChild.nodeName === 'CODE'
-        );
+        return node.nodeName === 'PRE' && node.firstChild && node.firstChild.nodeName === 'CODE';
       },
       replacement: (content, node) => {
         const codeElement = node.firstChild;
         const className = codeElement.className || '';
 
-        const langMatch =
-          className.match(/language-([\w-]+)/) ||
-          className.match(/lang-([\w-]+)/);
+        const langMatch = className.match(/language-([\w-]+)/) || className.match(/lang-([\w-]+)/);
 
         const lang = langMatch ? langMatch[1] : '';
         const code = codeElement.textContent || '';
@@ -46,7 +40,7 @@ export class MarkdownService {
         const langSuffix = lang ? `${lang}` : '';
 
         return `\n${fence}${langSuffix}\n${code.replace(/\n$/, '')}\n${fence}\n`;
-      }
+      },
     });
   }
 
@@ -64,7 +58,7 @@ export class MarkdownService {
       const markdown = this.turndown.turndown(html);
       this.logger?.debug?.('HTML 转 Markdown 完成', {
         length: markdown.length,
-        ...options.debugMeta
+        ...options.debugMeta,
       });
       return markdown;
     } catch (error) {
@@ -128,13 +122,13 @@ export class MarkdownService {
 
       return {
         html: clone.innerHTML,
-        svgCount: svgs.length
+        svgCount: svgs.length,
       };
     }, selector);
 
     this.logger?.debug?.('从页面提取 HTML 完成', {
       hasContent: !!html,
-      svgCount
+      svgCount,
     });
 
     return this.convertHtmlToMarkdown(html, { debugMeta: { svgCount } });
@@ -147,8 +141,7 @@ export class MarkdownService {
    * @returns {string}
    */
   addFrontmatter(markdown, metadata = {}) {
-    const includeFrontmatter =
-      this.markdownConfig.includeFrontmatter !== false;
+    const includeFrontmatter = this.markdownConfig.includeFrontmatter !== false;
 
     if (!includeFrontmatter) {
       return markdown;
@@ -226,4 +219,3 @@ export class MarkdownService {
     return { metadata, content };
   }
 }
-

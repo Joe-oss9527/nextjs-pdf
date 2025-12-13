@@ -36,7 +36,7 @@ export class GeminiClient {
         if (this.logger) {
           this.logger.warn('Translation timeout, force killing process', {
             timeoutMs: this.timeoutMs,
-            elapsed: Date.now() - startTime
+            elapsed: Date.now() - startTime,
           });
         }
 
@@ -90,7 +90,7 @@ export class GeminiClient {
               code,
               signal,
               stderr: stderr.substring(0, 500),
-              elapsed: Date.now() - startTime
+              elapsed: Date.now() - startTime,
             });
           }
           reject(new Error(`gemini-cli exited with code ${code}: ${stderr.substring(0, 200)}`));
@@ -113,7 +113,7 @@ export class GeminiClient {
           if (this.logger) {
             this.logger.debug('Translation completed', {
               elapsed: Date.now() - startTime,
-              keys: Object.keys(translatedMap).length
+              keys: Object.keys(translatedMap).length,
             });
           }
 
@@ -123,7 +123,7 @@ export class GeminiClient {
             this.logger.warn('Failed to parse translation JSON', {
               error: e.message,
               output: stdout.substring(0, 200),
-              elapsed: Date.now() - startTime
+              elapsed: Date.now() - startTime,
             });
           }
           resolve(null);
@@ -137,7 +137,7 @@ export class GeminiClient {
         if (this.logger) {
           this.logger.error('gemini spawn error', {
             error: err.message,
-            elapsed: Date.now() - startTime
+            elapsed: Date.now() - startTime,
           });
         }
         reject(err);

@@ -1,0 +1,10 @@
+node_modules
+pdfs
+logs
+venv
+coverage
+*.log
+
+# Jest cache
+jest.cache
+

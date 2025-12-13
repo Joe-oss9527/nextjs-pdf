@@ -20,8 +20,12 @@ async function verifyExpansion() {
 
     browser = await puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-blink-features=AutomationControlled'],
-      ignoreDefaultArgs: ['--enable-automation']
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-blink-features=AutomationControlled',
+      ],
+      ignoreDefaultArgs: ['--enable-automation'],
     });
 
     const page = await browser.newPage();
@@ -36,7 +40,7 @@ async function verifyExpansion() {
       const results = [];
 
       // 查找所有 aria-expanded 元素
-      document.querySelectorAll('[aria-expanded]').forEach(trigger => {
+      document.querySelectorAll('[aria-expanded]').forEach((trigger) => {
         const isExpanded = trigger.getAttribute('aria-expanded') === 'true';
         const title = trigger.textContent.trim();
 
@@ -50,7 +54,7 @@ async function verifyExpansion() {
         results.push({
           title,
           expanded: isExpanded,
-          contentPreview
+          contentPreview,
         });
       });
 
@@ -72,7 +76,7 @@ async function verifyExpansion() {
       const targetItems = [];
 
       // 展开所有折叠元素
-      document.querySelectorAll('[aria-expanded="false"]').forEach(trigger => {
+      document.querySelectorAll('[aria-expanded="false"]').forEach((trigger) => {
         trigger.setAttribute('aria-expanded', 'true');
 
         const title = trigger.textContent.trim();
@@ -88,7 +92,7 @@ async function verifyExpansion() {
             targetItems.push({
               title,
               contentLength: content.length,
-              contentSample: content.substring(0, 200)
+              contentSample: content.substring(0, 200),
             });
           }
         }
@@ -106,8 +110,9 @@ async function verifyExpansion() {
     });
 
     const totalContent = expandedContent.reduce((sum, item) => sum + item.contentLength, 0);
-    console.log(`📊 总计: ${expandedContent.length} 个折叠项，共 ${totalContent.toLocaleString()} 字符的隐藏内容\n`);
-
+    console.log(
+      `📊 总计: ${expandedContent.length} 个折叠项，共 ${totalContent.toLocaleString()} 字符的隐藏内容\n`
+    );
   } catch (error) {
     console.error('❌ 错误:', error.message);
   } finally {

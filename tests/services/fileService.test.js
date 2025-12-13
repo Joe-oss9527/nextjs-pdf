@@ -85,16 +85,16 @@ describe('FileService', () => {
       const initialData = [
         { id: 1, name: 'a' },
         { id: 2, name: 'b' },
-        { id: 3, name: 'c' }
+        { id: 3, name: 'c' },
       ];
 
       await fileService.writeJson(filePath, initialData);
-      await fileService.removeFromJsonArray(filePath, item => item.id === 2);
+      await fileService.removeFromJsonArray(filePath, (item) => item.id === 2);
 
       const result = await fileService.readJson(filePath);
       expect(result).toEqual([
         { id: 1, name: 'a' },
-        { id: 3, name: 'c' }
+        { id: 3, name: 'c' },
       ]);
     });
   });

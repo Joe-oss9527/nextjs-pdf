@@ -28,9 +28,9 @@ async function testExpandCollapsibles() {
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
-        '--disable-blink-features=AutomationControlled'
+        '--disable-blink-features=AutomationControlled',
       ],
-      ignoreDefaultArgs: ['--enable-automation']
+      ignoreDefaultArgs: ['--enable-automation'],
     });
 
     const page = await browser.newPage();
@@ -39,7 +39,7 @@ async function testExpandCollapsibles() {
     console.log('⏳ 加载页面...');
     await page.goto(TARGET_URL, {
       waitUntil: 'networkidle2',
-      timeout: 60000
+      timeout: 60000,
     });
 
     console.log('✅ 页面加载完成\n');
@@ -47,7 +47,7 @@ async function testExpandCollapsibles() {
     // 截图：展开前
     await page.screenshot({
       path: `${OUTPUT_DIR}/before-expand.png`,
-      fullPage: true
+      fullPage: true,
     });
     console.log('📸 保存展开前截图: before-expand.png');
 
@@ -69,7 +69,7 @@ async function testExpandCollapsibles() {
       let hiddenContentCount = 0;
 
       // 1. 处理标准 <details> 元素
-      document.querySelectorAll('details').forEach(details => {
+      document.querySelectorAll('details').forEach((details) => {
         details.open = true;
         expandedElementsCount++;
 
@@ -87,7 +87,7 @@ async function testExpandCollapsibles() {
       });
 
       // 2. 处理 aria-expanded 控制的折叠元素
-      document.querySelectorAll('[aria-expanded="false"]').forEach(trigger => {
+      document.querySelectorAll('[aria-expanded="false"]').forEach((trigger) => {
         trigger.setAttribute('aria-expanded', 'true');
         ariaExpandedCount++;
 
@@ -118,7 +118,9 @@ async function testExpandCollapsibles() {
         // 方法 3: 检查父元素的子元素
         const parent = trigger.parentElement;
         if (parent) {
-          const contentSibling = parent.querySelector('.expn-content, [class*="content"], [class*="body"]');
+          const contentSibling = parent.querySelector(
+            '.expn-content, [class*="content"], [class*="body"]'
+          );
           if (contentSibling && contentSibling !== trigger) {
             contentSibling.classList.remove('hidden', 'collapsed');
             contentSibling.style.setProperty('display', 'block', 'important');
@@ -130,7 +132,7 @@ async function testExpandCollapsibles() {
       });
 
       // 3. 强制显示隐藏内容
-      document.querySelectorAll('.hidden, .collapsed, [hidden]').forEach(el => {
+      document.querySelectorAll('.hidden, .collapsed, [hidden]').forEach((el) => {
         if (el.classList.contains('code-block')) {
           return;
         }
@@ -147,7 +149,7 @@ async function testExpandCollapsibles() {
       });
 
       // 4. 处理折叠面板
-      document.querySelectorAll('.accordion-item, [class*="accordion"]').forEach(item => {
+      document.querySelectorAll('.accordion-item, [class*="accordion"]').forEach((item) => {
         const content = item.querySelector('.accordion-content, [class*="content"]');
         if (content) {
           content.style.setProperty('display', 'block', 'important');
@@ -157,7 +159,7 @@ async function testExpandCollapsibles() {
       });
 
       // 5. 处理标签页
-      document.querySelectorAll('[role="tabpanel"]').forEach(panel => {
+      document.querySelectorAll('[role="tabpanel"]').forEach((panel) => {
         panel.style.setProperty('display', 'block', 'important');
         panel.style.setProperty('visibility', 'visible', 'important');
         panel.setAttribute('aria-hidden', 'false');
@@ -166,7 +168,7 @@ async function testExpandCollapsibles() {
       return {
         detailsExpanded: expandedElementsCount,
         ariaExpandedFixed: ariaExpandedCount,
-        hiddenContentRevealed: hiddenContentCount
+        hiddenContentRevealed: hiddenContentCount,
       };
     });
 
@@ -176,12 +178,12 @@ async function testExpandCollapsibles() {
     console.log(`   - 隐藏内容显示: ${stats.hiddenContentRevealed}`);
 
     // 等待页面稳定
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // 截图：展开后
     await page.screenshot({
       path: `${OUTPUT_DIR}/after-expand.png`,
-      fullPage: true
+      fullPage: true,
     });
     console.log('\n📸 保存展开后截图: after-expand.png');
 
@@ -200,14 +202,13 @@ async function testExpandCollapsibles() {
     await page.pdf({
       path: `${OUTPUT_DIR}/expanded-test.pdf`,
       format: 'A4',
-      printBackground: true
+      printBackground: true,
     });
 
     const pdfStats = fs.statSync(`${OUTPUT_DIR}/expanded-test.pdf`);
     console.log(`✅ PDF 生成成功: ${(pdfStats.size / 1024).toFixed(2)} KB`);
 
     console.log('\n✨ 测试完成！\n');
-
   } catch (error) {
     console.error('\n❌ 测试失败:', error.message);
     console.error(error.stack);

@@ -8,7 +8,7 @@ describe('GeminiClient', () => {
     debug: jest.fn(),
     info: jest.fn(),
     warn: jest.fn(),
-    error: jest.fn()
+    error: jest.fn(),
   });
 
   test('translateJson 应该解析有效的 JSON 输出', async () => {
@@ -24,12 +24,12 @@ describe('GeminiClient', () => {
         stderr,
         stdin: {
           write: jest.fn(),
-          end: jest.fn()
+          end: jest.fn(),
         },
         kill: jest.fn(),
         on: (event, handler) => {
           handlers[event] = handler;
-        }
+        },
       };
 
       // 模拟异步输出和正常退出
@@ -44,18 +44,18 @@ describe('GeminiClient', () => {
     const client = new GeminiClient({
       timeoutMs: 5000,
       logger,
-      spawn
+      spawn,
     });
 
     const inputMap = { id1: 'hello', id2: 'world' };
     const result = await client.translateJson({
       instructions: 'translate',
-      inputMap
+      inputMap,
     });
 
     expect(result).toEqual({
       id1: '你好',
-      id2: '世界'
+      id2: '世界',
     });
   });
 
@@ -72,12 +72,12 @@ describe('GeminiClient', () => {
         stderr,
         stdin: {
           write: jest.fn(),
-          end: jest.fn()
+          end: jest.fn(),
         },
         kill: jest.fn(),
         on: (event, handler) => {
           handlers[event] = handler;
-        }
+        },
       };
 
       process.nextTick(() => {
@@ -91,17 +91,16 @@ describe('GeminiClient', () => {
     const client = new GeminiClient({
       timeoutMs: 5000,
       logger,
-      spawn
+      spawn,
     });
 
     await expect(
       client.translateJson({
         instructions: 'translate',
-        inputMap: { id: 'text' }
+        inputMap: { id: 'text' },
       })
     ).rejects.toThrow(/gemini-cli exited with code 1/);
 
     expect(logger.error).toHaveBeenCalled();
   });
 });
-

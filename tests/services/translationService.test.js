@@ -24,15 +24,15 @@ describe('TranslationService', () => {
       concurrency: 2,
       timeout: 60000,
       maxRetries: 3,
-      retryDelay: 2000
-    }
+      retryDelay: 2000,
+    },
   };
 
   const logger = {
     debug: jest.fn(),
     info: jest.fn(),
     warn: jest.fn(),
-    error: jest.fn()
+    error: jest.fn(),
   };
 
   const cacheDir = path.join(process.cwd(), '.temp', 'translation_cache');
@@ -64,10 +64,10 @@ describe('TranslationService', () => {
         ...baseConfig,
         translation: {
           ...baseConfig.translation,
-          bilingual: true
-        }
+          bilingual: true,
+        },
       },
-      logger
+      logger,
     });
 
     const bilingualKey = bilingualService._getCacheKey(text);
@@ -90,10 +90,10 @@ describe('TranslationService', () => {
       config: {
         logLevel: 'error',
         translation: {
-          enabled: true
-        }
+          enabled: true,
+        },
       },
-      logger
+      logger,
     });
 
     expect(service.timeoutMs).toBeGreaterThanOrEqual(60000);
@@ -112,10 +112,10 @@ describe('TranslationService', () => {
           concurrency: 1,
           timeout: 60000,
           maxRetries: 1,
-          retryDelay: 0
-        }
+          retryDelay: 0,
+        },
       },
-      logger
+      logger,
     });
 
     // 替换实际的批量翻译，实现一个可预测的伪翻译
@@ -139,7 +139,7 @@ describe('TranslationService', () => {
       '```js',
       'const a = 1;',
       '```',
-      ''
+      '',
     ].join('\n');
 
     const translated = await service.translateMarkdown(markdown);

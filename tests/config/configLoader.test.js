@@ -8,15 +8,15 @@ jest.mock('fs', () => ({
   promises: {
     readFile: jest.fn(),
     access: jest.fn(),
-    stat: jest.fn()
+    stat: jest.fn(),
   },
   constants: {
-    R_OK: 4
-  }
+    R_OK: 4,
+  },
 }));
 
 jest.mock('../../src/config/configValidator.js', () => ({
-  validateConfig: jest.fn()
+  validateConfig: jest.fn(),
 }));
 
 jest.mock('../../src/utils/logger.js', () => ({
@@ -24,8 +24,8 @@ jest.mock('../../src/utils/logger.js', () => ({
     info: jest.fn(),
     debug: jest.fn(),
     warn: jest.fn(),
-    error: jest.fn()
-  }))
+    error: jest.fn(),
+  })),
 }));
 
 // Import mocked modules
@@ -62,7 +62,7 @@ describe('ConfigLoader', () => {
       rootURL: 'https://example.com',
       pdfDir: './pdfs',
       navLinksSelector: 'nav a',
-      contentSelector: 'main'
+      contentSelector: 'main',
     };
 
     beforeEach(() => {
@@ -70,22 +70,16 @@ describe('ConfigLoader', () => {
       fs.promises.stat.mockResolvedValue({ isFile: () => true });
       fs.promises.readFile.mockResolvedValue(JSON.stringify(mockConfigData));
       validateConfig.mockReturnValue({
-        config: { ...mockConfigData, processed: true }
+        config: { ...mockConfigData, processed: true },
       });
     });
 
     test('应该成功加载和验证配置', async () => {
       const config = await configLoader.load();
 
-      expect(fs.promises.access).toHaveBeenCalledWith(
-        configLoader.configPath,
-        fs.constants.R_OK
-      );
+      expect(fs.promises.access).toHaveBeenCalledWith(configLoader.configPath, fs.constants.R_OK);
       expect(fs.promises.stat).toHaveBeenCalledWith(configLoader.configPath);
-      expect(fs.promises.readFile).toHaveBeenCalledWith(
-        configLoader.configPath,
-        'utf8'
-      );
+      expect(fs.promises.readFile).toHaveBeenCalledWith(configLoader.configPath, 'utf8');
       expect(validateConfig).toHaveBeenCalled();
       expect(config.processed).toBe(true);
       expect(configLoader.loaded).toBe(true);
@@ -122,9 +116,7 @@ describe('ConfigLoader', () => {
     test('应该处理JSON解析错误', async () => {
       fs.promises.readFile.mockResolvedValue('invalid json');
 
-      await expect(configLoader.load()).rejects.toThrow(
-        'Configuration loading failed:'
-      );
+      await expect(configLoader.load()).rejects.toThrow('Configuration loading failed:');
     });
 
     test('应该处理验证错误', async () => {
@@ -145,14 +137,14 @@ describe('ConfigLoader', () => {
         pdfDir: 'relative/path',
         filesystem: {
           tempDirectory: 'temp',
-          metadataDirectory: 'metadata'
-        }
+          metadataDirectory: 'metadata',
+        },
       };
 
       fs.promises.access.mockResolvedValue();
       fs.promises.stat.mockResolvedValue({ isFile: () => true });
       fs.promises.readFile.mockResolvedValue(JSON.stringify(config));
-      
+
       validateConfig.mockImplementation((config) => ({ config }));
 
       await configLoader.load();
@@ -168,13 +160,13 @@ describe('ConfigLoader', () => {
         rootURL: 'https://docs.example.com/guide',
         pdfDir: './pdfs',
         navLinksSelector: 'nav a',
-        contentSelector: 'main'
+        contentSelector: 'main',
       };
 
       fs.promises.access.mockResolvedValue();
       fs.promises.stat.mockResolvedValue({ isFile: () => true });
       fs.promises.readFile.mockResolvedValue(JSON.stringify(config));
-      
+
       validateConfig.mockImplementation((config) => ({ config }));
 
       await configLoader.load();
@@ -189,13 +181,13 @@ describe('ConfigLoader', () => {
         rootURL: 'https://example.com',
         pdfDir: './pdfs',
         navLinksSelector: 'nav a',
-        contentSelector: 'main'
+        contentSelector: 'main',
       };
 
       fs.promises.access.mockResolvedValue();
       fs.promises.stat.mockResolvedValue({ isFile: () => true });
       fs.promises.readFile.mockResolvedValue(JSON.stringify(config));
-      
+
       validateConfig.mockImplementation((config) => ({ config }));
 
       await configLoader.load();
@@ -214,13 +206,13 @@ describe('ConfigLoader', () => {
         pdfDir: './pdfs',
         navLinksSelector: 'nav a',
         contentSelector: 'main',
-        allowedDomains: ['custom.com']
+        allowedDomains: ['custom.com'],
       };
 
       fs.promises.access.mockResolvedValue();
       fs.promises.stat.mockResolvedValue({ isFile: () => true });
       fs.promises.readFile.mockResolvedValue(JSON.stringify(config));
-      
+
       validateConfig.mockImplementation((config) => ({ config }));
 
       await configLoader.load();
@@ -254,12 +246,12 @@ describe('ConfigLoader', () => {
           headless: true,
           viewport: {
             width: 1920,
-            height: 1080
-          }
+            height: 1080,
+          },
         },
         pdf: {
-          format: 'A4'
-        }
+          format: 'A4',
+        },
       };
       configLoader.loaded = true;
     });
@@ -293,7 +285,7 @@ describe('ConfigLoader', () => {
   describe('isLoaded', () => {
     test('应该返回加载状态', () => {
       expect(configLoader.isLoaded()).toBe(false);
-      
+
       configLoader.loaded = true;
       expect(configLoader.isLoaded()).toBe(true);
     });
@@ -305,7 +297,7 @@ describe('ConfigLoader', () => {
         rootURL: 'https://example.com',
         pdfDir: './pdfs',
         navLinksSelector: 'nav a',
-        contentSelector: 'main'
+        contentSelector: 'main',
       };
 
       fs.promises.access.mockResolvedValue();
@@ -330,7 +322,7 @@ describe('ConfigLoader', () => {
 
       expect(summary).toEqual({
         loaded: false,
-        configPath: configLoader.configPath
+        configPath: configLoader.configPath,
       });
     });
 
@@ -342,8 +334,8 @@ describe('ConfigLoader', () => {
         allowedDomains: ['example.com'],
         logLevel: 'info',
         _runtime: {
-          loadTime: '2024-03-15T10:00:00Z'
-        }
+          loadTime: '2024-03-15T10:00:00Z',
+        },
       };
       configLoader.loaded = true;
 
@@ -357,7 +349,7 @@ describe('ConfigLoader', () => {
         concurrency: 5,
         allowedDomains: ['example.com'],
         logLevel: 'info',
-        loadTime: '2024-03-15T10:00:00Z'
+        loadTime: '2024-03-15T10:00:00Z',
       });
     });
   });
@@ -368,7 +360,7 @@ describe('ConfigLoader', () => {
         rootURL: 'https://example.com',
         pdfDir: '/absolute/path',
         navLinksSelector: 'nav a',
-        contentSelector: 'main'
+        contentSelector: 'main',
       };
 
       fs.promises.access.mockResolvedValue();
@@ -383,12 +375,12 @@ describe('ConfigLoader', () => {
 
     test('应该相对于配置文件目录解析相对路径', async () => {
       configLoader = new ConfigLoader('/custom/config/app.json');
-      
+
       const config = {
         rootURL: 'https://example.com',
         pdfDir: './output',
         navLinksSelector: 'nav a',
-        contentSelector: 'main'
+        contentSelector: 'main',
       };
 
       fs.promises.access.mockResolvedValue();
@@ -398,9 +390,7 @@ describe('ConfigLoader', () => {
 
       await configLoader.load();
 
-      expect(configLoader.config.pdfDir).toBe(
-        path.resolve('/custom/config', './output')
-      );
+      expect(configLoader.config.pdfDir).toBe(path.resolve('/custom/config', './output'));
     });
   });
 
@@ -410,7 +400,7 @@ describe('ConfigLoader', () => {
         rootURL: 'invalid-url',
         pdfDir: './pdfs',
         navLinksSelector: 'nav a',
-        contentSelector: 'main'
+        contentSelector: 'main',
       };
 
       fs.promises.access.mockResolvedValue();
@@ -433,7 +423,7 @@ describe('便捷函数', () => {
   describe('loadConfig', () => {
     test('应该创建加载器并返回配置', async () => {
       const mockConfig = { test: 'config' };
-      
+
       fs.promises.access.mockResolvedValue();
       fs.promises.stat.mockResolvedValue({ isFile: () => true });
       fs.promises.readFile.mockResolvedValue(JSON.stringify(mockConfig));
@@ -446,7 +436,7 @@ describe('便捷函数', () => {
 
     test('应该使用默认路径', async () => {
       const mockConfig = { test: 'config' };
-      
+
       fs.promises.access.mockResolvedValue();
       fs.promises.stat.mockResolvedValue({ isFile: () => true });
       fs.promises.readFile.mockResolvedValue(JSON.stringify(mockConfig));

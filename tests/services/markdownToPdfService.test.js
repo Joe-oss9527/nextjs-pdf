@@ -4,8 +4,8 @@ import { MarkdownToPdfService } from '../../src/services/markdownToPdfService.js
 
 jest.mock('md-to-pdf', () => ({
   mdToPdf: jest.fn().mockResolvedValue({
-    filename: '/tmp/output.pdf'
-  })
+    filename: '/tmp/output.pdf',
+  }),
 }));
 
 describe('MarkdownToPdfService', () => {
@@ -13,7 +13,7 @@ describe('MarkdownToPdfService', () => {
     debug: jest.fn(),
     info: jest.fn(),
     warn: jest.fn(),
-    error: jest.fn()
+    error: jest.fn(),
   };
 
   beforeEach(() => {
@@ -27,7 +27,7 @@ describe('MarkdownToPdfService', () => {
 
     await service.convertContentToPdf(markdown, outputPath, {
       highlightStyle: 'github',
-      pdfOptions: { format: 'A4' }
+      pdfOptions: { format: 'A4' },
     });
 
     const { mdToPdf } = await import('md-to-pdf');
@@ -36,7 +36,7 @@ describe('MarkdownToPdfService', () => {
       expect.objectContaining({
         dest: outputPath,
         pdf_options: { format: 'A4' },
-        highlight_style: 'github'
+        highlight_style: 'github',
       })
     );
   });
@@ -52,7 +52,7 @@ describe('MarkdownToPdfService', () => {
     expect(mdToPdf).toHaveBeenCalledWith(
       { path: markdownPath },
       expect.objectContaining({
-        dest: outputPath
+        dest: outputPath,
       })
     );
   });
@@ -65,10 +65,10 @@ describe('MarkdownToPdfService', () => {
           highlightStyle: 'monokai',
           pdfOptions: {
             format: 'Letter',
-            margin: '10mm'
-          }
-        }
-      }
+            margin: '10mm',
+          },
+        },
+      },
     });
 
     const markdown = '# Title';
@@ -83,9 +83,9 @@ describe('MarkdownToPdfService', () => {
         dest: outputPath,
         pdf_options: {
           format: 'Letter',
-          margin: '10mm'
+          margin: '10mm',
         },
-        highlight_style: 'monokai'
+        highlight_style: 'monokai',
       })
     );
   });

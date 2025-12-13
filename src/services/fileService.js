@@ -16,11 +16,7 @@ export class FileService {
       await fs.mkdir(dirPath, { recursive: true });
       this.logger.debug(`确保目录存在: ${dirPath}`);
     } catch (error) {
-      throw new FileOperationError(
-        `创建目录失败: ${dirPath} - ${error.message}`,
-        dirPath,
-        'mkdir'
-      );
+      throw new FileOperationError(`创建目录失败: ${dirPath} - ${error.message}`, dirPath, 'mkdir');
     }
   }
 
@@ -33,11 +29,7 @@ export class FileService {
       await this.ensureDirectory(dirPath);
       this.logger.info(`清理目录: ${dirPath}`);
     } catch (error) {
-      throw new FileOperationError(
-        `清理目录失败: ${dirPath} - ${error.message}`,
-        dirPath,
-        'clean'
-      );
+      throw new FileOperationError(`清理目录失败: ${dirPath} - ${error.message}`, dirPath, 'clean');
     }
   }
 
@@ -125,7 +117,7 @@ export class FileService {
       if (!Array.isArray(array)) {
         return;
       }
-      const filtered = array.filter(item => !predicate(item));
+      const filtered = array.filter((item) => !predicate(item));
       await this.writeJson(filePath, filtered);
     } catch (error) {
       throw new FileOperationError(
