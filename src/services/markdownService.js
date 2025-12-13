@@ -45,6 +45,78 @@ export class MarkdownService {
   }
 
   /**
+   * 规范化图像与图注：
+   * - 如果某行是斜体（例如 _Figure 1: ..._ 或 *Figure 1: ...*），
+   * - 且其前一行（忽略空行）是 Markdown 图片行，并且两者文本几乎相同，
+   *   则视为重复图注，删除斜体行，仅保留图片行作为 caption。
+   * 这样可以与 Pandoc 的 implicit_figures 行为对齐：
+   *   一张图片（单独成段）= 一个 figure + 一个 caption（来自 alt 文本）。
+   * @param {string} markdown
+   * @returns {string}
+   */
+  _normalizeFigureCaptions(markdown) {
+    if (!markdown || typeof markdown !== 'string') {
+      return markdown;
+    }
+
+    const lines = markdown.split('\n');
+
+    const normalizeText = (text) => {
+      if (!text) return '';
+      return text
+        .trim()
+        // 去掉首尾的强调符号（_ 或 *）
+        .replace(/^[*_]+/, '')
+        .replace(/[*_]+$/, '')
+        .trim()
+        // 去掉结尾的句号/感叹号等常见标点
+        .replace(/[。．\.!！]+$/u, '')
+        .trim()
+        .toLowerCase();
+    };
+
+    const result = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const trimmed = line.trim();
+
+      // 匹配整行斜体：_text_ 或 *text*
+      const italicMatch = trimmed.match(/^([*_])(.+)\1$/);
+      if (italicMatch) {
+        const italicText = italicMatch[2].trim();
+
+        // 向上寻找上一行非空行
+        let prevIndex = i - 1;
+        while (prevIndex >= 0 && lines[prevIndex].trim() === '') {
+          prevIndex--;
+        }
+
+        if (prevIndex >= 0) {
+          const prevTrimmed = lines[prevIndex].trim();
+          // 匹配单独一行的图片语法，允许可选的属性块：
+          // ![alt](src) 或 ![alt](src){ ... }
+          const imageMatch = prevTrimmed.match(/^!\[([^\]]+)\]\([^)]*\)\s*(\{[^}]*\})?$/);
+          if (imageMatch) {
+            const altText = imageMatch[1].trim();
+            const normAlt = normalizeText(altText);
+            const normItalic = normalizeText(italicText);
+
+            if (normAlt && normAlt === normItalic) {
+              // 认为是重复图注：跳过当前斜体行，不输出
+              continue;
+            }
+          }
+        }
+      }
+
+      result.push(line);
+    }
+
+    return result.join('\n');
+  }
+
+  /**
    * 将 HTML 字符串转换为 Markdown
    * @param {string} html
    * @returns {string}
@@ -55,7 +127,8 @@ export class MarkdownService {
     }
 
     try {
-      const markdown = this.turndown.turndown(html);
+      const rawMarkdown = this.turndown.turndown(html);
+      const markdown = this._normalizeFigureCaptions(rawMarkdown);
       this.logger?.debug?.('HTML 转 Markdown 完成', {
         length: markdown.length,
         ...options.debugMeta,

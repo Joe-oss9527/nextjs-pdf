@@ -357,6 +357,7 @@ export class TranslationService {
     const lines = markdownContent.split('\n');
     const outputLines = [];
     const segments = [];
+    const imageCaptions = [];
     let currentTextLines = [];
     let inFrontmatter = false;
     let inCodeBlock = false;
@@ -408,6 +409,32 @@ export class TranslationService {
       // 空行：结束当前段落
       if (trimmed === '') {
         flushCurrentSegment();
+        outputLines.push(line);
+        continue;
+      }
+
+      // 纯图片行（例如 `![alt](src)` 或 `![alt](src){...}`）在结构上不应生成第二个 `![]()`，
+      // 但在双语模式下我们希望图注也是双语：
+      // - 保持这行图片本身不变（继续作为 Pandoc implicit_figures 的唯一 figure+caption 来源）
+      // - 单独翻译 alt 文本，并在图片下方追加一行译文（例如 `_图 1：..._`）
+      const isStandaloneImage = /^!\[[^\]]*\]\([^)]*\)\s*(\{[^}]*\})?$/.test(trimmed);
+      if (isStandaloneImage) {
+        // 在进入图片行前先结束当前段落
+        flushCurrentSegment();
+
+        if (this.bilingual) {
+          const imgMatch = trimmed.match(/^!\[([^\]]*)\]\(([^)]*)\)\s*(\{[^}]*\})?$/);
+          const altText = imgMatch && imgMatch[1] ? imgMatch[1].trim() : '';
+          if (altText) {
+            const id = `img-${imageCaptions.length}`;
+            imageCaptions.push({
+              id,
+              altText,
+              outputIndex: outputLines.length,
+            });
+          }
+        }
+
         outputLines.push(line);
         continue;
       }
@@ -564,25 +591,83 @@ export class TranslationService {
       }
     }
 
-    // 重建 Markdown：用翻译结果替换占位符
+    // 如果是双语模式，为图片 alt 文本单独做一次翻译，用于在图片下方追加译文图注
+    const captionTranslations = {};
+    if (this.bilingual && imageCaptions.length > 0) {
+      const uncachedCaptionSegs = [];
+
+      for (const cap of imageCaptions) {
+        const cached = this._getFromCache(cap.altText);
+        if (cached) {
+          captionTranslations[cap.id] = cached;
+        } else if (cap.altText) {
+          uncachedCaptionSegs.push({ id: cap.id, text: cap.altText });
+        }
+      }
+
+      if (uncachedCaptionSegs.length > 0) {
+        try {
+          const result = await this._translateBatchWithRetry(uncachedCaptionSegs);
+          if (result) {
+            Object.entries(result).forEach(([id, translated]) => {
+              const originalItem = uncachedCaptionSegs.find((item) => item.id === id);
+              if (originalItem) {
+                this._saveToCache(originalItem.text, translated);
+              }
+              captionTranslations[id] = translated;
+            });
+          }
+        } catch (err) {
+          this.logger.warn('Image caption translation failed, will use original captions', {
+            error: err.message,
+            count: uncachedCaptionSegs.length,
+          });
+        }
+      }
+
+      // 将译文挂回 imageCaptions，方便重建 Markdown 时插入
+      for (const cap of imageCaptions) {
+        const translated = captionTranslations[cap.id];
+        if (typeof translated === 'string') {
+          cap.translated = translated;
+        }
+      }
+    }
+
+    // 重建 Markdown：用翻译结果替换占位符，并在图片下方追加译文图注（仅双语模式）
     const idToOriginal = {};
     for (const seg of segments) {
       idToOriginal[seg.id] = seg.text;
     }
 
-    const finalLines = outputLines.map((line) => {
+    const finalLines = outputLines.map((line, index) => {
       const match = line.match(/^__MD_SEGMENT_(.+)__$/);
-      if (!match) return line;
+      if (match) {
+        const id = match[1];
+        const original = idToOriginal[id] || '';
+        const translated = cachedTranslations[id] || original;
 
-      const id = match[1];
-      const original = idToOriginal[id] || '';
-      const translated = cachedTranslations[id] || original;
+        if (this.bilingual) {
+          return `${original}\n\n${translated}`;
+        }
 
-      if (this.bilingual) {
-        return `${original}\n\n${translated}`;
+        return translated;
       }
 
-      return translated;
+      // 为图片行追加一行译文图注：
+      // ![Figure 1: ...](/img)
+      // _图 1：..._
+      if (this.bilingual && imageCaptions.length > 0) {
+        const cap = imageCaptions.find((c) => c.outputIndex === index);
+        if (cap && typeof cap.translated === 'string') {
+          const translatedCaption = cap.translated.trim();
+          if (translatedCaption && translatedCaption !== cap.altText.trim()) {
+            return `${line}\n_${translatedCaption}_`;
+          }
+        }
+      }
+
+      return line;
     });
 
     return finalLines.join('\n');

@@ -23,6 +23,25 @@ describe('MarkdownService', () => {
     expect(markdown).toContain('Content');
   });
 
+  test('convertHtmlToMarkdown 应该去重图片后的重复斜体图注', () => {
+    const service = new MarkdownService({ logger });
+    const html =
+      '<figure><img src="/img.png" alt="Figure 1: Caption here"><figcaption><em>Figure 1: Caption here</em></figcaption></figure>';
+
+    const markdown = service.convertHtmlToMarkdown(html);
+    const lines = markdown.split('\n');
+
+    // 应该保留一行带有 Figure 1 caption 的图片 Markdown
+    const imageLines = lines.filter((line) => line.includes('![Figure 1: Caption here]'));
+    expect(imageLines.length).toBe(1);
+
+    // 同一段落中不应再出现重复的斜体图注行
+    const duplicateItalic = lines.some((line) =>
+      line.trim().match(/^[_*]Figure 1: Caption here[_*]$/)
+    );
+    expect(duplicateItalic).toBe(false);
+  });
+
   test('代码块应保留语言标识', () => {
     const service = new MarkdownService({ logger });
     const html = '<pre><code class="language-js">const x = 1;</code></pre>';
