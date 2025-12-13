@@ -359,7 +359,18 @@ const configSchema = Joi.object({
       .description('Maximum retry attempts for translation batch'),
 
     retryDelay: Joi.number().integer().min(0).default(2000)
-      .description('Delay between translation retries (ms)')
+      .description('Delay between translation retries (ms)'),
+
+    maxSegmentRetries: Joi.number().integer().min(0).default(2)
+      .description('Maximum retry attempts for individual segments after batch retry'),
+
+    maxDelay: Joi.number().integer().min(0).default(30000)
+      .description('Maximum backoff delay cap (ms) for translation retries'),
+
+    jitterStrategy: Joi.string()
+      .valid('none', 'full', 'equal', 'decorrelated')
+      .default('decorrelated')
+      .description('Jitter strategy for translation retries')
   }).default().description('Translation settings')
 });
 

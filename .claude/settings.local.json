@@ -18,7 +18,9 @@
       "Bash(tee:*)",
       "Bash(pdftotext:*)",
       "Bash(cat:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:google-gemini.github.io)"
     ],
     "deny": []
   }

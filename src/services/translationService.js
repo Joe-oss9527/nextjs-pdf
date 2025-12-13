@@ -11,64 +11,72 @@ import { GeminiClient } from './geminiClient.js';
  * Handles content translation using gemini-cli with caching and concurrency control
  */
 export class TranslationService {
-  constructor(options = {}) {
-    const {
-      config = {},
-      logger,
-      pathService,
-      client
-    } = options;
+    constructor(options = {}) {
+        const {
+            config = {},
+            logger,
+            pathService,
+            client
+        } = options;
 
-    this.config = config;
-    this.logger = logger || createLogger({ logLevel: config.logLevel });
-    this.pathService = pathService || null;
+        this.config = config;
+        this.logger = logger || createLogger({ logLevel: config.logLevel });
+        this.pathService = pathService || null;
 
-    this.logger.info('TranslationService constructor called', {
-      configKeys: Object.keys(config || {})
-    });
+        this.logger.info('TranslationService constructor called', {
+            configKeys: Object.keys(config || {})
+        });
 
-    const translationConfig = config.translation || {};
+        const translationConfig = config.translation || {};
 
-    this.enabled = translationConfig.enabled || false;
-    this.bilingual = translationConfig.bilingual || false;
-    this.targetLanguage = translationConfig.targetLanguage || 'Chinese';
-    this.concurrency = translationConfig.concurrency || 1;
+        this.enabled = translationConfig.enabled || false;
+        this.bilingual = translationConfig.bilingual || false;
+        this.targetLanguage = translationConfig.targetLanguage || 'Chinese';
+        this.concurrency = translationConfig.concurrency || 1;
 
-    // 超时与重试配置（支持从配置覆盖）
-    this.timeoutMs = translationConfig.timeout || 60000;
-    this.maxRetries = translationConfig.maxRetries || 3;
-    this.retryDelay = translationConfig.retryDelay || 2000;
+        // 超时与重试配置（支持从配置覆盖）
+        this.timeoutMs = translationConfig.timeout || 60000;
+        this.maxRetries = translationConfig.maxRetries || 3;
+        this.retryDelay = translationConfig.retryDelay || 2000;
 
-    this.logger.info('TranslationService enabled:', {
-      enabled: this.enabled,
-      targetLanguage: this.targetLanguage,
-      bilingual: this.bilingual,
-      concurrency: this.concurrency,
-      timeoutMs: this.timeoutMs,
-      maxRetries: this.maxRetries,
-      retryDelay: this.retryDelay
-    });
+        // 新增：段落级重试与抖动策略配置（AWS/Netflix 最佳实践）
+        this.maxSegmentRetries = translationConfig.maxSegmentRetries || 2;
+        this.maxDelay = translationConfig.maxDelay || 30000;
+        this.jitterStrategy = translationConfig.jitterStrategy || 'decorrelated';
 
-    // 外部可注入自定义客户端（方便测试或替换实现）
-    this.client = client || null;
+        this.logger.info('TranslationService enabled:', {
+            enabled: this.enabled,
+            targetLanguage: this.targetLanguage,
+            bilingual: this.bilingual,
+            concurrency: this.concurrency,
+            timeoutMs: this.timeoutMs,
+            maxRetries: this.maxRetries,
+            retryDelay: this.retryDelay,
+            maxSegmentRetries: this.maxSegmentRetries,
+            maxDelay: this.maxDelay,
+            jitterStrategy: this.jitterStrategy
+        });
 
-    // Cache directory
-    this.cacheDir = this._resolveCacheDir();
-    this._ensureCacheDir();
-  }
+        // 外部可注入自定义客户端（方便测试或替换实现）
+        this.client = client || null;
 
-  _resolveCacheDir() {
-    if (this.pathService && typeof this.pathService.getTranslationCacheDirectory === 'function') {
-      return this.pathService.getTranslationCacheDirectory();
+        // Cache directory
+        this.cacheDir = this._resolveCacheDir();
+        this._ensureCacheDir();
     }
-    return path.join(process.cwd(), '.temp', 'translation_cache');
-  }
 
-  _ensureCacheDir() {
-    if (!fs.existsSync(this.cacheDir)) {
-      fs.mkdirSync(this.cacheDir, { recursive: true });
+    _resolveCacheDir() {
+        if (this.pathService && typeof this.pathService.getTranslationCacheDirectory === 'function') {
+            return this.pathService.getTranslationCacheDirectory();
+        }
+        return path.join(process.cwd(), '.temp', 'translation_cache');
     }
-  }
+
+    _ensureCacheDir() {
+        if (!fs.existsSync(this.cacheDir)) {
+            fs.mkdirSync(this.cacheDir, { recursive: true });
+        }
+    }
 
     _getCacheKey(text) {
         const mode = this.bilingual ? 'bilingual' : 'single';
@@ -523,13 +531,13 @@ export class TranslationService {
      * @param {Array} batch 
      * @returns {Promise<Object>} Map of id -> translated text
      */
-  async _translateBatch(batch) {
-    const inputMap = {};
-    batch.forEach((item) => {
-      inputMap[item.id] = item.text;
-    });
+    async _translateBatch(batch) {
+        const inputMap = {};
+        batch.forEach((item) => {
+            inputMap[item.id] = item.text;
+        });
 
-    const instructions = `
+        const instructions = `
 You are a professional technical translator. Translate the following JSON object values into ${this.targetLanguage}.
 Keep the keys unchanged.
 The values may contain Markdown formatting (headings, lists, links, emphasis) or code snippets.
@@ -538,39 +546,136 @@ Do not translate code identifiers, API names, or URLs.
 Output ONLY the valid JSON object with translated values. Do not wrap the result in additional Markdown, code fences, or explanations.
 `;
 
-    if (!this.client) {
-      this.client = new GeminiClient({
-        timeoutMs: this.timeoutMs,
-        logger: this.logger
-      });
+        if (!this.client) {
+            this.client = new GeminiClient({
+                timeoutMs: this.timeoutMs,
+                logger: this.logger
+            });
+        }
+
+        return this.client.translateJson({
+            instructions,
+            inputMap
+        });
     }
 
-    return this.client.translateJson({
-      instructions,
-      inputMap
-    });
-  }
+    /**
+     * Translate a single segment (for individual retry)
+     * @param {Object} segment - { id, text }
+     * @returns {Promise<Object>} { id: translatedText }
+     */
+    async _translateSingleSegment(segment) {
+        return this._translateBatch([segment]);
+    }
 
     /**
-     * 带重试的批量翻译封装
-     * @param {Array} batch
+     * Batch translation with segment-level retry (best practice)
+     * First attempts batch translation, then retries failed segments individually
+         * Uses exponential backoff with decorrelated jitter
+         * Note: This method is "best-effort" and may return partial results when
+         * some segments permanently fail; callers should handle untranslated
+         * segments gracefully (they will keep the original content).
+     * @param {Array} batch - Array of { id, text } objects
      * @returns {Promise<Object>} Map of id -> translated text
      */
     async _translateBatchWithRetry(batch) {
-        return retry(
-            () => this._translateBatch(batch),
-            {
-                maxAttempts: this.maxRetries,
-                delay: this.retryDelay,
-                backoff: 2,
-                onRetry: (attempt, error) => {
-                    this.logger.warn('Retrying translation batch', {
-                        attempt,
-                        maxAttempts: this.maxRetries,
-                        error: error.message
-                    });
+        const maxSegmentRetries = this.maxSegmentRetries || 2;
+        const jitterStrategy = this.jitterStrategy || 'decorrelated';
+        const maxDelay = this.maxDelay || 30000;
+
+        // First attempt: try the entire batch
+        let results = {};
+        let failedSegments = [...batch];
+
+        try {
+            const batchResult = await retry(
+                () => this._translateBatch(batch),
+                {
+                    maxAttempts: this.maxRetries,
+                    delay: this.retryDelay,
+                    backoff: 2,
+                    maxDelay,
+                    jitterStrategy,
+                    onRetry: (attempt, error, waitTime) => {
+                        this.logger.warn('Retrying translation batch', {
+                            attempt,
+                            maxAttempts: this.maxRetries,
+                            error: error.message,
+                            waitTime: `${waitTime}ms`,
+                            jitterStrategy
+                        });
+                    }
                 }
+            );
+
+            if (batchResult) {
+                results = { ...batchResult };
+                // Identify segments that got translated
+                failedSegments = batch.filter(seg => !batchResult[seg.id]);
             }
-        );
+        } catch (batchError) {
+            this.logger.warn('Batch translation failed, will retry individual segments', {
+                error: batchError.message,
+                segmentCount: batch.length
+            });
+        }
+
+        // Second phase: retry failed segments individually
+        if (failedSegments.length > 0 && failedSegments.length < batch.length) {
+            this.logger.info('Retrying failed segments individually', {
+                failedCount: failedSegments.length,
+                totalCount: batch.length
+            });
+        }
+
+        for (const segment of failedSegments) {
+            try {
+                const segmentResult = await retry(
+                    () => this._translateSingleSegment(segment),
+                    {
+                        maxAttempts: maxSegmentRetries,
+                        delay: this.retryDelay,
+                        backoff: 2,
+                        maxDelay,
+                        jitterStrategy,
+                        onRetry: (attempt, error, waitTime) => {
+                            this.logger.warn('Retrying single segment', {
+                                segmentId: segment.id,
+                                attempt,
+                                maxAttempts: maxSegmentRetries,
+                                error: error.message,
+                                waitTime: `${waitTime}ms`
+                            });
+                        }
+                    }
+                );
+
+                if (segmentResult && segmentResult[segment.id]) {
+                    results[segment.id] = segmentResult[segment.id];
+                    this.logger.debug('Segment retry succeeded', { segmentId: segment.id });
+                }
+            } catch (segmentError) {
+                this.logger.error('Segment retry exhausted', {
+                    segmentId: segment.id,
+                    text: segment.text.substring(0, 50) + '...',
+                    error: segmentError.message
+                });
+                // Continue with other segments even if one fails
+            }
+        }
+
+        // Log final stats
+        const successCount = Object.keys(results).length;
+        const failCount = batch.length - successCount;
+
+        if (failCount > 0) {
+            this.logger.warn('Batch completed with some failures', {
+                success: successCount,
+                failed: failCount,
+                total: batch.length
+            });
+        }
+
+        return results;
     }
 }
