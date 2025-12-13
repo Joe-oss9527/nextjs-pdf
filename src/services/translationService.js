@@ -74,6 +74,35 @@ export class TranslationService {
     }
   }
 
+  /**
+   * Normalize CJK intraword emphasis to use `*` instead of `_`.
+   *
+   * According to CommonMark and Pandoc best practices, intraword underscores
+   * should generally NOT be treated as emphasis, in order to avoid breaking
+   * identifiers like foo_bar_baz. This helper rewrites the specific pattern
+   * of Chinese characters emphasized inline as `变得_更_有趣` into
+   * `变得*更*有趣`, which Pandoc will reliably render as italics.
+   *
+   * The regex is intentionally conservative and only targets runs of
+   * CJK characters on both sides of the emphasized text to avoid touching
+   * English identifiers or code.
+   *
+   * @param {string} markdown
+   * @returns {string}
+   * @private
+   */
+  _normalizeCjkEmphasis(markdown) {
+    if (!markdown || typeof markdown !== 'string') {
+      return markdown;
+    }
+
+    // 处理典型模式：中文 + _中文+_ + 中文，例如：变得_更_有趣
+    // 覆盖基本汉字和扩展 A 区间（U+3400-U+9FFF）
+    const cjkIntrawordUnderscore = /([\u3400-\u9fff])_([\u3400-\u9fff]+)_([\u3400-\u9fff])/g;
+
+    return markdown.replace(cjkIntrawordUnderscore, '$1*$2*$3');
+  }
+
   _getCacheKey(text) {
     const mode = this.bilingual ? 'bilingual' : 'single';
     const keyBase = `${this.targetLanguage}:${mode}:${text}`;
@@ -670,7 +699,10 @@ export class TranslationService {
       return line;
     });
 
-    return finalLines.join('\n');
+    // 在最终返回前，按规范将中文句子内部的 `_字_` 形式转换为 `*字*`
+    // 这是 Pandoc 和 CommonMark 推荐的写法，可以避免 intraword underscore
+    // 被忽略为普通字符，从而确保中文斜体在 PDF 中正常生效。
+    return this._normalizeCjkEmphasis(finalLines.join('\n'));
   }
 
   /**
