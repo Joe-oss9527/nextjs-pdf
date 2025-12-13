@@ -11,8 +11,8 @@ jest.mock('child_process');
 jest.mock('fs', () => ({
   promises: {
     access: jest.fn(),
-    stat: jest.fn()
-  }
+    stat: jest.fn(),
+  },
 }));
 
 // Mock logger module
@@ -22,8 +22,8 @@ jest.mock('../../src/utils/logger.js', () => ({
     info: jest.fn(),
     warn: jest.fn(),
     warning: jest.fn(),
-    error: jest.fn()
-  }))
+    error: jest.fn(),
+  })),
 }));
 
 describe('PythonRunner', () => {
@@ -38,7 +38,7 @@ describe('PythonRunner', () => {
     mockProcess.stderr = new EventEmitter();
     mockProcess.stdin = {
       write: jest.fn(),
-      end: jest.fn()
+      end: jest.fn(),
     };
     mockProcess.kill = jest.fn();
     mockProcess.killed = false;
@@ -49,7 +49,7 @@ describe('PythonRunner', () => {
     pythonRunner = new PythonRunner({
       pythonExecutable: 'python3',
       pythonTimeout: 5000,
-      pythonCwd: '/test/dir'
+      pythonCwd: '/test/dir',
     });
 
     mockLogger = pythonRunner.logger;
@@ -57,7 +57,7 @@ describe('PythonRunner', () => {
     // Mock file system operations
     fs.promises.access.mockResolvedValue();
     fs.promises.stat.mockResolvedValue({
-      isFile: () => true
+      isFile: () => true,
     });
   });
 
@@ -69,7 +69,7 @@ describe('PythonRunner', () => {
   describe('constructor', () => {
     it('should initialize with default config', () => {
       const runner = new PythonRunner();
-      
+
       expect(runner.config.pythonExecutable).toBe('python3');
       expect(runner.config.timeout).toBe(300000);
       expect(runner.config.maxBuffer).toBe(10485760);
@@ -81,9 +81,9 @@ describe('PythonRunner', () => {
       const runner = new PythonRunner({
         pythonExecutable: 'python',
         pythonTimeout: 10000,
-        pythonPath: '/custom/path'
+        pythonPath: '/custom/path',
       });
-      
+
       expect(runner.config.pythonExecutable).toBe('python');
       expect(runner.config.timeout).toBe(10000);
       expect(runner.config.env.PYTHONPATH).toBe('/custom/path');
@@ -91,9 +91,9 @@ describe('PythonRunner', () => {
 
     it('should set Python environment variables', () => {
       const runner = new PythonRunner({
-        pythonEnv: { CUSTOM_VAR: 'value' }
+        pythonEnv: { CUSTOM_VAR: 'value' },
       });
-      
+
       expect(runner.config.env.PYTHONIOENCODING).toBe('utf-8');
       expect(runner.config.env.CUSTOM_VAR).toBe('value');
     });
@@ -119,19 +119,29 @@ describe('PythonRunner', () => {
         stdout: 'Output line 1\nOutput line 2',
         stderr: '',
         duration: expect.any(Number),
-        processId: expect.stringMatching(/^python_\d+_[a-z0-9]+$/)
+        processId: expect.stringMatching(/^python_\d+_[a-z0-9]+$/),
       });
 
-      expect(spawn).toHaveBeenCalledWith('python3', [scriptPath, 'arg1', 'arg2'], expect.objectContaining({
-        cwd: '/test/dir',
-        env: expect.objectContaining({
-          PYTHONIOENCODING: 'utf-8'
-        }),
-        timeout: 5000
-      }));
+      expect(spawn).toHaveBeenCalledWith(
+        'python3',
+        [scriptPath, 'arg1', 'arg2'],
+        expect.objectContaining({
+          cwd: '/test/dir',
+          env: expect.objectContaining({
+            PYTHONIOENCODING: 'utf-8',
+          }),
+          timeout: 5000,
+        })
+      );
 
-      expect(mockLogger.info).toHaveBeenCalledWith('Starting Python script execution', expect.any(Object));
-      expect(mockLogger.info).toHaveBeenCalledWith('Python script execution completed successfully', expect.any(Object));
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Starting Python script execution',
+        expect.any(Object)
+      );
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Python script execution completed successfully',
+        expect.any(Object)
+      );
     });
 
     it('should handle script execution failure', async () => {
@@ -151,10 +161,13 @@ describe('PythonRunner', () => {
         exitCode: 1,
         stdout: '',
         stderr: 'Error occurred',
-        duration: expect.any(Number)
+        duration: expect.any(Number),
       });
 
-      expect(mockLogger.error).toHaveBeenCalledWith('Python script execution failed', expect.any(Object));
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Python script execution failed',
+        expect.any(Object)
+      );
     });
 
     it('should handle process spawn error', async () => {
@@ -170,7 +183,7 @@ describe('PythonRunner', () => {
       expect(result).toMatchObject({
         success: false,
         error: 'Spawn failed',
-        exitCode: -1
+        exitCode: -1,
       });
     });
 
@@ -181,7 +194,7 @@ describe('PythonRunner', () => {
 
       expect(result).toMatchObject({
         success: false,
-        error: expect.stringContaining('Script validation failed')
+        error: expect.stringContaining('Script validation failed'),
       });
     });
 
@@ -203,7 +216,7 @@ describe('PythonRunner', () => {
       });
 
       await pythonRunner.runScript('/test/script.py', [], {
-        input: 'test input'
+        input: 'test input',
       });
 
       expect(mockProcess.stdin.write).toHaveBeenCalledWith('test input');
@@ -218,11 +231,17 @@ describe('PythonRunner', () => {
       });
 
       await pythonRunner.runScript('/test/script.py', [], {
-        logOutput: true
+        logOutput: true,
       });
 
-      expect(mockLogger.debug).toHaveBeenCalledWith(expect.stringContaining('Python stdout'), 'Debug output');
-      expect(mockLogger.debug).toHaveBeenCalledWith(expect.stringContaining('Python stderr'), 'Error output');
+      expect(mockLogger.debug).toHaveBeenCalledWith(
+        expect.stringContaining('Python stdout'),
+        'Debug output'
+      );
+      expect(mockLogger.debug).toHaveBeenCalledWith(
+        expect.stringContaining('Python stderr'),
+        'Error output'
+      );
     });
   });
 
@@ -230,31 +249,34 @@ describe('PythonRunner', () => {
     it('should validate Python file successfully', async () => {
       fs.promises.access.mockResolvedValue();
       fs.promises.stat.mockResolvedValue({
-        isFile: () => true
+        isFile: () => true,
       });
 
       await expect(pythonRunner.validateScript('/test/script.py')).resolves.not.toThrow();
     });
 
     it('should reject non-Python files', async () => {
-      await expect(pythonRunner.validateScript('/test/script.js'))
-        .rejects.toThrow('Invalid Python script file');
+      await expect(pythonRunner.validateScript('/test/script.js')).rejects.toThrow(
+        'Invalid Python script file'
+      );
     });
 
     it('should reject non-existent files', async () => {
       fs.promises.access.mockRejectedValue(new Error('ENOENT'));
 
-      await expect(pythonRunner.validateScript('/test/script.py'))
-        .rejects.toThrow('Script validation failed');
+      await expect(pythonRunner.validateScript('/test/script.py')).rejects.toThrow(
+        'Script validation failed'
+      );
     });
 
     it('should reject directories', async () => {
       fs.promises.stat.mockResolvedValue({
-        isFile: () => false
+        isFile: () => false,
       });
 
-      await expect(pythonRunner.validateScript('/test/dir.py'))
-        .rejects.toThrow('Path is not a file');
+      await expect(pythonRunner.validateScript('/test/dir.py')).rejects.toThrow(
+        'Path is not a file'
+      );
     });
   });
 
@@ -269,14 +291,16 @@ describe('PythonRunner', () => {
       jest.useFakeTimers();
 
       pythonRunner.killProcess(mockProcess, 'test-id');
-      
+
       expect(mockProcess.kill).toHaveBeenCalledWith('SIGTERM');
 
       // Fast forward 5 seconds
       jest.advanceTimersByTime(5000);
 
       expect(mockProcess.kill).toHaveBeenCalledWith('SIGKILL');
-      expect(mockLogger.warning).toHaveBeenCalledWith('Force killed Python process', { processId: 'test-id' });
+      expect(mockLogger.warning).toHaveBeenCalledWith('Force killed Python process', {
+        processId: 'test-id',
+      });
 
       jest.useRealTimers();
     });
@@ -296,16 +320,19 @@ describe('PythonRunner', () => {
 
       pythonRunner.killProcess(mockProcess, 'test-id');
 
-      expect(mockLogger.error).toHaveBeenCalledWith('Error killing Python process', expect.objectContaining({
-        error: 'Kill failed'
-      }));
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Error killing Python process',
+        expect.objectContaining({
+          error: 'Kill failed',
+        })
+      );
     });
   });
 
   describe('getRunningProcesses', () => {
     it('should return empty array when no processes', () => {
       const processes = pythonRunner.getRunningProcesses();
-      
+
       expect(processes).toEqual([]);
     });
 
@@ -313,8 +340,8 @@ describe('PythonRunner', () => {
       // Start a process
       const promise = pythonRunner.runScript('/test/script.py', ['arg1']);
 
-      // Wait for process to be registered  
-      await new Promise(resolve => process.nextTick(resolve));
+      // Wait for process to be registered
+      await new Promise((resolve) => process.nextTick(resolve));
 
       const processes = pythonRunner.getRunningProcesses();
 
@@ -325,7 +352,7 @@ describe('PythonRunner', () => {
         args: ['arg1'],
         startTime: expect.any(Number),
         duration: expect.any(Number),
-        pid: 12345
+        pid: 12345,
       });
 
       // Clean up
@@ -370,10 +397,14 @@ describe('PythonRunner', () => {
       expect(result).toEqual({
         available: true,
         version: 'Python 3.9.0',
-        executable: 'python3'
+        executable: 'python3',
       });
 
-      expect(spawn).toHaveBeenCalledWith('python3', ['-c', 'import sys; print(sys.version)'], expect.any(Object));
+      expect(spawn).toHaveBeenCalledWith(
+        'python3',
+        ['-c', 'import sys; print(sys.version)'],
+        expect.any(Object)
+      );
     });
 
     it('should handle environment check failure', async () => {
@@ -386,7 +417,7 @@ describe('PythonRunner', () => {
       expect(result).toMatchObject({
         available: false,
         error: expect.any(String),
-        executable: 'python3'
+        executable: 'python3',
       });
     });
   });
@@ -408,7 +439,7 @@ describe('PythonRunner', () => {
       // Start process
       const promise = pythonRunner.runScript('/test/script.py');
 
-      await new Promise(resolve => process.nextTick(resolve));
+      await new Promise((resolve) => process.nextTick(resolve));
       expect(pythonRunner.runningProcesses.size).toBe(1);
 
       // Complete process

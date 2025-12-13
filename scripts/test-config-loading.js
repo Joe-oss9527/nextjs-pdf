@@ -28,8 +28,8 @@ async function testConfigLoading() {
     console.log('  contentSelector:', config.contentSelector);
 
     // 检查所有包含 PDF 或 Style 的字段
-    const pdfStyleKeys = Object.keys(config).filter(k =>
-      k.includes('PDF') || k.includes('Style') || k.includes('pdf')
+    const pdfStyleKeys = Object.keys(config).filter(
+      (k) => k.includes('PDF') || k.includes('Style') || k.includes('pdf')
     );
     console.log('\n📌 所有 PDF/Style 相关字段:', pdfStyleKeys);
 
@@ -42,7 +42,10 @@ async function testConfigLoading() {
         if (config.enablePDFStyleProcessing === true) {
           console.log('✅ Claude Code 配置正确 (应该为 true)');
         } else {
-          console.log('⚠️  Claude Code 配置错误：应该为 true，实际为', config.enablePDFStyleProcessing);
+          console.log(
+            '⚠️  Claude Code 配置错误：应该为 true，实际为',
+            config.enablePDFStyleProcessing
+          );
         }
       } else if (config.rootURL.includes('openai.com')) {
         if (config.enablePDFStyleProcessing === false) {
@@ -59,7 +62,6 @@ async function testConfigLoading() {
 
     // 清理
     await container.dispose();
-
   } catch (error) {
     console.error('❌ 测试失败:', error.message);
     console.error(error.stack);

@@ -5,8 +5,8 @@ import { EventEmitter } from 'events';
 // Mock p-queue
 jest.mock('p-queue', () => {
   const EventEmitterCopy = require('events').EventEmitter;
-  
-  return jest.fn().mockImplementation(function(options) {
+
+  return jest.fn().mockImplementation(function (options) {
     const mockQueue = new EventEmitterCopy();
     Object.assign(mockQueue, {
       size: 0,
@@ -35,7 +35,7 @@ jest.mock('p-queue', () => {
       }),
       start: jest.fn().mockImplementation(() => {
         mockQueue.isPaused = false;
-      })
+      }),
     });
     return mockQueue;
   });
@@ -50,7 +50,7 @@ describe('QueueManager', () => {
       interval: 1000,
       intervalCap: 5,
       timeout: 30000,
-      throwOnTimeout: false
+      throwOnTimeout: false,
     });
   });
 
@@ -115,12 +115,12 @@ describe('QueueManager', () => {
   describe('addTask', () => {
     test('应该添加任务并执行', async () => {
       const fn = jest.fn().mockResolvedValue('result');
-      
+
       const result = await queueManager.addTask('task1', fn);
 
       expect(result).toBe('result');
       expect(queueManager.tasks.has('task1')).toBe(true);
-      
+
       const task = queueManager.tasks.get('task1');
       expect(task.id).toBe('task1');
       expect(task.status).toBe('completed');
@@ -130,15 +130,12 @@ describe('QueueManager', () => {
 
     test('应该处理任务优先级', async () => {
       const fn = jest.fn().mockResolvedValue('result');
-      
+
       await queueManager.addTask('task1', fn, { priority: 10 });
 
       const task = queueManager.tasks.get('task1');
       expect(task.priority).toBe(10);
-      expect(queueManager.queue.add).toHaveBeenCalledWith(
-        expect.any(Function),
-        { priority: 10 }
-      );
+      expect(queueManager.queue.add).toHaveBeenCalledWith(expect.any(Function), { priority: 10 });
     });
 
     test('应该在任务成功时发出taskSuccess事件', (done) => {
@@ -171,17 +168,18 @@ describe('QueueManager', () => {
 
     test('应该记录任务执行时间', async () => {
       let resolveTask;
-      const fn = jest.fn().mockImplementation(() => 
-        new Promise(resolve => {
-          resolveTask = resolve;
-        })
+      const fn = jest.fn().mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveTask = resolve;
+          })
       );
 
       const taskPromise = queueManager.addTask('task1', fn);
-      
+
       // 任务开始后等待一段时间
-      await new Promise(resolve => setTimeout(resolve, 50));
-      
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
       const taskDuringExecution = queueManager.tasks.get('task1');
       expect(taskDuringExecution.status).toBe('running');
       expect(taskDuringExecution.startedAt).toBeDefined();
@@ -199,7 +197,7 @@ describe('QueueManager', () => {
       const tasks = [
         { id: 'task1', fn: jest.fn().mockResolvedValue('result1') },
         { id: 'task2', fn: jest.fn().mockResolvedValue('result2') },
-        { id: 'task3', fn: jest.fn().mockRejectedValue(new Error('error3')) }
+        { id: 'task3', fn: jest.fn().mockRejectedValue(new Error('error3')) },
       ];
 
       const results = await queueManager.addBatch(tasks);
@@ -207,9 +205,9 @@ describe('QueueManager', () => {
       expect(results).toHaveLength(3);
       expect(results[0]).toEqual({ status: 'fulfilled', value: 'result1' });
       expect(results[1]).toEqual({ status: 'fulfilled', value: 'result2' });
-      expect(results[2]).toEqual({ 
-        status: 'rejected', 
-        reason: expect.objectContaining({ message: 'error3' })
+      expect(results[2]).toEqual({
+        status: 'rejected',
+        reason: expect.objectContaining({ message: 'error3' }),
       });
 
       expect(queueManager.tasks.has('task1')).toBe(true);
@@ -220,7 +218,7 @@ describe('QueueManager', () => {
     test('应该处理带选项的批量任务', async () => {
       const tasks = [
         { id: 'task1', fn: jest.fn().mockResolvedValue('result1'), options: { priority: 10 } },
-        { id: 'task2', fn: jest.fn().mockResolvedValue('result2'), options: { priority: 5 } }
+        { id: 'task2', fn: jest.fn().mockResolvedValue('result2'), options: { priority: 5 } },
       ];
 
       await queueManager.addBatch(tasks);
@@ -301,18 +299,18 @@ describe('QueueManager', () => {
           pending: 1,
           running: 1,
           completed: 1,
-          failed: 1
-        }
+          failed: 1,
+        },
       });
     });
   });
 
   describe('getTaskDetails', () => {
     test('应该返回任务详情', () => {
-      const taskData = { 
-        id: 'task1', 
+      const taskData = {
+        id: 'task1',
         status: 'completed',
-        priority: 5
+        priority: 5,
       };
       queueManager.tasks.set('task1', taskData);
 
@@ -347,9 +345,9 @@ describe('QueueManager', () => {
 
   describe('任务生命周期', () => {
     test('任务应该经历完整的生命周期', async () => {
-      const fn = jest.fn().mockImplementation(() => 
-        new Promise(resolve => setTimeout(() => resolve('done'), 10))
-      );
+      const fn = jest
+        .fn()
+        .mockImplementation(() => new Promise((resolve) => setTimeout(() => resolve('done'), 10)));
 
       const taskPromise = queueManager.addTask('lifecycle-task', fn, { priority: 5 });
 

@@ -5,7 +5,7 @@ import { createLogger } from '../src/utils/logger.js';
 jest.mock('../src/core/setup.js', () => ({
   createContainer: jest.fn(),
   shutdownContainer: jest.fn().mockResolvedValue(),
-  getContainerHealth: jest.fn().mockReturnValue({ healthy: true, services: [] })
+  getContainerHealth: jest.fn().mockReturnValue({ healthy: true, services: [] }),
 }));
 
 jest.mock('../src/core/pythonRunner.js', () => {
@@ -13,10 +13,10 @@ jest.mock('../src/core/pythonRunner.js', () => {
     checkPythonEnvironment: jest.fn().mockResolvedValue({
       available: true,
       version: 'Python 3.9.0',
-      executable: 'python3'
+      executable: 'python3',
     }),
     getRunningProcesses: jest.fn().mockReturnValue([]),
-    dispose: jest.fn().mockResolvedValue()
+    dispose: jest.fn().mockResolvedValue(),
   }));
 });
 
@@ -26,8 +26,8 @@ jest.mock('../src/utils/logger.js', () => ({
     info: jest.fn(),
     warn: jest.fn(),
     error: jest.fn(),
-    name
-  }))
+    name,
+  })),
 }));
 
 // Prevent process.exit from being called
@@ -49,7 +49,7 @@ describe('Application', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Create mock Application class
     Application = class MockApplication {
       constructor() {
@@ -63,7 +63,7 @@ describe('Application', () => {
 
       setupSignalHandlers() {
         const signals = ['SIGINT', 'SIGTERM', 'SIGQUIT'];
-        signals.forEach(signal => {
+        signals.forEach((signal) => {
           process.on(signal, async () => {
             this.logger.info(`Received ${signal}, initiating graceful shutdown...`);
             await this.shutdown();
@@ -89,7 +89,7 @@ describe('Application', () => {
           this.startTime = Date.now();
           this.logger.info('🚀 Starting PDF Scraper Application...');
           this.logger.info('📦 Setting up dependency injection container...');
-          
+
           const { createContainer } = await import('../src/core/setup.js');
           this.container = await createContainer();
 
@@ -114,7 +114,6 @@ describe('Application', () => {
 
           const initTime = Date.now() - this.startTime;
           this.logger.info(`✅ Application initialized successfully in ${initTime}ms`);
-
         } catch (error) {
           this.logger.error('❌ Failed to initialize application:', error);
           await this.cleanup();
@@ -144,20 +143,19 @@ describe('Application', () => {
 
           this.logger.info('✅ Web scraping completed successfully', {
             duration: scrapeTime,
-            stats
+            stats,
           });
 
           return {
             success: true,
             duration: scrapeTime,
-            stats
+            stats,
           };
-
         } catch (error) {
           this.logger.error('❌ Web scraping failed:', error);
           return {
             success: false,
-            error: error.message
+            error: error.message,
           };
         }
       }
@@ -176,7 +174,7 @@ describe('Application', () => {
             this.logger.info('✅ PDF merge completed successfully', {
               duration: mergeTime,
               outputFile: result.outputFile,
-              processedFiles: result.processedFiles
+              processedFiles: result.processedFiles,
             });
           } else {
             this.logger.error('❌ PDF merge failed:', result.error);
@@ -184,14 +182,13 @@ describe('Application', () => {
 
           return {
             ...result,
-            duration: mergeTime
+            duration: mergeTime,
           };
-
         } catch (error) {
           this.logger.error('❌ PDF merge process failed:', error);
           return {
             success: false,
-            error: error.message
+            error: error.message,
           };
         }
       }
@@ -219,13 +216,12 @@ describe('Application', () => {
             totalDuration: totalTime,
             scraping: scrapeResult,
             merge: mergeResult,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
           };
 
           this.logger.info('🎉 Application workflow completed!', finalReport);
 
           return finalReport;
-
         } catch (error) {
           this.logger.error('💥 Application workflow failed:', error);
           throw error;
@@ -243,7 +239,7 @@ describe('Application', () => {
           containerHealth: this.container ? getContainerHealth(this.container) : null,
           pythonProcesses: this.pythonRunner ? this.pythonRunner.getRunningProcesses() : [],
           memoryUsage: process.memoryUsage(),
-          pid: process.pid
+          pid: process.pid,
         };
       }
 
@@ -268,7 +264,6 @@ describe('Application', () => {
           }
 
           this.logger.info('✅ Application cleanup completed');
-
         } catch (error) {
           this.logger.error('❌ Error during cleanup:', error);
         }
@@ -287,7 +282,6 @@ describe('Application', () => {
 
           const shutdownTime = Date.now() - shutdownStartTime;
           this.logger.info(`✅ Graceful shutdown completed in ${shutdownTime}ms`);
-
         } catch (error) {
           this.logger.error('❌ Error during shutdown:', error);
         }
@@ -296,7 +290,9 @@ describe('Application', () => {
       async healthCheck() {
         try {
           const status = this.getStatus();
-          const pythonCheck = this.pythonRunner ? await this.pythonRunner.checkPythonEnvironment() : null;
+          const pythonCheck = this.pythonRunner
+            ? await this.pythonRunner.checkPythonEnvironment()
+            : null;
 
           return {
             healthy: true,
@@ -304,14 +300,13 @@ describe('Application', () => {
             uptime: status.uptime,
             containerHealth: status.containerHealth,
             pythonEnvironment: pythonCheck,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
           };
-
         } catch (error) {
           return {
             healthy: false,
             error: error.message,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
           };
         }
       }
@@ -320,12 +315,12 @@ describe('Application', () => {
     // Mock config
     mockConfig = {
       pdfDir: '/test/pdf',
-      pythonExecutable: 'python3'
+      pythonExecutable: 'python3',
     };
 
     // Mock services
     mockScraper = {
-      run: jest.fn().mockResolvedValue()
+      run: jest.fn().mockResolvedValue(),
     };
 
     mockProgressTracker = {
@@ -333,28 +328,28 @@ describe('Application', () => {
       getStats: jest.fn().mockReturnValue({
         processed: 10,
         failed: 0,
-        total: 10
-      })
+        total: 10,
+      }),
     };
 
     mockFileService = {
       cleanDirectory: jest.fn().mockResolvedValue(),
-      ensureDirectory: jest.fn().mockResolvedValue()
+      ensureDirectory: jest.fn().mockResolvedValue(),
     };
 
     mockPythonMergeService = {
       mergePDFs: jest.fn().mockResolvedValue({
         success: true,
         outputFile: 'merged.pdf',
-        processedFiles: 10
-      })
+        processedFiles: 10,
+      }),
     };
 
     mockLogger = {
       debug: jest.fn(),
       info: jest.fn(),
       warn: jest.fn(),
-      error: jest.fn()
+      error: jest.fn(),
     };
 
     // Mock container
@@ -366,10 +361,10 @@ describe('Application', () => {
           scraper: mockScraper,
           progressTracker: mockProgressTracker,
           fileService: mockFileService,
-          pythonMergeService: mockPythonMergeService
+          pythonMergeService: mockPythonMergeService,
         };
         return Promise.resolve(services[service]);
-      })
+      }),
     };
 
     const { createContainer } = require('../src/core/setup.js');
@@ -398,7 +393,7 @@ describe('Application', () => {
 
     it('should setup signal handlers', () => {
       const signals = ['SIGINT', 'SIGTERM', 'SIGQUIT'];
-      signals.forEach(signal => {
+      signals.forEach((signal) => {
         expect(process.listenerCount(signal)).toBeGreaterThan(0);
       });
       expect(process.listenerCount('uncaughtException')).toBeGreaterThan(0);
@@ -413,10 +408,10 @@ describe('Application', () => {
       expect(app.container).toBe(mockContainer);
       expect(app.pythonRunner).toBeDefined();
       expect(app.startTime).toBeGreaterThan(0);
-      
+
       const { createContainer } = require('../src/core/setup.js');
       expect(createContainer).toHaveBeenCalled();
-      
+
       expect(app.logger.info).toHaveBeenCalledWith('🚀 Starting PDF Scraper Application...');
       expect(app.logger.info).toHaveBeenCalledWith('✅ Python environment ready:', 'Python 3.9.0');
     });
@@ -426,15 +421,18 @@ describe('Application', () => {
       PythonRunner.mockImplementation(() => ({
         checkPythonEnvironment: jest.fn().mockResolvedValue({
           available: false,
-          error: 'Python not found'
+          error: 'Python not found',
         }),
         getRunningProcesses: jest.fn().mockReturnValue([]),
-        dispose: jest.fn().mockResolvedValue()
+        dispose: jest.fn().mockResolvedValue(),
       }));
 
       await app.initialize();
 
-      expect(app.logger.warn).toHaveBeenCalledWith('⚠️ Python environment not available:', 'Python not found');
+      expect(app.logger.warn).toHaveBeenCalledWith(
+        '⚠️ Python environment not available:',
+        'Python not found'
+      );
       expect(app.logger.warn).toHaveBeenCalledWith('📄 PDF merge functionality will be limited');
     });
 
@@ -443,7 +441,10 @@ describe('Application', () => {
       createContainer.mockRejectedValue(new Error('Container setup failed'));
 
       await expect(app.initialize()).rejects.toThrow('Container setup failed');
-      expect(app.logger.error).toHaveBeenCalledWith('❌ Failed to initialize application:', expect.any(Error));
+      expect(app.logger.error).toHaveBeenCalledWith(
+        '❌ Failed to initialize application:',
+        expect.any(Error)
+      );
     });
   });
 
@@ -461,8 +462,8 @@ describe('Application', () => {
         stats: {
           processed: 10,
           failed: 0,
-          total: 10
-        }
+          total: 10,
+        },
       });
 
       expect(mockFileService.cleanDirectory).toHaveBeenCalledWith('/test/pdf');
@@ -478,7 +479,7 @@ describe('Application', () => {
 
       expect(result).toMatchObject({
         success: false,
-        error: 'Scraping failed'
+        error: 'Scraping failed',
       });
 
       expect(app.logger.error).toHaveBeenCalledWith('❌ Web scraping failed:', expect.any(Error));
@@ -497,17 +498,20 @@ describe('Application', () => {
         success: true,
         outputFile: 'merged.pdf',
         processedFiles: 10,
-        duration: expect.any(Number)
+        duration: expect.any(Number),
       });
 
       expect(mockPythonMergeService.mergePDFs).toHaveBeenCalled();
-      expect(app.logger.info).toHaveBeenCalledWith('✅ PDF merge completed successfully', expect.any(Object));
+      expect(app.logger.info).toHaveBeenCalledWith(
+        '✅ PDF merge completed successfully',
+        expect.any(Object)
+      );
     });
 
     it('should handle merge failures', async () => {
       mockPythonMergeService.mergePDFs.mockResolvedValue({
         success: false,
-        error: 'Merge failed'
+        error: 'Merge failed',
       });
 
       const result = await app.runPythonMerge();
@@ -523,7 +527,7 @@ describe('Application', () => {
 
       expect(result).toMatchObject({
         success: false,
-        error: 'Merge exception'
+        error: 'Merge exception',
       });
     });
   });
@@ -537,18 +541,21 @@ describe('Application', () => {
         scraping: {
           success: true,
           duration: expect.any(Number),
-          stats: expect.any(Object)
+          stats: expect.any(Object),
         },
         merge: {
           success: true,
           outputFile: 'merged.pdf',
           processedFiles: 10,
-          duration: expect.any(Number)
+          duration: expect.any(Number),
         },
-        timestamp: expect.any(String)
+        timestamp: expect.any(String),
       });
 
-      expect(app.logger.info).toHaveBeenCalledWith('🎉 Application workflow completed!', expect.any(Object));
+      expect(app.logger.info).toHaveBeenCalledWith(
+        '🎉 Application workflow completed!',
+        expect.any(Object)
+      );
     });
 
     it('should fail if scraping fails', async () => {
@@ -560,14 +567,16 @@ describe('Application', () => {
     it('should continue if merge fails after successful scraping', async () => {
       mockPythonMergeService.mergePDFs.mockResolvedValue({
         success: false,
-        error: 'Merge failed'
+        error: 'Merge failed',
       });
 
       const result = await app.run();
 
       expect(result.scraping.success).toBe(true);
       expect(result.merge.success).toBe(false);
-      expect(app.logger.error).toHaveBeenCalledWith('PDF merge failed, but scraping was successful');
+      expect(app.logger.error).toHaveBeenCalledWith(
+        'PDF merge failed, but scraping was successful'
+      );
     });
   });
 
@@ -582,13 +591,13 @@ describe('Application', () => {
         containerHealth: null,
         pythonProcesses: [],
         memoryUsage: expect.any(Object),
-        pid: process.pid
+        pid: process.pid,
       });
     });
 
     it('should return status when initialized', async () => {
       await app.initialize();
-      
+
       const status = app.getStatus();
 
       expect(status).toMatchObject({
@@ -598,14 +607,14 @@ describe('Application', () => {
         containerHealth: { healthy: true, services: [] },
         pythonProcesses: [],
         memoryUsage: expect.any(Object),
-        pid: process.pid
+        pid: process.pid,
       });
     });
 
     it('should return shutting down status', async () => {
       await app.initialize();
       app.isShuttingDown = true;
-      
+
       const status = app.getStatus();
 
       expect(status.status).toBe('shutting_down');
@@ -616,12 +625,12 @@ describe('Application', () => {
     it('should cleanup resources', async () => {
       await app.initialize();
       const pythonRunnerDisposeSpy = app.pythonRunner.dispose;
-      
+
       await app.cleanup();
 
       expect(pythonRunnerDisposeSpy).toHaveBeenCalled();
       expect(app.pythonRunner).toBeNull();
-      
+
       const { shutdownContainer } = require('../src/core/setup.js');
       expect(shutdownContainer).toHaveBeenCalledWith(mockContainer);
       expect(app.container).toBeNull();
@@ -654,14 +663,16 @@ describe('Application', () => {
       await app.shutdown();
 
       expect(app.logger.info).toHaveBeenCalledWith('🛑 Initiating graceful shutdown...');
-      expect(app.logger.info).toHaveBeenCalledWith(expect.stringContaining('✅ Graceful shutdown completed'));
+      expect(app.logger.info).toHaveBeenCalledWith(
+        expect.stringContaining('✅ Graceful shutdown completed')
+      );
       expect(app.isShuttingDown).toBe(true);
     });
 
     it('should not shutdown twice', async () => {
       await app.initialize();
       await app.shutdown();
-      
+
       const cleanupSpy = jest.spyOn(app, 'cleanup');
       await app.shutdown();
 
@@ -672,7 +683,7 @@ describe('Application', () => {
   describe('healthCheck', () => {
     it('should return healthy status', async () => {
       await app.initialize();
-      
+
       const health = await app.healthCheck();
 
       expect(health).toMatchObject({
@@ -681,9 +692,9 @@ describe('Application', () => {
         uptime: expect.any(Number),
         containerHealth: { healthy: true, services: [] },
         pythonEnvironment: expect.objectContaining({
-          available: expect.any(Boolean)
+          available: expect.any(Boolean),
         }),
-        timestamp: expect.any(String)
+        timestamp: expect.any(String),
       });
     });
 
@@ -692,13 +703,13 @@ describe('Application', () => {
       jest.spyOn(app, 'getStatus').mockImplementation(() => {
         throw new Error('Status error');
       });
-      
+
       const health = await app.healthCheck();
 
       expect(health).toMatchObject({
         healthy: false,
         error: expect.any(String),
-        timestamp: expect.any(String)
+        timestamp: expect.any(String),
       });
     });
   });
@@ -707,9 +718,9 @@ describe('Application', () => {
     it('should handle SIGINT', async () => {
       await app.initialize();
       const shutdownSpy = jest.spyOn(app, 'shutdown');
-      
+
       process.emit('SIGINT');
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       expect(shutdownSpy).toHaveBeenCalled();
       expect(mockExit).toHaveBeenCalledWith(0);
@@ -718,9 +729,9 @@ describe('Application', () => {
     it('should handle uncaught exception', async () => {
       await app.initialize();
       const shutdownSpy = jest.spyOn(app, 'shutdown');
-      
+
       process.emit('uncaughtException', new Error('Test error'));
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       expect(app.logger.error).toHaveBeenCalledWith('Uncaught exception:', expect.any(Error));
       expect(shutdownSpy).toHaveBeenCalled();
@@ -730,16 +741,19 @@ describe('Application', () => {
     it('should handle unhandled rejection', async () => {
       await app.initialize();
       const shutdownSpy = jest.spyOn(app, 'shutdown');
-      
+
       // Create a rejected promise but don't throw it
       const rejectedPromise = Promise.reject('test rejection');
       // Prevent unhandled rejection warning
       rejectedPromise.catch(() => {});
-      
-      process.emit('unhandledRejection', 'rejection reason', rejectedPromise);
-      await new Promise(resolve => setTimeout(resolve, 10));
 
-      expect(app.logger.error).toHaveBeenCalledWith('Unhandled promise rejection:', expect.any(Object));
+      process.emit('unhandledRejection', 'rejection reason', rejectedPromise);
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(app.logger.error).toHaveBeenCalledWith(
+        'Unhandled promise rejection:',
+        expect.any(Object)
+      );
       expect(shutdownSpy).toHaveBeenCalled();
       expect(mockExit).toHaveBeenCalledWith(1);
     });
@@ -752,13 +766,13 @@ describe('main', () => {
   let consoleErrorSpy;
 
   // Mock main function
-  const main = async function() {
+  const main = async function () {
     const Application = class {
       constructor() {
         Object.assign(this, mockApp);
       }
     };
-    
+
     const app = new Application();
 
     try {
@@ -774,7 +788,6 @@ describe('main', () => {
 
       await app.shutdown();
       process.exit(0);
-
     } catch (error) {
       console.error('\n' + '='.repeat(60));
       console.error('💥 APPLICATION FAILED');
@@ -789,7 +802,7 @@ describe('main', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Mock console methods
     consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
@@ -799,10 +812,10 @@ describe('main', () => {
       run: jest.fn().mockResolvedValue({
         totalDuration: 5000,
         scraping: { success: true },
-        merge: { success: true }
+        merge: { success: true },
       }),
       shutdown: jest.fn().mockResolvedValue(),
-      cleanup: jest.fn().mockResolvedValue()
+      cleanup: jest.fn().mockResolvedValue(),
     };
   });
 
@@ -816,7 +829,9 @@ describe('main', () => {
 
     expect(mockApp.run).toHaveBeenCalled();
     expect(mockApp.shutdown).toHaveBeenCalled();
-    expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('APPLICATION COMPLETED SUCCESSFULLY'));
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      expect.stringContaining('APPLICATION COMPLETED SUCCESSFULLY')
+    );
     expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('Scraping: ✅ Success'));
     expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('PDF Merge: ✅ Success'));
     expect(mockExit).toHaveBeenCalledWith(0);

@@ -14,7 +14,7 @@ describe('Scraper', () => {
       evaluate: jest.fn(),
       waitForSelector: jest.fn(),
       pdf: jest.fn(),
-      close: jest.fn()
+      close: jest.fn(),
     };
 
     mockDependencies = {
@@ -28,35 +28,35 @@ describe('Scraper', () => {
         pdfDir: './pdfs',
         maxRetries: 3,
         pageTimeout: 30000,
-        pdf: { engine: 'puppeteer' }
+        pdf: { engine: 'puppeteer' },
       },
       logger: {
         info: jest.fn(),
         debug: jest.fn(),
         warn: jest.fn(),
-        error: jest.fn()
+        error: jest.fn(),
       },
       browserPool: {
         isInitialized: false,
         initialize: jest.fn(),
-        close: jest.fn()
+        close: jest.fn(),
       },
       pageManager: {
         createPage: jest.fn().mockResolvedValue(mockPage),
         closePage: jest.fn(),
-        closeAll: jest.fn()
+        closeAll: jest.fn(),
       },
       fileService: {
-        ensureDirectory: jest.fn()
+        ensureDirectory: jest.fn(),
       },
       pathService: {
-        getPdfPath: jest.fn().mockReturnValue('./pdfs/001-page.pdf')
+        getPdfPath: jest.fn().mockReturnValue('./pdfs/001-page.pdf'),
       },
       metadataService: {
         saveArticleTitle: jest.fn(),
         logImageLoadFailure: jest.fn(),
         logFailedLink: jest.fn(),
-        saveSectionStructure: jest.fn()
+        saveSectionStructure: jest.fn(),
       },
       stateManager: {
         on: jest.fn(),
@@ -69,8 +69,8 @@ describe('Scraper', () => {
         getFailedUrls: jest.fn().mockReturnValue([]),
         state: {
           processedUrls: new Set(),
-          failedUrls: new Map()
-        }
+          failedUrls: new Map(),
+        },
       },
       progressTracker: {
         on: jest.fn(),
@@ -83,8 +83,8 @@ describe('Scraper', () => {
           processed: 0,
           failed: 0,
           skipped: 0,
-          total: 0
-        })
+          total: 0,
+        }),
       },
       queueManager: {
         on: jest.fn(),
@@ -98,13 +98,13 @@ describe('Scraper', () => {
           pending: 0,
           active: 0,
           completed: 0,
-          failed: 0
-        })
+          failed: 0,
+        }),
       },
       imageService: {
         setupImageObserver: jest.fn(),
         triggerLazyLoading: jest.fn().mockResolvedValue(true),
-        cleanupPage: jest.fn()
+        cleanupPage: jest.fn(),
       },
       pdfStyleService: {
         applyPDFStyles: jest.fn(),
@@ -112,8 +112,8 @@ describe('Scraper', () => {
         removeDarkTheme: jest.fn(),
         getPDFOptions: jest.fn().mockReturnValue({
           format: 'A4',
-          printBackground: true
-        })
+          printBackground: true,
+        }),
       },
     };
 
@@ -133,10 +133,22 @@ describe('Scraper', () => {
     });
 
     it('should bind event handlers', () => {
-      expect(mockDependencies.stateManager.on).toHaveBeenCalledWith('stateLoaded', expect.any(Function));
-      expect(mockDependencies.progressTracker.on).toHaveBeenCalledWith('progress', expect.any(Function));
-      expect(mockDependencies.queueManager.on).toHaveBeenCalledWith('taskCompleted', expect.any(Function));
-      expect(mockDependencies.queueManager.on).toHaveBeenCalledWith('taskFailed', expect.any(Function));
+      expect(mockDependencies.stateManager.on).toHaveBeenCalledWith(
+        'stateLoaded',
+        expect.any(Function)
+      );
+      expect(mockDependencies.progressTracker.on).toHaveBeenCalledWith(
+        'progress',
+        expect.any(Function)
+      );
+      expect(mockDependencies.queueManager.on).toHaveBeenCalledWith(
+        'taskCompleted',
+        expect.any(Function)
+      );
+      expect(mockDependencies.queueManager.on).toHaveBeenCalledWith(
+        'taskFailed',
+        expect.any(Function)
+      );
     });
   });
 
@@ -165,7 +177,10 @@ describe('Scraper', () => {
       mockDependencies.browserPool.initialize.mockRejectedValue(error);
 
       await expect(scraper.initialize()).rejects.toThrow(error);
-      expect(mockDependencies.logger.error).toHaveBeenCalledWith('爬虫初始化失败', expect.any(Object));
+      expect(mockDependencies.logger.error).toHaveBeenCalledWith(
+        '爬虫初始化失败',
+        expect.any(Object)
+      );
     });
   });
 
@@ -182,7 +197,7 @@ describe('Scraper', () => {
         'https://example.com/page2',
         'https://example.com/page1', // duplicate
         '#anchor', // invalid
-        'javascript:void(0)' // invalid
+        'javascript:void(0)', // invalid
       ]);
 
       const urls = await scraper.collectUrls();
@@ -210,7 +225,7 @@ describe('Scraper', () => {
         '入口URL收集失败，将跳过该入口',
         expect.objectContaining({
           entryUrl: 'https://example.com',
-          error: 'Navigation failed'
+          error: 'Navigation failed',
         })
       );
     }, 30000);
@@ -284,19 +299,30 @@ describe('Scraper', () => {
         status: 'success',
         title: 'Page Title',
         pdfPath: './pdfs/001-page.pdf',
-        imagesLoaded: true
+        imagesLoaded: true,
       });
 
       expect(mockDependencies.pageManager.createPage).toHaveBeenCalledWith('scraper-page-0');
       expect(mockDependencies.imageService.setupImageObserver).toHaveBeenCalledWith(mockPage);
-      expect(mockDependencies.pdfStyleService.applyPDFStyles).toHaveBeenCalledWith(mockPage, '.content');
-      expect(mockPage.pdf).toHaveBeenCalledWith(expect.objectContaining({
-        path: './pdfs/001-page.pdf',
-        format: 'A4',
-        printBackground: true
-      }));
-      expect(mockDependencies.stateManager.markProcessed).toHaveBeenCalledWith(testUrl, './pdfs/001-page.pdf');
-      expect(mockDependencies.metadataService.saveArticleTitle).toHaveBeenCalledWith('0', 'Page Title');
+      expect(mockDependencies.pdfStyleService.applyPDFStyles).toHaveBeenCalledWith(
+        mockPage,
+        '.content'
+      );
+      expect(mockPage.pdf).toHaveBeenCalledWith(
+        expect.objectContaining({
+          path: './pdfs/001-page.pdf',
+          format: 'A4',
+          printBackground: true,
+        })
+      );
+      expect(mockDependencies.stateManager.markProcessed).toHaveBeenCalledWith(
+        testUrl,
+        './pdfs/001-page.pdf'
+      );
+      expect(mockDependencies.metadataService.saveArticleTitle).toHaveBeenCalledWith(
+        '0',
+        'Page Title'
+      );
     });
 
     it('should skip already processed pages', async () => {
@@ -306,27 +332,34 @@ describe('Scraper', () => {
 
       expect(result).toEqual({
         status: 'skipped',
-        reason: 'already_processed'
+        reason: 'already_processed',
       });
       expect(mockDependencies.progressTracker.skip).toHaveBeenCalledWith(testUrl);
       expect(mockPage.goto).not.toHaveBeenCalled();
     });
 
-
-
     it('should handle page navigation errors', async () => {
       mockPage.goto.mockRejectedValue(new Error('Navigation timeout'));
 
       await expect(scraper.scrapePage(testUrl, testIndex)).rejects.toThrow(NetworkError);
-      expect(mockDependencies.stateManager.markFailed).toHaveBeenCalledWith(testUrl, expect.any(Error));
-      expect(mockDependencies.progressTracker.failure).toHaveBeenCalledWith(testUrl, expect.any(Error));
+      expect(mockDependencies.stateManager.markFailed).toHaveBeenCalledWith(
+        testUrl,
+        expect.any(Error)
+      );
+      expect(mockDependencies.progressTracker.failure).toHaveBeenCalledWith(
+        testUrl,
+        expect.any(Error)
+      );
     });
 
     it('should handle content not found', async () => {
       mockPage.waitForSelector.mockRejectedValue(new Error('Timeout'));
 
       await expect(scraper.scrapePage(testUrl, testIndex)).rejects.toThrow(NetworkError);
-      expect(mockDependencies.logger.warn).toHaveBeenCalledWith('内容选择器等待超时', expect.any(Object));
+      expect(mockDependencies.logger.warn).toHaveBeenCalledWith(
+        '内容选择器等待超时',
+        expect.any(Object)
+      );
     });
 
     it('should clean up resources on error', async () => {
@@ -373,7 +406,7 @@ describe('Scraper', () => {
     it('should retry failed URLs', async () => {
       const failedUrls = [
         ['https://example.com/failed1', { message: 'Error 1' }],
-        ['https://example.com/failed2', { message: 'Error 2' }]
+        ['https://example.com/failed2', { message: 'Error 2' }],
       ];
       mockDependencies.stateManager.getFailedUrls.mockReturnValue(failedUrls);
       scraper.urlQueue = ['https://example.com/failed1'];
@@ -384,10 +417,13 @@ describe('Scraper', () => {
       await scraper.retryFailedUrls();
 
       expect(mockDependencies.logger.info).toHaveBeenCalledWith('开始重试 2 个失败的URL');
-      expect(mockDependencies.logger.info).toHaveBeenCalledWith('重试完成', expect.objectContaining({
-        成功: expect.any(Number),
-        失败: expect.any(Number)
-      }));
+      expect(mockDependencies.logger.info).toHaveBeenCalledWith(
+        '重试完成',
+        expect.objectContaining({
+          成功: expect.any(Number),
+          失败: expect.any(Number),
+        })
+      );
     });
 
     it('should handle no failed URLs', async () => {
@@ -497,7 +533,10 @@ describe('Scraper', () => {
       mockDependencies.browserPool.close.mockRejectedValue(new Error('Close failed'));
 
       await expect(scraper.cleanup()).rejects.toThrow();
-      expect(mockDependencies.logger.error).toHaveBeenCalledWith('资源清理失败', expect.any(Object));
+      expect(mockDependencies.logger.error).toHaveBeenCalledWith(
+        '资源清理失败',
+        expect.any(Object)
+      );
     });
   });
 
@@ -516,7 +555,7 @@ describe('Scraper', () => {
         totalUrls: 2,
         progress: expect.any(Object),
         queue: expect.any(Object),
-        uptime: expect.any(Number)
+        uptime: expect.any(Number),
       });
       expect(status.uptime).toBeGreaterThan(0);
     });
@@ -539,19 +578,21 @@ describe('Scraper', () => {
 
       // Mock multiple evaluate calls: section title + URLs collection
       mockPage.evaluate
-        .mockResolvedValueOnce('Section Title')  // _extractSectionTitle
-        .mockResolvedValueOnce(['https://example.com/page1']);  // _collectUrlsFromEntryPoint
+        .mockResolvedValueOnce('Section Title') // _extractSectionTitle
+        .mockResolvedValueOnce(['https://example.com/page1']); // _collectUrlsFromEntryPoint
 
       const listener = jest.fn();
       scraper.on('urlsCollected', listener);
 
       await scraper.collectUrls();
 
-      expect(listener).toHaveBeenCalledWith(expect.objectContaining({
-        totalUrls: expect.any(Number),
-        duplicates: expect.any(Number),
-        sections: expect.any(Number)
-      }));
+      expect(listener).toHaveBeenCalledWith(
+        expect.objectContaining({
+          totalUrls: expect.any(Number),
+          duplicates: expect.any(Number),
+          sections: expect.any(Number),
+        })
+      );
     });
 
     it('should emit pageScraped event', async () => {
@@ -563,12 +604,14 @@ describe('Scraper', () => {
 
       await scraper.scrapePage('https://example.com/page', 0);
 
-      expect(listener).toHaveBeenCalledWith(expect.objectContaining({
-        url: 'https://example.com/page',
-        index: 0,
-        pdfPath: './pdfs/001-page.pdf',
-        imagesLoaded: true
-      }));
+      expect(listener).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: 'https://example.com/page',
+          index: 0,
+          pdfPath: './pdfs/001-page.pdf',
+          imagesLoaded: true,
+        })
+      );
     });
   });
 
@@ -638,29 +681,35 @@ describe('Scraper', () => {
     it('should extract title from document.title', async () => {
       mockPage.evaluate.mockResolvedValue({
         title: 'Overview | Claude Code',
-        source: 'document.title'
+        source: 'document.title',
       });
 
       await scraper.scrapePage('https://example.com/page', 0);
 
-      expect(mockDependencies.metadataService.saveArticleTitle).toHaveBeenCalledWith('0', 'Overview');
+      expect(mockDependencies.metadataService.saveArticleTitle).toHaveBeenCalledWith(
+        '0',
+        'Overview'
+      );
     });
 
     it('should extract title from content h1 when document.title is empty', async () => {
       mockPage.evaluate.mockResolvedValue({
         title: 'Page Heading',
-        source: 'content-h1'
+        source: 'content-h1',
       });
 
       await scraper.scrapePage('https://example.com/page', 0);
 
-      expect(mockDependencies.metadataService.saveArticleTitle).toHaveBeenCalledWith('0', 'Page Heading');
+      expect(mockDependencies.metadataService.saveArticleTitle).toHaveBeenCalledWith(
+        '0',
+        'Page Heading'
+      );
     });
 
     it('should warn when title extraction fails', async () => {
       mockPage.evaluate.mockResolvedValue({
         title: '',
-        source: 'none'
+        source: 'none',
       });
 
       await scraper.scrapePage('https://example.com/page', 0);

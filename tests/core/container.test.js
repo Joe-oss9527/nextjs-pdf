@@ -25,7 +25,7 @@ describe('Container', () => {
       const options = {
         singleton: false,
         dependencies: ['dep1', 'dep2'],
-        lifecycle: 'transient'
+        lifecycle: 'transient',
       };
 
       container.register('testService', factory, options);
@@ -80,7 +80,7 @@ describe('Container', () => {
 
     test('应该处理返回Promise的工厂函数', async () => {
       container.register('asyncService', async () => {
-        return new Promise(resolve => {
+        return new Promise((resolve) => {
           setTimeout(() => resolve({ loaded: true }), 10);
         });
       });
@@ -103,7 +103,7 @@ describe('Container', () => {
       container.register('logger', () => ({ log: jest.fn() }));
       container.register('config', () => ({ apiUrl: 'http://test.com' }));
       container.register('service', (logger, config) => ({ logger, config }), {
-        dependencies: ['logger', 'config']
+        dependencies: ['logger', 'config'],
       });
 
       const service = await container.get('service');
@@ -114,10 +114,10 @@ describe('Container', () => {
     test('应该解析嵌套的依赖关系', async () => {
       container.register('logger', () => ({ log: jest.fn() }));
       container.register('db', (logger) => ({ logger, query: jest.fn() }), {
-        dependencies: ['logger']
+        dependencies: ['logger'],
       });
       container.register('userService', (db) => ({ db, getUser: jest.fn() }), {
-        dependencies: ['db']
+        dependencies: ['db'],
       });
 
       const userService = await container.get('userService');
@@ -141,7 +141,9 @@ describe('Container', () => {
       container.register('serviceB', () => {}, { dependencies: ['serviceC'] });
       container.register('serviceC', () => {}, { dependencies: ['serviceA'] });
 
-      expect(() => container.checkCircularDependency('serviceA')).toThrow(/Circular dependency detected/);
+      expect(() => container.checkCircularDependency('serviceA')).toThrow(
+        /Circular dependency detected/
+      );
     });
 
     test('应该通过非循环依赖的验证', () => {
@@ -222,15 +224,15 @@ describe('Container', () => {
 
     test('应该按相反顺序清理服务', async () => {
       const callOrder = [];
-      
+
       container.register('service1', () => ({
-        dispose: () => callOrder.push('service1')
+        dispose: () => callOrder.push('service1'),
       }));
       container.register('service2', () => ({
-        dispose: () => callOrder.push('service2')
+        dispose: () => callOrder.push('service2'),
       }));
       container.register('service3', () => ({
-        dispose: () => callOrder.push('service3')
+        dispose: () => callOrder.push('service3'),
       }));
 
       await container.get('service1');
@@ -243,12 +245,14 @@ describe('Container', () => {
 
     test('应该处理dispose时的错误', async () => {
       const errorService = {
-        dispose: () => { throw new Error('Dispose error'); }
+        dispose: () => {
+          throw new Error('Dispose error');
+        },
       };
       container.register('errorService', () => errorService);
 
       await container.get('errorService');
-      
+
       // dispose不应该因为单个服务的错误而失败
       await expect(container.dispose()).resolves.not.toThrow();
     });
@@ -267,34 +271,34 @@ describe('Container', () => {
   describe('listServices', () => {
     test('应该列出所有注册的服务', async () => {
       container.register('service1', () => {});
-      container.register('service2', () => {}, { 
+      container.register('service2', () => {}, {
         singleton: false,
-        dependencies: ['service1']
+        dependencies: ['service1'],
       });
 
       await container.get('service1');
 
       const services = container.listServices();
       expect(services).toHaveLength(2);
-      
-      const service1 = services.find(s => s.name === 'service1');
+
+      const service1 = services.find((s) => s.name === 'service1');
       expect(service1).toEqual({
         name: 'service1',
         singleton: true,
         dependencies: [],
         lifecycle: 'singleton',
         created: true,
-        hasInstance: true
+        hasInstance: true,
       });
 
-      const service2 = services.find(s => s.name === 'service2');
+      const service2 = services.find((s) => s.name === 'service2');
       expect(service2).toEqual({
         name: 'service2',
         singleton: false,
         dependencies: ['service1'],
         lifecycle: 'singleton',
         created: false,
-        hasInstance: false
+        hasInstance: false,
       });
     });
   });
@@ -321,11 +325,11 @@ describe('Container', () => {
       expect(health.stats.created).toBe(1);
       expect(health.services).toHaveLength(2);
 
-      const service1Health = health.services.find(s => s.name === 'service1');
+      const service1Health = health.services.find((s) => s.name === 'service1');
       expect(service1Health.status).toBe('created');
       expect(service1Health.hasInstance).toBe(true);
 
-      const service2Health = health.services.find(s => s.name === 'service2');
+      const service2Health = health.services.find((s) => s.name === 'service2');
       expect(service2Health.status).toBe('registered');
       expect(service2Health.hasInstance).toBe(false);
     });

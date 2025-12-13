@@ -12,7 +12,7 @@ export class QueueManager extends EventEmitter {
       intervalCap: options.intervalCap || 5,
       timeout: options.timeout || 30000,
       throwOnTimeout: options.throwOnTimeout || false,
-      ...options
+      ...options,
     };
 
     this.queue = new PQueue({
@@ -20,7 +20,7 @@ export class QueueManager extends EventEmitter {
       interval: this.options.interval,
       intervalCap: this.options.intervalCap,
       timeout: this.options.timeout,
-      throwOnTimeout: this.options.throwOnTimeout
+      throwOnTimeout: this.options.throwOnTimeout,
     });
 
     this.tasks = new Map();
@@ -34,7 +34,7 @@ export class QueueManager extends EventEmitter {
     this.queue.on('active', () => {
       this.emit('active', {
         size: this.queue.size,
-        pending: this.queue.pending
+        pending: this.queue.pending,
       });
     });
 
@@ -45,14 +45,14 @@ export class QueueManager extends EventEmitter {
     this.queue.on('add', () => {
       this.emit('taskAdded', {
         size: this.queue.size,
-        pending: this.queue.pending
+        pending: this.queue.pending,
       });
     });
 
     this.queue.on('next', () => {
       this.emit('taskCompleted', {
         size: this.queue.size,
-        pending: this.queue.pending
+        pending: this.queue.pending,
       });
     });
   }
@@ -66,7 +66,7 @@ export class QueueManager extends EventEmitter {
       fn,
       priority: options.priority || 0,
       addedAt: Date.now(),
-      status: 'pending'
+      status: 'pending',
     };
 
     this.tasks.set(id, task);
@@ -98,9 +98,7 @@ export class QueueManager extends EventEmitter {
    * 批量添加任务
    */
   async addBatch(tasks) {
-    const promises = tasks.map(({ id, fn, options }) =>
-      this.addTask(id, fn, options)
-    );
+    const promises = tasks.map(({ id, fn, options }) => this.addTask(id, fn, options));
     return Promise.allSettled(promises);
   }
 
@@ -147,11 +145,11 @@ export class QueueManager extends EventEmitter {
       concurrency: this.options.concurrency,
       tasks: {
         total: this.tasks.size,
-        pending: Array.from(this.tasks.values()).filter(t => t.status === 'pending').length,
-        running: Array.from(this.tasks.values()).filter(t => t.status === 'running').length,
-        completed: Array.from(this.tasks.values()).filter(t => t.status === 'completed').length,
-        failed: Array.from(this.tasks.values()).filter(t => t.status === 'failed').length
-      }
+        pending: Array.from(this.tasks.values()).filter((t) => t.status === 'pending').length,
+        running: Array.from(this.tasks.values()).filter((t) => t.status === 'running').length,
+        completed: Array.from(this.tasks.values()).filter((t) => t.status === 'completed').length,
+        failed: Array.from(this.tasks.values()).filter((t) => t.status === 'failed').length,
+      },
     };
   }
 

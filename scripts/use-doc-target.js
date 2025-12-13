@@ -16,11 +16,11 @@ const CONFIG_FILE = path.resolve(rootDir, 'config.json');
 const TARGETS_DIR = path.resolve(rootDir, 'doc-targets');
 
 const DOC_TARGETS = {
-  'openai': 'openai-docs.json',
+  openai: 'openai-docs.json',
   'claude-code': 'claude-code.json',
   'cloudflare-blog': 'cloudflare-blog.json',
   'anthropic-research': 'anthropic-research.json',
-  'claude-blog': 'claude-blog.json'
+  'claude-blog': 'claude-blog.json',
 };
 
 function validateSafePath(targetPath) {
@@ -48,7 +48,7 @@ function deepMerge(target, source) {
 
 function validateConfigStructure(config) {
   const requiredFields = ['rootURL', 'baseUrl', 'pdfDir'];
-  return requiredFields.every(field => typeof config[field] === 'string' && config[field].trim());
+  return requiredFields.every((field) => typeof config[field] === 'string' && config[field].trim());
 }
 
 function readJSON(filePath) {
@@ -77,7 +77,7 @@ function showHelp() {
 
 function listTargets() {
   console.log('可用文档站点配置:');
-  Object.keys(DOC_TARGETS).forEach(key => {
+  Object.keys(DOC_TARGETS).forEach((key) => {
     console.log(`  - ${key}`);
   });
 }
@@ -92,11 +92,17 @@ function showCurrentConfig() {
   console.log('\n当前文档配置:');
   console.log(`  Root URL      : ${config.rootURL}`);
   console.log(`  Base URL      : ${config.baseUrl || '(未设置)'}`);
-  console.log(`  允许域名       : ${Array.isArray(config.allowedDomains) ? config.allowedDomains.join(', ') : '(未设置)'}`);
-  const entryPoints = Array.isArray(config.sectionEntryPoints) ? config.sectionEntryPoints.length : 0;
+  console.log(
+    `  允许域名       : ${Array.isArray(config.allowedDomains) ? config.allowedDomains.join(', ') : '(未设置)'}`
+  );
+  const entryPoints = Array.isArray(config.sectionEntryPoints)
+    ? config.sectionEntryPoints.length
+    : 0;
   console.log(`  额外入口数量   : ${entryPoints}`);
   console.log(`  内容选择器     : ${config.contentSelector || '(未设置)'}`);
-  console.log(`  样式处理       : enablePDFStyleProcessing=${config.enablePDFStyleProcessing === true ? 'true' : 'false'}`);
+  console.log(
+    `  样式处理       : enablePDFStyleProcessing=${config.enablePDFStyleProcessing === true ? 'true' : 'false'}`
+  );
   console.log('');
 }
 

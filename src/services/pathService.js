@@ -33,7 +33,11 @@ export class PathService {
     const { useHash = true, index = null } = options;
 
     // 提取文件名
-    let fileName = url.split('/').filter(s => s).pop() || 'index';
+    let fileName =
+      url
+        .split('/')
+        .filter((s) => s)
+        .pop() || 'index';
 
     // 清理文件名中的特殊字符
     fileName = fileName.replace(/[^a-zA-Z0-9-_]/g, '-');
@@ -71,7 +75,7 @@ export class PathService {
       progress: 'progress.json',
       urlMapping: 'urlMapping.json',
       // 新增：分层TOC的section结构元数据文件
-      sectionStructure: 'sectionStructure.json'
+      sectionStructure: 'sectionStructure.json',
     };
 
     const fileName = metadataFiles[type];
@@ -99,7 +103,7 @@ export class PathService {
     const logFiles = {
       combined: 'combined.log',
       error: 'error.log',
-      progress: 'progress.log'
+      progress: 'progress.log',
     };
 
     return path.join(logDir, logFiles[type] || `${type}.log`);
@@ -126,7 +130,7 @@ export class PathService {
         originalName,
         isNumericIndex,
         isHash,
-        index: isNumericIndex ? parseInt(prefix, 10) : null
+        index: isNumericIndex ? parseInt(prefix, 10) : null,
       };
     }
 
@@ -135,7 +139,7 @@ export class PathService {
       originalName: nameWithoutExt,
       isNumericIndex: false,
       isHash: false,
-      index: null
+      index: null,
     };
   }
 
@@ -177,10 +181,9 @@ export class PathService {
 
     return {
       isValid: parsed.isNumericIndex || parsed.isHash || !parsed.prefix,
-      type: parsed.isNumericIndex ? 'indexed' :
-            parsed.isHash ? 'hashed' : 'simple',
+      type: parsed.isNumericIndex ? 'indexed' : parsed.isHash ? 'hashed' : 'simple',
       index: parsed.index,
-      originalName: parsed.originalName
+      originalName: parsed.originalName,
     };
   }
 

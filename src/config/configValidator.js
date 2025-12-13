@@ -3,375 +3,523 @@ import { createLogger } from '../utils/logger.js';
 
 // 配置验证模式
 const configSchema = Joi.object({
-  rootURL: Joi.string().uri().required()
-    .description('Root URL to start scraping from'),
+  rootURL: Joi.string().uri().required().description('Root URL to start scraping from'),
 
-  baseUrl: Joi.string().uri().optional()
+  baseUrl: Joi.string()
+    .uri()
+    .optional()
     .description('Base URL prefix - only crawl URLs under this path'),
 
-  pdfDir: Joi.string().required()
-    .description('Directory to save PDF files'),
+  pdfDir: Joi.string().required().description('Directory to save PDF files'),
 
-  concurrency: Joi.number().integer().min(1).max(10).default(5)
+  concurrency: Joi.number()
+    .integer()
+    .min(1)
+    .max(10)
+    .default(5)
     .description('Number of concurrent browser instances'),
 
-  screenshotDelay: Joi.number().integer().min(0).default(500)
+  screenshotDelay: Joi.number()
+    .integer()
+    .min(0)
+    .default(500)
     .description('Delay before taking screenshot (ms)'),
 
-  navLinksSelector: Joi.string().required()
-    .description('CSS selector for navigation links'),
+  navLinksSelector: Joi.string().required().description('CSS selector for navigation links'),
 
-  paginationSelector: Joi.string().allow('').optional()
+  paginationSelector: Joi.string()
+    .allow('')
+    .optional()
     .description('CSS selector for pagination (next page) link'),
 
-  maxPaginationPages: Joi.number().integer().min(1).default(10)
+  maxPaginationPages: Joi.number()
+    .integer()
+    .min(1)
+    .default(10)
     .description('Maximum number of pages to crawl when pagination is enabled'),
 
-  contentSelector: Joi.string().required()
-    .description('CSS selector for main content'),
+  contentSelector: Joi.string().required().description('CSS selector for main content'),
 
-  sectionEntryPoints: Joi.array().items(Joi.string().uri()).default([])
+  sectionEntryPoints: Joi.array()
+    .items(Joi.string().uri())
+    .default([])
     .description('Additional entry URLs that should be crawled alongside rootURL'),
 
-  targetUrls: Joi.array().items(Joi.string().uri()).optional()
+  targetUrls: Joi.array()
+    .items(Joi.string().uri())
+    .optional()
     .description('Specific URLs to scrape directly, bypassing crawling'),
 
-  sectionTitles: Joi.object().pattern(
-    Joi.string().uri(),
-    Joi.string()
-  ).optional()
-    .description('Manual override for section titles (URL -> Title mapping). If not provided, titles will be extracted from navigation menu'),
+  sectionTitles: Joi.object()
+    .pattern(Joi.string().uri(), Joi.string())
+    .optional()
+    .description(
+      'Manual override for section titles (URL -> Title mapping). If not provided, titles will be extracted from navigation menu'
+    ),
 
-  ignoreURLs: Joi.array().items(Joi.string()).default([])
+  ignoreURLs: Joi.array()
+    .items(Joi.string())
+    .default([])
     .description('URLs to ignore during scraping'),
 
-  maxRetries: Joi.number().integer().min(1).default(3)
+  maxRetries: Joi.number()
+    .integer()
+    .min(1)
+    .default(3)
     .description('Maximum number of retry attempts'),
 
-  retryDelay: Joi.number().integer().min(0).default(1000)
+  retryDelay: Joi.number()
+    .integer()
+    .min(0)
+    .default(1000)
     .description('Delay between retry attempts (ms)'),
 
-  pageTimeout: Joi.number().integer().min(1000).default(30000)
+  pageTimeout: Joi.number()
+    .integer()
+    .min(1000)
+    .default(30000)
     .description('Page load timeout (ms)'),
 
-  imageTimeout: Joi.number().integer().min(1000).default(10000)
+  imageTimeout: Joi.number()
+    .integer()
+    .min(1000)
+    .default(10000)
     .description('Image loading timeout (ms)'),
 
-  allowedDomains: Joi.array().items(Joi.string()).default(['rc.nextjs.org', 'nextjs.org'])
+  allowedDomains: Joi.array()
+    .items(Joi.string())
+    .default(['rc.nextjs.org', 'nextjs.org'])
     .description('Allowed domains for scraping'),
 
-  logLevel: Joi.string().valid('debug', 'info', 'warn', 'error').default('info')
+  logLevel: Joi.string()
+    .valid('debug', 'info', 'warn', 'error')
+    .default('info')
     .description('Logging level'),
 
-  enablePDFStyleProcessing: Joi.boolean().default(false)
-    .description('Enable PDF style processing (DOM manipulation) - false prevents printToPDF failures on some sites'),
+  enablePDFStyleProcessing: Joi.boolean()
+    .default(false)
+    .description(
+      'Enable PDF style processing (DOM manipulation) - false prevents printToPDF failures on some sites'
+    ),
 
   navigationStrategy: Joi.string()
     .valid('domcontentloaded', 'networkidle2', 'networkidle0', 'load', 'auto')
     .default('auto')
-    .description('Preferred navigation wait strategy - "auto" uses default fallback order (domcontentloaded→networkidle2→networkidle0→load), specific strategy (e.g., "load") tries that first for better performance on SPAs'),
+    .description(
+      'Preferred navigation wait strategy - "auto" uses default fallback order (domcontentloaded→networkidle2→networkidle0→load), specific strategy (e.g., "load") tries that first for better performance on SPAs'
+    ),
 
   // 浏览器配置
   browser: Joi.object({
-    headless: Joi.boolean().default(true)
-      .description('Run browser in headless mode'),
+    headless: Joi.boolean().default(true).description('Run browser in headless mode'),
 
-    slowMo: Joi.number().integer().min(0).default(0)
+    slowMo: Joi.number()
+      .integer()
+      .min(0)
+      .default(0)
       .description('Slow down browser operations (ms)'),
 
-    devtools: Joi.boolean().default(false)
-      .description('Open browser devtools'),
+    devtools: Joi.boolean().default(false).description('Open browser devtools'),
 
-    args: Joi.array().items(Joi.string()).default([
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-accelerated-2d-canvas',
-      '--no-first-run',
-      '--no-zygote',
-      '--disable-gpu'
-    ]).description('Browser launch arguments'),
+    args: Joi.array()
+      .items(Joi.string())
+      .default([
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--disable-gpu',
+      ])
+      .description('Browser launch arguments'),
 
     viewport: Joi.object({
       width: Joi.number().integer().min(800).default(1920),
-      height: Joi.number().integer().min(600).default(1080)
-    }).default().description('Browser viewport size'),
+      height: Joi.number().integer().min(600).default(1080),
+    })
+      .default()
+      .description('Browser viewport size'),
 
-    userAgent: Joi.string().optional()
-      .description('Custom user agent string')
-  }).default().description('Browser configuration'),
+    userAgent: Joi.string().optional().description('Custom user agent string'),
+  })
+    .default()
+    .description('Browser configuration'),
 
   // 队列管理配置
   queue: Joi.object({
-    maxConcurrent: Joi.number().integer().min(1).max(20).default(5)
+    maxConcurrent: Joi.number()
+      .integer()
+      .min(1)
+      .max(20)
+      .default(5)
       .description('Maximum concurrent operations'),
 
-    maxRetries: Joi.number().integer().min(0).default(3)
+    maxRetries: Joi.number()
+      .integer()
+      .min(0)
+      .default(3)
       .description('Maximum retry attempts per operation'),
 
-    retryDelay: Joi.number().integer().min(100).default(1000)
+    retryDelay: Joi.number()
+      .integer()
+      .min(100)
+      .default(1000)
       .description('Base delay between retries (ms)'),
 
-    timeout: Joi.number().integer().min(5000).default(30000)
-      .description('Operation timeout (ms)')
-  }).default().description('Queue management settings'),
+    timeout: Joi.number().integer().min(5000).default(30000).description('Operation timeout (ms)'),
+  })
+    .default()
+    .description('Queue management settings'),
 
   // 图片处理配置
   images: Joi.object({
-    lazyLoadTimeout: Joi.number().integer().min(1000).default(10000)
+    lazyLoadTimeout: Joi.number()
+      .integer()
+      .min(1000)
+      .default(10000)
       .description('Timeout for lazy loading images (ms)'),
 
-    scrollDelay: Joi.number().integer().min(100).default(500)
+    scrollDelay: Joi.number()
+      .integer()
+      .min(100)
+      .default(500)
       .description('Delay between scroll actions (ms)'),
 
-    maxScrollAttempts: Joi.number().integer().min(1).default(10)
+    maxScrollAttempts: Joi.number()
+      .integer()
+      .min(1)
+      .default(10)
       .description('Maximum scroll attempts for lazy loading'),
 
-    waitForNetworkIdle: Joi.boolean().default(true)
-      .description('Wait for network idle after loading images')
-  }).default().description('Image processing settings'),
+    waitForNetworkIdle: Joi.boolean()
+      .default(true)
+      .description('Wait for network idle after loading images'),
+  })
+    .default()
+    .description('Image processing settings'),
 
   // 文件系统配置
   filesystem: Joi.object({
-    tempDirectory: Joi.string().default('.temp')
-      .description('Temporary files directory'),
+    tempDirectory: Joi.string().default('.temp').description('Temporary files directory'),
 
-    metadataDirectory: Joi.string().default('metadata')
-      .description('Metadata files directory'),
+    metadataDirectory: Joi.string().default('metadata').description('Metadata files directory'),
 
-    cleanupTemp: Joi.boolean().default(true)
-      .description('Clean temporary files after completion'),
+    cleanupTemp: Joi.boolean().default(true).description('Clean temporary files after completion'),
 
-    preserveMetadata: Joi.boolean().default(true)
-      .description('Preserve metadata files after completion')
-  }).default().description('File system settings'),
+    preserveMetadata: Joi.boolean()
+      .default(true)
+      .description('Preserve metadata files after completion'),
+  })
+    .default()
+    .description('File system settings'),
 
   // PDF生成配置
   pdf: Joi.object({
     // PDF引擎选择
-    engine: Joi.string().valid('puppeteer').default('puppeteer')
+    engine: Joi.string()
+      .valid('puppeteer')
+      .default('puppeteer')
       .description('PDF generation engine'),
 
     // 主题配置
-    theme: Joi.string().valid('light', 'dark').default('light')
-      .description('PDF theme mode'),
+    theme: Joi.string().valid('light', 'dark').default('light').description('PDF theme mode'),
 
-    preserveCodeHighlighting: Joi.boolean().default(true)
+    preserveCodeHighlighting: Joi.boolean()
+      .default(true)
       .description('Preserve code syntax highlighting'),
 
-    enableCodeWrap: Joi.boolean().default(true)
-      .description('Enable code line wrapping'),
+    enableCodeWrap: Joi.boolean().default(true).description('Enable code line wrapping'),
 
-    fontSize: Joi.string().default('14px')
-      .description('Base font size for PDF content'),
+    fontSize: Joi.string().default('14px').description('Base font size for PDF content'),
 
-    fontFamily: Joi.string().default('system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif')
+    fontFamily: Joi.string()
+      .default('system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif')
       .description('Font family for body text'),
 
-    codeFont: Joi.string().default('SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace')
+    codeFont: Joi.string()
+      .default('SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace')
       .description('Font family for code blocks'),
 
     // Kindle特定优化选项
-    kindleOptimized: Joi.boolean().default(false)
+    kindleOptimized: Joi.boolean()
+      .default(false)
       .description('Enable Kindle-specific optimizations'),
 
-    deviceProfile: Joi.string().valid('default', 'kindle7', 'paperwhite', 'oasis', 'scribe').default('default')
+    deviceProfile: Joi.string()
+      .valid('default', 'kindle7', 'paperwhite', 'oasis', 'scribe')
+      .default('default')
       .description('Device profile for optimized PDF generation'),
 
-    codeFontSize: Joi.string().default('13px')
+    codeFontSize: Joi.string()
+      .default('13px')
       .description('Font size specifically for code blocks'),
 
-    lineHeight: Joi.string().default('1.5')
-      .description('Line height for improved readability'),
+    lineHeight: Joi.string().default('1.5').description('Line height for improved readability'),
 
-    maxCodeLineLength: Joi.number().integer().min(40).max(120).default(80)
+    maxCodeLineLength: Joi.number()
+      .integer()
+      .min(40)
+      .max(120)
+      .default(80)
       .description('Maximum character length for code lines before wrapping'),
 
     // Puppeteer PDF配置
-    format: Joi.string().valid('A4', 'A3', 'Letter', 'Legal', 'Tabloid').default('A4')
+    format: Joi.string()
+      .valid('A4', 'A3', 'Letter', 'Legal', 'Tabloid')
+      .default('A4')
       .description('PDF page format'),
 
-    pageFormat: Joi.string().valid('A4', 'A3', 'Letter', 'Legal', 'Tabloid').optional()
+    pageFormat: Joi.string()
+      .valid('A4', 'A3', 'Letter', 'Legal', 'Tabloid')
+      .optional()
       .description('Alternative page format specification'),
 
-    margin: Joi.alternatives().try(
-      Joi.object({
-        top: Joi.string().default('1cm'),
-        right: Joi.string().default('1cm'),
-        bottom: Joi.string().default('1cm'),
-        left: Joi.string().default('1cm')
-      }),
-      Joi.string().valid('narrow', 'normal', 'wide')
-    ).default({
-      top: '1cm',
-      right: '1cm',
-      bottom: '1cm',
-      left: '1cm'
-    }).description('PDF margins'),
+    margin: Joi.alternatives()
+      .try(
+        Joi.object({
+          top: Joi.string().default('1cm'),
+          right: Joi.string().default('1cm'),
+          bottom: Joi.string().default('1cm'),
+          left: Joi.string().default('1cm'),
+        }),
+        Joi.string().valid('narrow', 'normal', 'wide')
+      )
+      .default({
+        top: '1cm',
+        right: '1cm',
+        bottom: '1cm',
+        left: '1cm',
+      })
+      .description('PDF margins'),
 
-    printBackground: Joi.boolean().default(true)
-      .description('Include background graphics in PDF'),
+    printBackground: Joi.boolean().default(true).description('Include background graphics in PDF'),
 
-    displayHeaderFooter: Joi.boolean().default(false)
+    displayHeaderFooter: Joi.boolean()
+      .default(false)
       .description('Display header and footer in PDF'),
 
-    preferCSSPageSize: Joi.boolean().default(false)
+    preferCSSPageSize: Joi.boolean()
+      .default(false)
       .description('Use CSS-defined page size over format'),
 
-    tagged: Joi.boolean().default(false)
+    tagged: Joi.boolean()
+      .default(false)
       .description('Generate tagged PDF for better accessibility'),
 
-    quality: Joi.string().valid('low', 'medium', 'high').default('high')
+    quality: Joi.string()
+      .valid('low', 'medium', 'high')
+      .default('high')
       .description('PDF generation quality'),
 
-    compression: Joi.boolean().default(true)
-      .description('Enable PDF compression'),
+    compression: Joi.boolean().default(true).description('Enable PDF compression'),
 
-    bookmarks: Joi.boolean().default(true)
-      .description('Generate PDF bookmarks'),
+    bookmarks: Joi.boolean().default(true).description('Generate PDF bookmarks'),
 
-    maxMemoryMB: Joi.number().integer().min(100).max(2000).default(500)
-      .description('Maximum memory usage for PDF operations (MB)')
-  }).default().description('PDF generation settings'),
+    maxMemoryMB: Joi.number()
+      .integer()
+      .min(100)
+      .max(2000)
+      .default(500)
+      .description('Maximum memory usage for PDF operations (MB)'),
+  })
+    .default()
+    .description('PDF generation settings'),
 
   // Python集成配置
   python: Joi.object({
-    executable: Joi.string().default('python3')
-      .description('Python executable path'),
+    executable: Joi.string().default('python3').description('Python executable path'),
 
-    timeout: Joi.number().integer().min(30000).max(600000).default(300000)
+    timeout: Joi.number()
+      .integer()
+      .min(30000)
+      .max(600000)
+      .default(300000)
       .description('Python script execution timeout (ms)'),
 
-    maxBuffer: Joi.number().integer().min(1048576).default(10485760)
+    maxBuffer: Joi.number()
+      .integer()
+      .min(1048576)
+      .default(10485760)
       .description('Maximum buffer size for Python output (bytes)'),
 
-    encoding: Joi.string().default('utf8')
-      .description('Text encoding for Python communication'),
+    encoding: Joi.string().default('utf8').description('Text encoding for Python communication'),
 
-    env: Joi.object().pattern(Joi.string(), Joi.string()).default({})
+    env: Joi.object()
+      .pattern(Joi.string(), Joi.string())
+      .default({})
       .description('Additional environment variables for Python'),
 
-    cwd: Joi.string().optional()
-      .description('Working directory for Python scripts')
-  }).default().description('Python integration settings'),
+    cwd: Joi.string().optional().description('Working directory for Python scripts'),
+  })
+    .default()
+    .description('Python integration settings'),
 
   // 状态管理配置
   state: Joi.object({
-    saveInterval: Joi.number().integer().min(1000).default(30000)
+    saveInterval: Joi.number()
+      .integer()
+      .min(1000)
+      .default(30000)
       .description('State save interval (ms)'),
 
-    backupCount: Joi.number().integer().min(1).default(3)
+    backupCount: Joi.number()
+      .integer()
+      .min(1)
+      .default(3)
       .description('Number of state file backups to keep'),
 
-    autoSave: Joi.boolean().default(true)
-      .description('Enable automatic state saving'),
+    autoSave: Joi.boolean().default(true).description('Enable automatic state saving'),
 
-    persistFailures: Joi.boolean().default(true)
-      .description('Persist failed URL information')
-  }).default().description('State management settings'),
+    persistFailures: Joi.boolean().default(true).description('Persist failed URL information'),
+  })
+    .default()
+    .description('State management settings'),
 
   // 监控和日志配置
   monitoring: Joi.object({
-    enabled: Joi.boolean().default(true)
-      .description('Enable monitoring and metrics'),
+    enabled: Joi.boolean().default(true).description('Enable monitoring and metrics'),
 
-    progressInterval: Joi.number().integer().min(1000).default(10000)
+    progressInterval: Joi.number()
+      .integer()
+      .min(1000)
+      .default(10000)
       .description('Progress reporting interval (ms)'),
 
-    memoryThreshold: Joi.number().integer().min(100).default(1000)
+    memoryThreshold: Joi.number()
+      .integer()
+      .min(100)
+      .default(1000)
       .description('Memory usage warning threshold (MB)'),
 
-    logMetrics: Joi.boolean().default(true)
-      .description('Log performance metrics')
-  }).default().description('Monitoring settings'),
+    logMetrics: Joi.boolean().default(true).description('Log performance metrics'),
+  })
+    .default()
+    .description('Monitoring settings'),
 
   // 网络配置
   network: Joi.object({
-    userAgent: Joi.string().optional()
-      .description('Custom user agent string'),
+    userAgent: Joi.string().optional().description('Custom user agent string'),
 
-    requestTimeout: Joi.number().integer().min(5000).default(30000)
+    requestTimeout: Joi.number()
+      .integer()
+      .min(5000)
+      .default(30000)
       .description('Network request timeout (ms)'),
 
-    maxRedirects: Joi.number().integer().min(0).default(5)
+    maxRedirects: Joi.number()
+      .integer()
+      .min(0)
+      .default(5)
       .description('Maximum number of redirects to follow'),
 
-    retryOn429: Joi.boolean().default(true)
+    retryOn429: Joi.boolean()
+      .default(true)
       .description('Retry on 429 (Too Many Requests) responses'),
 
-    rateLimitDelay: Joi.number().integer().min(100).default(1000)
-      .description('Delay between requests to avoid rate limiting (ms)')
-  }).default().description('Network settings'),
+    rateLimitDelay: Joi.number()
+      .integer()
+      .min(100)
+      .default(1000)
+      .description('Delay between requests to avoid rate limiting (ms)'),
+  })
+    .default()
+    .description('Network settings'),
 
   // Markdown 转换配置
   markdown: Joi.object({
-    enabled: Joi.boolean().default(false)
-      .description('Enable HTML to Markdown pipeline'),
+    enabled: Joi.boolean().default(false).description('Enable HTML to Markdown pipeline'),
 
-    outputDir: Joi.string().default('markdown')
+    outputDir: Joi.string()
+      .default('markdown')
       .description('Output directory for markdown files (relative to pdfDir)'),
 
-    includeFrontmatter: Joi.boolean().default(true)
-      .description('Include YAML frontmatter in generated markdown')
-  }).default().description('Markdown conversion settings'),
+    includeFrontmatter: Joi.boolean()
+      .default(true)
+      .description('Include YAML frontmatter in generated markdown'),
+  })
+    .default()
+    .description('Markdown conversion settings'),
 
   // Markdown 转 PDF 配置
   markdownPdf: Joi.object({
-    enabled: Joi.boolean().default(false)
+    enabled: Joi.boolean()
+      .default(false)
       .description('Use md-to-pdf instead of Puppeteer for PDF generation'),
 
-    stylesheet: Joi.string().optional()
-      .description('Custom CSS stylesheet for md-to-pdf'),
+    stylesheet: Joi.string().optional().description('Custom CSS stylesheet for md-to-pdf'),
 
-    highlightStyle: Joi.string().default('github')
+    highlightStyle: Joi.string()
+      .default('github')
       .description('Code highlight theme for markdown PDF'),
 
     pdfOptions: Joi.object({
-      format: Joi.string().default('A4')
-        .description('PDF page format for md-to-pdf'),
-      margin: Joi.alternatives().try(
-        Joi.string(),
-        Joi.object()
-      ).optional()
-        .description('PDF margins passed to md-to-pdf')
-    }).default({ format: 'A4' })
-      .description('Additional pdf_options for md-to-pdf')
-  }).default().description('Markdown to PDF settings'),
+      format: Joi.string().default('A4').description('PDF page format for md-to-pdf'),
+      margin: Joi.alternatives()
+        .try(Joi.string(), Joi.object())
+        .optional()
+        .description('PDF margins passed to md-to-pdf'),
+    })
+      .default({ format: 'A4' })
+      .description('Additional pdf_options for md-to-pdf'),
+  })
+    .default()
+    .description('Markdown to PDF settings'),
 
   // 翻译配置
   translation: Joi.object({
-    enabled: Joi.boolean().default(false)
-      .description('Enable translation'),
+    enabled: Joi.boolean().default(false).description('Enable translation'),
 
-    bilingual: Joi.boolean().default(false)
+    bilingual: Joi.boolean()
+      .default(false)
       .description('Enable bilingual display (original + translated)'),
 
-    targetLanguage: Joi.string().default('Chinese')
-      .description('Target language for translation'),
+    targetLanguage: Joi.string().default('Chinese').description('Target language for translation'),
 
-    concurrency: Joi.number().integer().min(1).max(5).default(1)
+    concurrency: Joi.number()
+      .integer()
+      .min(1)
+      .max(5)
+      .default(1)
       .description('Translation concurrency'),
 
-    timeout: Joi.number().integer().min(1000).default(60000)
+    timeout: Joi.number()
+      .integer()
+      .min(1000)
+      .default(60000)
       .description('Translation timeout per batch (ms)'),
 
-    maxRetries: Joi.number().integer().min(1).default(3)
+    maxRetries: Joi.number()
+      .integer()
+      .min(1)
+      .default(3)
       .description('Maximum retry attempts for translation batch'),
 
-    retryDelay: Joi.number().integer().min(0).default(2000)
+    retryDelay: Joi.number()
+      .integer()
+      .min(0)
+      .default(2000)
       .description('Delay between translation retries (ms)'),
 
-    maxSegmentRetries: Joi.number().integer().min(0).default(2)
+    maxSegmentRetries: Joi.number()
+      .integer()
+      .min(0)
+      .default(2)
       .description('Maximum retry attempts for individual segments after batch retry'),
 
-    maxDelay: Joi.number().integer().min(0).default(30000)
+    maxDelay: Joi.number()
+      .integer()
+      .min(0)
+      .default(30000)
       .description('Maximum backoff delay cap (ms) for translation retries'),
 
     jitterStrategy: Joi.string()
       .valid('none', 'full', 'equal', 'decorrelated')
       .default('decorrelated')
-      .description('Jitter strategy for translation retries')
-  }).default().description('Translation settings')
+      .description('Jitter strategy for translation retries'),
+  })
+    .default()
+    .description('Translation settings'),
 });
 
 /**
@@ -388,7 +536,7 @@ function validateConfig(config, options = {}) {
     allowUnknown: options.allowUnknown || false,
     stripUnknown: options.stripUnknown || true,
     convert: options.convert !== false,
-    ...options
+    ...options,
   };
 
   try {
@@ -398,7 +546,7 @@ function validateConfig(config, options = {}) {
     logger.debug('Config BEFORE validation', {
       enablePDFStyleProcessing: config.enablePDFStyleProcessing,
       type: typeof config.enablePDFStyleProcessing,
-      allKeys: Object.keys(config).filter(k => k.includes('PDF') || k.includes('Style'))
+      allKeys: Object.keys(config).filter((k) => k.includes('PDF') || k.includes('Style')),
     });
 
     const { error, value, warning } = configSchema.validate(config, validationOptions);
@@ -407,26 +555,32 @@ function validateConfig(config, options = {}) {
     logger.debug('Config AFTER validation', {
       enablePDFStyleProcessing: value?.enablePDFStyleProcessing,
       type: typeof value?.enablePDFStyleProcessing,
-      allKeys: value ? Object.keys(value).filter(k => k.includes('PDF') || k.includes('Style')) : []
+      allKeys: value
+        ? Object.keys(value).filter((k) => k.includes('PDF') || k.includes('Style'))
+        : [],
     });
 
     if (error) {
-      const errorMessage = error.details.map(detail => {
-        return `${detail.path.join('.')}: ${detail.message}`;
-      }).join('; ');
+      const errorMessage = error.details
+        .map((detail) => {
+          return `${detail.path.join('.')}: ${detail.message}`;
+        })
+        .join('; ');
 
       logger.error('Configuration validation failed:', errorMessage);
 
       throw new ValidationError(`Configuration validation failed: ${errorMessage}`, {
         details: error.details,
-        originalConfig: config
+        originalConfig: config,
       });
     }
 
     if (warning) {
-      const warningMessage = warning.details.map(detail => {
-        return `${detail.path.join('.')}: ${detail.message}`;
-      }).join('; ');
+      const warningMessage = warning.details
+        .map((detail) => {
+          return `${detail.path.join('.')}: ${detail.message}`;
+        })
+        .join('; ');
 
       logger.warn('Configuration validation warnings:', warningMessage);
     }
@@ -438,9 +592,8 @@ function validateConfig(config, options = {}) {
       valid: true,
       config: value,
       warnings: warning ? warning.details : [],
-      errors: []
+      errors: [],
     };
-
   } catch (err) {
     if (err instanceof ValidationError) {
       throw err;
@@ -449,14 +602,14 @@ function validateConfig(config, options = {}) {
     logger.error('Unexpected error during configuration validation:', err);
     throw new ValidationError(`Unexpected validation error: ${err.message}`, {
       originalError: err,
-      originalConfig: config
+      originalConfig: config,
     });
   }
 }
 
 /**
  * 异步验证配置对象
- * @param {Object} config - 要验证的配置对象  
+ * @param {Object} config - 要验证的配置对象
  * @param {Object} options - 验证选项
  * @returns {Promise<Object>} 验证结果
  */
@@ -478,17 +631,17 @@ function validatePartialConfig(partialConfig, requiredFields = []) {
 
     if (requiredFields.length > 0) {
       // 检查必需字段是否存在
-      const missingFields = requiredFields.filter(field => !(field in partialConfig));
+      const missingFields = requiredFields.filter((field) => !(field in partialConfig));
       if (missingFields.length > 0) {
         return {
           valid: false,
           config: null,
-          errors: missingFields.map(field => ({
+          errors: missingFields.map((field) => ({
             message: `"${field}" is required`,
             path: [field],
-            type: 'any.required'
+            type: 'any.required',
           })),
-          warnings: []
+          warnings: [],
         };
       }
     }
@@ -501,18 +654,20 @@ function validatePartialConfig(partialConfig, requiredFields = []) {
       navLinksSelector: partialConfig.navLinksSelector || 'nav a',
       contentSelector: partialConfig.contentSelector || 'main',
       // 合并实际的部分配置
-      ...partialConfig
+      ...partialConfig,
     };
 
     const { error, value } = configSchema.validate(fullConfig, {
       allowUnknown: true,
-      stripUnknown: false
+      stripUnknown: false,
     });
 
     if (error) {
-      const errorMessage = error.details.map(detail => {
-        return `${detail.path.join('.')}: ${detail.message}`;
-      }).join('; ');
+      const errorMessage = error.details
+        .map((detail) => {
+          return `${detail.path.join('.')}: ${detail.message}`;
+        })
+        .join('; ');
 
       logger.error('Partial configuration validation failed:', errorMessage);
 
@@ -520,13 +675,13 @@ function validatePartialConfig(partialConfig, requiredFields = []) {
         valid: false,
         config: null,
         errors: error.details,
-        warnings: []
+        warnings: [],
       };
     }
 
     // 只返回原始提供的字段
     const resultConfig = {};
-    Object.keys(partialConfig).forEach(key => {
+    Object.keys(partialConfig).forEach((key) => {
       resultConfig[key] = value[key];
     });
 
@@ -536,9 +691,8 @@ function validatePartialConfig(partialConfig, requiredFields = []) {
       valid: true,
       config: resultConfig,
       errors: [],
-      warnings: []
+      warnings: [],
     };
-
   } catch (err) {
     logger.error('Error during partial configuration validation:', err);
     throw err;
@@ -563,12 +717,12 @@ function getDefaultConfig() {
     rootURL: 'https://example.com',
     pdfDir: './pdfs',
     navLinksSelector: 'nav a',
-    contentSelector: 'main'
+    contentSelector: 'main',
   };
 
   const { value } = configSchema.validate(minimalConfig, {
     allowUnknown: false,
-    stripUnknown: true
+    stripUnknown: true,
   });
 
   // 清除我们添加的占位符值，只保留默认值
@@ -602,5 +756,5 @@ export {
   getConfigSchema,
   getDefaultConfig,
   configSchema,
-  ValidationError
+  ValidationError,
 };

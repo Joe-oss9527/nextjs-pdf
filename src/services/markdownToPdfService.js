@@ -23,7 +23,7 @@ export class MarkdownToPdfService {
 
       this.logger?.info?.('开始将 Markdown 文件转换为 PDF', {
         markdownPath,
-        outputPath
+        outputPath,
       });
 
       const result = await mdToPdf({ path: markdownPath }, mdOptions);
@@ -33,13 +33,13 @@ export class MarkdownToPdfService {
       }
 
       this.logger?.info?.('Markdown 文件转换 PDF 完成', {
-        outputPath: result.filename || outputPath
+        outputPath: result.filename || outputPath,
       });
     } catch (error) {
       this.logger?.error?.('Markdown 文件转换 PDF 失败', {
         markdownPath,
         outputPath,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
@@ -56,7 +56,7 @@ export class MarkdownToPdfService {
       const mdOptions = this._buildMdToPdfOptions(outputPath, options);
 
       this.logger?.info?.('开始将 Markdown 内容转换为 PDF', {
-        outputPath
+        outputPath,
       });
 
       const result = await mdToPdf({ content: markdownContent }, mdOptions);
@@ -66,12 +66,12 @@ export class MarkdownToPdfService {
       }
 
       this.logger?.info?.('Markdown 内容转换 PDF 完成', {
-        outputPath: result.filename || outputPath
+        outputPath: result.filename || outputPath,
       });
     } catch (error) {
       this.logger?.error?.('Markdown 内容转换 PDF 失败', {
         outputPath,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
@@ -87,13 +87,13 @@ export class MarkdownToPdfService {
   _buildMdToPdfOptions(outputPath, options = {}) {
     const markdownPdfConfig = {
       ...(this.config.markdownPdf || {}),
-      ...(options || {})
+      ...(options || {}),
     };
 
     const mdOptions = {
       dest: outputPath,
       pdf_options: markdownPdfConfig.pdfOptions || {},
-      highlight_style: markdownPdfConfig.highlightStyle || 'github'
+      highlight_style: markdownPdfConfig.highlightStyle || 'github',
     };
 
     if (markdownPdfConfig.stylesheet) {

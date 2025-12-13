@@ -7,8 +7,8 @@ jest.mock('../../src/utils/logger.js', () => ({
     debug: jest.fn(),
     info: jest.fn(),
     warn: jest.fn(),
-    error: jest.fn()
-  }))
+    error: jest.fn(),
+  })),
 }));
 
 describe('PDFStyleService', () => {
@@ -19,12 +19,12 @@ describe('PDFStyleService', () => {
   beforeEach(() => {
     mockPage = {
       evaluate: jest.fn(),
-      url: jest.fn().mockReturnValue('https://example.com/page')
+      url: jest.fn().mockReturnValue('https://example.com/page'),
     };
 
     pdfStyleService = new PDFStyleService({
       theme: 'light',
-      fontSize: '16px'
+      fontSize: '16px',
     });
 
     // Get the mocked logger
@@ -38,13 +38,13 @@ describe('PDFStyleService', () => {
   describe('constructor', () => {
     it('should initialize with default settings', () => {
       const service = new PDFStyleService();
-      
+
       expect(service.defaults).toMatchObject({
         theme: 'light',
         preserveCodeHighlighting: true,
         enableCodeWrap: true,
         maxCodeLineLength: 80,
-        fontSize: '14px'
+        fontSize: '14px',
       });
     });
 
@@ -53,7 +53,7 @@ describe('PDFStyleService', () => {
         theme: 'light',
         fontSize: '16px',
         preserveCodeHighlighting: true,
-        enableCodeWrap: true
+        enableCodeWrap: true,
       });
     });
   });
@@ -66,15 +66,18 @@ describe('PDFStyleService', () => {
         dataTheme: null,
         bodyBgColor: 'rgb(255, 255, 255)',
         bodyColor: 'rgb(0, 0, 0)',
-        themeToggle: false
+        themeToggle: false,
       });
 
       const theme = await pdfStyleService.detectThemeMode(mockPage);
-      
+
       expect(theme).toBe('dark');
-      expect(mockLogger.debug).toHaveBeenCalledWith('检测到页面主题', expect.objectContaining({
-        detected: 'dark'
-      }));
+      expect(mockLogger.debug).toHaveBeenCalledWith(
+        '检测到页面主题',
+        expect.objectContaining({
+          detected: 'dark',
+        })
+      );
     });
 
     it('should detect dark theme from data-theme attribute', async () => {
@@ -84,11 +87,11 @@ describe('PDFStyleService', () => {
         dataTheme: 'dark',
         bodyBgColor: 'rgb(255, 255, 255)',
         bodyColor: 'rgb(0, 0, 0)',
-        themeToggle: false
+        themeToggle: false,
       });
 
       const theme = await pdfStyleService.detectThemeMode(mockPage);
-      
+
       expect(theme).toBe('dark');
     });
 
@@ -99,11 +102,11 @@ describe('PDFStyleService', () => {
         dataTheme: null,
         bodyBgColor: 'rgb(20, 20, 20)',
         bodyColor: 'rgb(255, 255, 255)',
-        themeToggle: false
+        themeToggle: false,
       });
 
       const theme = await pdfStyleService.detectThemeMode(mockPage);
-      
+
       expect(theme).toBe('dark');
     });
 
@@ -111,9 +114,11 @@ describe('PDFStyleService', () => {
       mockPage.evaluate.mockRejectedValue(new Error('Evaluation failed'));
 
       const theme = await pdfStyleService.detectThemeMode(mockPage);
-      
+
       expect(theme).toBe('light');
-      expect(mockLogger.warn).toHaveBeenCalledWith('主题检测失败，使用默认主题', { error: 'Evaluation failed' });
+      expect(mockLogger.warn).toHaveBeenCalledWith('主题检测失败，使用默认主题', {
+        error: 'Evaluation failed',
+      });
     });
 
     it('should detect night theme', async () => {
@@ -123,11 +128,11 @@ describe('PDFStyleService', () => {
         dataTheme: null,
         bodyBgColor: 'rgb(255, 255, 255)',
         bodyColor: 'rgb(0, 0, 0)',
-        themeToggle: false
+        themeToggle: false,
       });
 
       const theme = await pdfStyleService.detectThemeMode(mockPage);
-      
+
       expect(theme).toBe('dark');
     });
   });
@@ -135,7 +140,7 @@ describe('PDFStyleService', () => {
   describe('getPDFOptimizedCSS', () => {
     it('should return CSS string with required rules', () => {
       const css = pdfStyleService.getPDFOptimizedCSS();
-      
+
       expect(css).toContain('webkit-print-color-adjust: exact');
       expect(css).toContain('@page');
       expect(css).toContain('white-space: pre-wrap');
@@ -149,7 +154,7 @@ describe('PDFStyleService', () => {
 
     it('should include code block styling', () => {
       const css = pdfStyleService.getPDFOptimizedCSS();
-      
+
       expect(css).toContain('pre[class*="language-"]');
       expect(css).toContain('pre[class*="hljs"]');
       expect(css).toContain('.highlight');
@@ -159,7 +164,7 @@ describe('PDFStyleService', () => {
 
     it('should include syntax highlighting colors', () => {
       const css = pdfStyleService.getPDFOptimizedCSS();
-      
+
       expect(css).toContain('.token.comment');
       expect(css).toContain('.token.keyword');
       expect(css).toContain('.token.function');
@@ -172,9 +177,11 @@ describe('PDFStyleService', () => {
       mockPage.evaluate.mockResolvedValue(undefined);
 
       const result = await pdfStyleService.applyPDFStyles(mockPage, '.content');
-      
+
       expect(result).toEqual({ success: true });
-      expect(mockLogger.info).toHaveBeenCalledWith('应用最简化PDF样式', { contentSelector: '.content' });
+      expect(mockLogger.info).toHaveBeenCalledWith('应用最简化PDF样式', {
+        contentSelector: '.content',
+      });
       expect(mockLogger.debug).toHaveBeenCalledWith('PDF样式应用完成');
       expect(mockPage.evaluate).toHaveBeenCalledWith(
         expect.any(Function),
@@ -186,40 +193,42 @@ describe('PDFStyleService', () => {
     it('should handle missing content selector', async () => {
       mockPage.evaluate.mockRejectedValue(new Error('内容选择器未找到: .missing'));
 
-      await expect(pdfStyleService.applyPDFStyles(mockPage, '.missing'))
-        .rejects.toThrow('内容选择器未找到: .missing');
-      
+      await expect(pdfStyleService.applyPDFStyles(mockPage, '.missing')).rejects.toThrow(
+        '内容选择器未找到: .missing'
+      );
+
       expect(mockLogger.error).toHaveBeenCalledWith('PDF样式应用失败', {
         error: '内容选择器未找到: .missing',
-        contentSelector: '.missing'
+        contentSelector: '.missing',
       });
     });
 
     it('should handle evaluation errors', async () => {
       mockPage.evaluate.mockRejectedValue(new Error('Page closed'));
 
-      await expect(pdfStyleService.applyPDFStyles(mockPage, '.content'))
-        .rejects.toThrow('Page closed');
+      await expect(pdfStyleService.applyPDFStyles(mockPage, '.content')).rejects.toThrow(
+        'Page closed'
+      );
     });
   });
 
   describe('getPDFOptions', () => {
     it('should return PDF options with correct settings', () => {
       const options = pdfStyleService.getPDFOptions();
-      
+
       expect(options).toMatchObject({
         format: 'A4',
         margin: {
           top: '1.5cm',
           right: '1.5cm',
           bottom: '1.5cm',
-          left: '1.5cm'
+          left: '1.5cm',
         },
         printBackground: true,
         preferCSSPageSize: false,
         displayHeaderFooter: false,
         scale: 1,
-        tagged: false
+        tagged: false,
       });
     });
   });
@@ -229,12 +238,12 @@ describe('PDFStyleService', () => {
       const stats = {
         detailsExpanded: 5,
         ariaExpandedFixed: 3,
-        hiddenContentRevealed: 2
+        hiddenContentRevealed: 2,
       };
       mockPage.evaluate.mockResolvedValue(stats);
 
       await pdfStyleService.processSpecialContent(mockPage);
-      
+
       expect(mockLogger.info).toHaveBeenCalledWith('特殊内容处理完成', stats);
       expect(mockPage.evaluate).toHaveBeenCalledWith(expect.any(Function));
     });
@@ -243,8 +252,10 @@ describe('PDFStyleService', () => {
       mockPage.evaluate.mockRejectedValue(new Error('Processing failed'));
 
       await pdfStyleService.processSpecialContent(mockPage);
-      
-      expect(mockLogger.warn).toHaveBeenCalledWith('特殊内容处理失败', { error: 'Processing failed' });
+
+      expect(mockLogger.warn).toHaveBeenCalledWith('特殊内容处理失败', {
+        error: 'Processing failed',
+      });
     });
   });
 
@@ -252,13 +263,14 @@ describe('PDFStyleService', () => {
     it('should handle full workflow', async () => {
       // Mock successful operations
       mockPage.evaluate
-        .mockResolvedValueOnce({ // detectThemeMode
+        .mockResolvedValueOnce({
+          // detectThemeMode
           htmlClass: 'dark',
           bodyClass: '',
           dataTheme: 'dark',
           bodyBgColor: 'rgb(0, 0, 0)',
           bodyColor: 'rgb(255, 255, 255)',
-          themeToggle: true
+          themeToggle: true,
         })
         .mockResolvedValueOnce(undefined) // applyPDFStyles
         .mockResolvedValueOnce(undefined); // processSpecialContent
@@ -300,11 +312,11 @@ describe('PDFStyleService', () => {
       const customService = new PDFStyleService({
         fontSize: '18px',
         fontFamily: 'Arial, sans-serif',
-        codeFont: 'Courier New, monospace'
+        codeFont: 'Courier New, monospace',
       });
 
       const css = customService.getPDFOptimizedCSS();
-      
+
       // Should still contain all required rules regardless of custom settings
       expect(css).toContain('webkit-print-color-adjust');
       expect(css).toContain('white-space: pre-wrap');

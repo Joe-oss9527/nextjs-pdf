@@ -41,9 +41,9 @@ async function testOpenAIAccess() {
         '--disable-infobars',
         '--window-size=1920,1080',
         '--start-maximized',
-        '--disable-notifications'
+        '--disable-notifications',
       ],
-      ignoreDefaultArgs: ['--enable-automation']
+      ignoreDefaultArgs: ['--enable-automation'],
     });
 
     const page = await browser.newPage();
@@ -62,16 +62,16 @@ async function testOpenAIAccess() {
       delete navigator.__proto__.webdriver;
 
       window.chrome = {
-        runtime: {}
+        runtime: {},
       };
 
       Object.defineProperty(navigator, 'plugins', {
         get: () => [
           {
-            description: "Portable Document Format",
-            filename: "internal-pdf-viewer",
-            name: "Chrome PDF Plugin"
-          }
+            description: 'Portable Document Format',
+            filename: 'internal-pdf-viewer',
+            name: 'Chrome PDF Plugin',
+          },
         ],
       });
 
@@ -86,7 +86,7 @@ async function testOpenAIAccess() {
     console.log('⏳ 正在访问页面...');
     const response = await page.goto(TARGET_URL, {
       waitUntil: 'networkidle2',
-      timeout: 60000
+      timeout: 60000,
     });
 
     console.log(`✅ 页面响应状态: ${response.status()}\n`);
@@ -101,13 +101,13 @@ async function testOpenAIAccess() {
       console.log('✅ 成功访问页面！\n');
 
       // 等待页面完全加载
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      await new Promise((resolve) => setTimeout(resolve, 3000));
 
       // 保存截图
       const screenshotPath = path.join(SCREENSHOT_DIR, 'openai-page.png');
       await page.screenshot({
         path: screenshotPath,
-        fullPage: true
+        fullPage: true,
       });
       console.log(`📸 截图已保存: ${screenshotPath}\n`);
 
@@ -122,7 +122,7 @@ async function testOpenAIAccess() {
         '.sidebar a[href]',
         '.nav a[href]',
         '[class*="sidebar"] a[href]',
-        '[class*="nav"] a[href]'
+        '[class*="nav"] a[href]',
       ];
 
       for (const selector of selectors) {
@@ -136,7 +136,7 @@ async function testOpenAIAccess() {
             // 显示前 3 个链接的 href
             const hrefs = await page.evaluate((sel) => {
               const links = Array.from(document.querySelectorAll(sel));
-              return links.slice(0, 3).map(link => link.href);
+              return links.slice(0, 3).map((link) => link.href);
             }, selector);
 
             hrefs.forEach((href, index) => {
@@ -160,15 +160,17 @@ async function testOpenAIAccess() {
         'article',
         '[role="main"]',
         '.main-content',
-        '[class*="content"]'
+        '[class*="content"]',
       ];
 
       for (const selector of contentSelectors) {
         try {
           const element = await page.$(selector);
           if (element) {
-            const text = await element.evaluate(el => el.textContent.substring(0, 100));
-            console.log(`✅ ${selector.padEnd(30)} → 找到 (前100字符: ${text.trim().substring(0, 50)}...)`);
+            const text = await element.evaluate((el) => el.textContent.substring(0, 100));
+            console.log(
+              `✅ ${selector.padEnd(30)} → 找到 (前100字符: ${text.trim().substring(0, 50)}...)`
+            );
           } else {
             console.log(`❌ ${selector.padEnd(30)} → 未找到`);
           }
@@ -186,8 +188,12 @@ async function testOpenAIAccess() {
           hasAside: !!document.querySelector('aside'),
           hasSidebar: !!document.querySelector('[class*="sidebar"]'),
           hasMain: !!document.querySelector('main'),
-          allClassesWithNav: Array.from(document.querySelectorAll('[class*="nav"]')).map(el => el.className),
-          allClassesWithSidebar: Array.from(document.querySelectorAll('[class*="sidebar"]')).map(el => el.className)
+          allClassesWithNav: Array.from(document.querySelectorAll('[class*="nav"]')).map(
+            (el) => el.className
+          ),
+          allClassesWithSidebar: Array.from(document.querySelectorAll('[class*="sidebar"]')).map(
+            (el) => el.className
+          ),
         };
       });
 
@@ -199,21 +205,20 @@ async function testOpenAIAccess() {
 
       if (structureInfo.allClassesWithNav.length > 0) {
         console.log('\n包含 "nav" 的类名:');
-        structureInfo.allClassesWithNav.slice(0, 5).forEach(className => {
+        structureInfo.allClassesWithNav.slice(0, 5).forEach((className) => {
           console.log(`  - ${className}`);
         });
       }
 
       if (structureInfo.allClassesWithSidebar.length > 0) {
         console.log('\n包含 "sidebar" 的类名:');
-        structureInfo.allClassesWithSidebar.slice(0, 5).forEach(className => {
+        structureInfo.allClassesWithSidebar.slice(0, 5).forEach((className) => {
           console.log(`  - ${className}`);
         });
       }
 
       console.log('\n✨ 测试完成！\n');
     }
-
   } catch (error) {
     console.error('\n❌ 测试失败:', error.message);
     console.error('\n堆栈信息:', error.stack);

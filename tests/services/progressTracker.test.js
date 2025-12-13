@@ -10,7 +10,7 @@ jest.mock('chalk', () => ({
   yellow: jest.fn((text) => text),
   cyan: jest.fn((text) => text),
   gray: jest.fn((text) => text),
-  bold: jest.fn((text) => text)
+  bold: jest.fn((text) => text),
 }));
 
 describe('ProgressTracker', () => {
@@ -22,11 +22,11 @@ describe('ProgressTracker', () => {
       info: jest.fn(),
       warn: jest.fn(),
       error: jest.fn(),
-      debug: jest.fn()
+      debug: jest.fn(),
     };
 
     progressTracker = new ProgressTracker(mockLogger);
-    
+
     jest.clearAllTimers();
     jest.useFakeTimers();
     jest.spyOn(console, 'log').mockImplementation();
@@ -52,7 +52,7 @@ describe('ProgressTracker', () => {
         startTime: null,
         endTime: null,
         currentUrl: null,
-        eta: null
+        eta: null,
       });
       expect(progressTracker.urlStats).toBeInstanceOf(Map);
       expect(progressTracker.displayMode).toBe('detailed');
@@ -71,7 +71,7 @@ describe('ProgressTracker', () => {
       expect(progressTracker.stats.startTime).toBeDefined();
       expect(mockLogger.info).toHaveBeenCalledWith('开始爬取任务', {
         总数: 100,
-        模式: 'detailed'
+        模式: 'detailed',
       });
 
       return startPromise.then((event) => {
@@ -96,7 +96,7 @@ describe('ProgressTracker', () => {
   describe('success', () => {
     test('应该记录成功的URL', () => {
       progressTracker.start(10);
-      
+
       const successPromise = new Promise((resolve) => {
         progressTracker.once('success', resolve);
       });
@@ -136,7 +136,7 @@ describe('ProgressTracker', () => {
   describe('failure', () => {
     test('应该记录失败的URL', () => {
       progressTracker.start(10);
-      
+
       const failurePromise = new Promise((resolve) => {
         progressTracker.once('failure', resolve);
       });
@@ -156,7 +156,7 @@ describe('ProgressTracker', () => {
 
     test('应该处理将要重试的失败', () => {
       progressTracker.start(10);
-      
+
       const error = new Error('Timeout');
       progressTracker.failure('http://example.com', error, true);
 
@@ -177,7 +177,7 @@ describe('ProgressTracker', () => {
   describe('skip', () => {
     test('应该记录跳过的URL', () => {
       progressTracker.start(10);
-      
+
       const skipPromise = new Promise((resolve) => {
         progressTracker.once('skip', resolve);
       });
@@ -205,7 +205,7 @@ describe('ProgressTracker', () => {
   describe('retry', () => {
     test('应该记录重试', () => {
       progressTracker.start(10);
-      
+
       const retryPromise = new Promise((resolve) => {
         progressTracker.once('retry', resolve);
       });
@@ -213,7 +213,7 @@ describe('ProgressTracker', () => {
       progressTracker.retry('http://example.com', 2);
 
       expect(progressTracker.stats.retried).toBe(1);
-      
+
       const urlStat = progressTracker.urlStats.get('http://example.com');
       expect(urlStat.status).toBe('retrying');
       expect(urlStat.attempts).toBe(2);
@@ -231,7 +231,7 @@ describe('ProgressTracker', () => {
       progressTracker.startUrl('http://example.com');
 
       expect(progressTracker.stats.currentUrl).toBe('http://example.com');
-      
+
       const urlStat = progressTracker.urlStats.get('http://example.com');
       expect(urlStat.startTime).toBeDefined();
       expect(urlStat.status).toBe('processing');
@@ -355,7 +355,7 @@ describe('ProgressTracker', () => {
         重试次数: 0,
         成功率: '20.00%',
         总耗时: expect.stringMatching(/^\d+\.\d{2}秒$/),
-        平均速度: expect.stringMatching(/^\d+\.\d{2} 页\/秒$/)
+        平均速度: expect.stringMatching(/^\d+\.\d{2} 页\/秒$/),
       });
     });
   });
@@ -419,9 +419,7 @@ describe('ProgressTracker', () => {
       expect(console.log).toHaveBeenCalledWith(
         expect.stringContaining('处理中: http://current.com')
       );
-      expect(console.log).toHaveBeenCalledWith(
-        expect.stringContaining('进度:')
-      );
+      expect(console.log).toHaveBeenCalledWith(expect.stringContaining('进度:'));
     });
 
     test('应该停止进度显示', () => {
@@ -443,9 +441,7 @@ describe('ProgressTracker', () => {
 
       progressTracker.displayFinalReport();
 
-      expect(console.log).toHaveBeenCalledWith(
-        expect.stringContaining('=== 爬取任务完成报告 ===')
-      );
+      expect(console.log).toHaveBeenCalledWith(expect.stringContaining('=== 爬取任务完成报告 ==='));
     });
 
     test('应该显示失败的URL', () => {
@@ -455,9 +451,7 @@ describe('ProgressTracker', () => {
 
       progressTracker.displayFinalReport();
 
-      expect(console.log).toHaveBeenCalledWith(
-        expect.stringContaining('失败的URL:')
-      );
+      expect(console.log).toHaveBeenCalledWith(expect.stringContaining('失败的URL:'));
       expect(console.log).toHaveBeenCalledWith(
         expect.stringContaining('http://failed1.com: Error 1')
       );
@@ -467,14 +461,17 @@ describe('ProgressTracker', () => {
   describe('exportDetailedReport', () => {
     test('应该导出详细报告', async () => {
       const mockFileService = {
-        writeJson: jest.fn()
+        writeJson: jest.fn(),
       };
 
       progressTracker.start(10);
       progressTracker.success('url1');
       progressTracker.failure('url2', new Error('Error'));
 
-      const report = await progressTracker.exportDetailedReport('/reports/test.json', mockFileService);
+      const report = await progressTracker.exportDetailedReport(
+        '/reports/test.json',
+        mockFileService
+      );
 
       expect(mockFileService.writeJson).toHaveBeenCalledWith(
         '/reports/test.json',
@@ -482,7 +479,7 @@ describe('ProgressTracker', () => {
           summary: expect.any(Object),
           stats: expect.any(Object),
           urlDetails: expect.any(Array),
-          generatedAt: expect.any(String)
+          generatedAt: expect.any(String),
         })
       );
 

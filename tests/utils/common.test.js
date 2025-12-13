@@ -7,7 +7,7 @@ import {
   batchDelay,
   exponentialBackoff,
   jitteredDelay,
-  applyJitter
+  applyJitter,
 } from '../../src/utils/common.js';
 
 describe('Common Utilities', () => {
@@ -48,7 +48,8 @@ describe('Common Utilities', () => {
     });
 
     test('应该重试失败的函数', async () => {
-      const fn = jest.fn()
+      const fn = jest
+        .fn()
         .mockRejectedValueOnce(new Error('First fail'))
         .mockRejectedValueOnce(new Error('Second fail'))
         .mockResolvedValue('success');
@@ -61,7 +62,8 @@ describe('Common Utilities', () => {
 
     test('应该在所有尝试失败后抛出最后的错误', async () => {
       const lastError = new Error('Final error');
-      const fn = jest.fn()
+      const fn = jest
+        .fn()
         .mockRejectedValueOnce(new Error('Error 1'))
         .mockRejectedValueOnce(new Error('Error 2'))
         .mockRejectedValue(lastError);
@@ -71,7 +73,8 @@ describe('Common Utilities', () => {
     });
 
     test('应该使用指数退避', async () => {
-      const fn = jest.fn()
+      const fn = jest
+        .fn()
         .mockRejectedValueOnce(new Error('Fail 1'))
         .mockRejectedValueOnce(new Error('Fail 2'))
         .mockResolvedValue('success');
@@ -85,9 +88,7 @@ describe('Common Utilities', () => {
     test('应该调用onRetry回调', async () => {
       const onRetry = jest.fn();
       const error = new Error('Test error');
-      const fn = jest.fn()
-        .mockRejectedValueOnce(error)
-        .mockResolvedValue('success');
+      const fn = jest.fn().mockRejectedValueOnce(error).mockResolvedValue('success');
 
       await retry(fn, { onRetry, delay: 10, jitterStrategy: 'none' });
 
@@ -96,7 +97,8 @@ describe('Common Utilities', () => {
     });
 
     test('decorrelated jitter 应该遵守 maxDelay 上限', async () => {
-      const fn = jest.fn()
+      const fn = jest
+        .fn()
         .mockRejectedValueOnce(new Error('Fail 1'))
         .mockRejectedValueOnce(new Error('Fail 2'))
         .mockResolvedValue('success');
@@ -112,14 +114,14 @@ describe('Common Utilities', () => {
         jitterStrategy: 'decorrelated',
         onRetry: (attempt, error, waitTime) => {
           waits.push(waitTime);
-        }
+        },
       });
 
       randomSpy.mockRestore();
 
       expect(result).toBe('success');
       expect(waits.length).toBe(2);
-      waits.forEach(w => {
+      waits.forEach((w) => {
         expect(w).toBeLessThanOrEqual(100);
         expect(w).toBeGreaterThan(0);
       });
@@ -202,9 +204,7 @@ describe('Common Utilities', () => {
 
     test('应该调用进度回调', async () => {
       const onProgress = jest.fn();
-      const fn = jest.fn()
-        .mockRejectedValueOnce(new Error('Fail'))
-        .mockResolvedValue('success');
+      const fn = jest.fn().mockRejectedValueOnce(new Error('Fail')).mockResolvedValue('success');
 
       const promise = retryWithProgress(fn, { onProgress, maxAttempts: 3, delay: 100 });
 
@@ -224,14 +224,12 @@ describe('Common Utilities', () => {
     test('应该调用重试回调并包含等待时间', async () => {
       const onRetry = jest.fn();
       const error = new Error('Test error');
-      const fn = jest.fn()
-        .mockRejectedValueOnce(error)
-        .mockResolvedValue('success');
+      const fn = jest.fn().mockRejectedValueOnce(error).mockResolvedValue('success');
 
       const promise = retryWithProgress(fn, {
         onRetry,
         delay: 100,
-        backoff: 2
+        backoff: 2,
       });
 
       // 第一次尝试失败
@@ -278,7 +276,7 @@ describe('Common Utilities', () => {
       expect(results).toEqual([
         { success: true, result: 'result1', index: 0 },
         { success: true, result: 'result2', index: 1 },
-        { success: true, result: 'result3', index: 2 }
+        { success: true, result: 'result3', index: 2 },
       ]);
     });
 
@@ -296,7 +294,7 @@ describe('Common Utilities', () => {
       expect(results).toEqual([
         { success: true, result: 'result1', index: 0 },
         { success: false, error, index: 1 },
-        { success: true, result: 'result3', index: 2 }
+        { success: true, result: 'result3', index: 2 },
       ]);
 
       // 恢复假计时器

@@ -18,19 +18,19 @@ const sampleSectionStructure = {
         {
           index: '0',
           url: 'https://code.claude.com/docs/en/overview',
-          order: 0
+          order: 0,
         },
         {
           index: '1',
           url: 'https://code.claude.com/docs/en/installation',
-          order: 1
+          order: 1,
         },
         {
           index: '2',
           url: 'https://code.claude.com/docs/en/quickstart',
-          order: 2
-        }
-      ]
+          order: 2,
+        },
+      ],
     },
     {
       index: 1,
@@ -40,14 +40,14 @@ const sampleSectionStructure = {
         {
           index: '3',
           url: 'https://code.claude.com/docs/en/sub-agents',
-          order: 0
+          order: 0,
         },
         {
           index: '4',
           url: 'https://code.claude.com/docs/en/tools',
-          order: 1
-        }
-      ]
+          order: 1,
+        },
+      ],
     },
     {
       index: 2,
@@ -57,10 +57,10 @@ const sampleSectionStructure = {
         {
           index: '5',
           url: 'https://code.claude.com/docs/en/third-party-integrations',
-          order: 0
-        }
-      ]
-    }
+          order: 0,
+        },
+      ],
+    },
   ],
   urlToSection: {
     'https://code.claude.com/docs/en/overview': 0,
@@ -68,18 +68,18 @@ const sampleSectionStructure = {
     'https://code.claude.com/docs/en/quickstart': 0,
     'https://code.claude.com/docs/en/sub-agents': 1,
     'https://code.claude.com/docs/en/tools': 1,
-    'https://code.claude.com/docs/en/third-party-integrations': 2
-  }
+    'https://code.claude.com/docs/en/third-party-integrations': 2,
+  },
 };
 
 // 模拟articleTitles
 const sampleArticleTitles = {
-  '0': 'Overview',
-  '1': 'Installation',
-  '2': 'Quick Start',
-  '3': 'Sub-agents',
-  '4': 'Tools',
-  '5': 'Third-party Integrations'
+  0: 'Overview',
+  1: 'Installation',
+  2: 'Quick Start',
+  3: 'Sub-agents',
+  4: 'Tools',
+  5: 'Third-party Integrations',
 };
 
 console.log('\n📊 Section结构示例:');
@@ -150,21 +150,21 @@ if (orderValid) {
 console.log('\n📝 模拟TOC生成...');
 
 const mockTOC = [];
-sampleSectionStructure.sections.forEach(section => {
+sampleSectionStructure.sections.forEach((section) => {
   // Level 1: Section
   mockTOC.push({
     level: 1,
     title: section.title,
-    page: 1  // 模拟页码
+    page: 1, // 模拟页码
   });
 
   // Level 2: Pages
-  section.pages.forEach(page => {
+  section.pages.forEach((page) => {
     const pageTitle = sampleArticleTitles[page.index] || `Page ${page.index}`;
     mockTOC.push({
       level: 2,
       title: pageTitle,
-      page: 1  // 模拟页码
+      page: 1, // 模拟页码
     });
   });
 });

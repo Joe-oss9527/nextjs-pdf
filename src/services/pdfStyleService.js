@@ -9,7 +9,7 @@ export class PDFStyleService {
   constructor(config = {}) {
     this.config = config;
     this.logger = createLogger('PDFStyleService');
-    
+
     // 默认配置
     this.defaults = {
       theme: 'light',
@@ -22,11 +22,11 @@ export class PDFStyleService {
       codeFontSize: '13px',
       lineHeight: '1.5',
       kindleOptimized: false,
-      deviceProfile: 'default'
+      deviceProfile: 'default',
     };
-    
+
     this.settings = { ...this.defaults, ...config };
-    
+
     // 设备配置预设
     this.deviceProfiles = {
       default: {},
@@ -36,7 +36,7 @@ export class PDFStyleService {
         lineHeight: '1.6',
         maxCodeLineLength: 70,
         format: 'Letter',
-        margin: { top: '0.8in', right: '0.5in', bottom: '0.8in', left: '0.5in' }
+        margin: { top: '0.8in', right: '0.5in', bottom: '0.8in', left: '0.5in' },
       },
       paperwhite: {
         fontSize: '16px',
@@ -44,7 +44,7 @@ export class PDFStyleService {
         lineHeight: '1.6',
         maxCodeLineLength: 75,
         format: 'Letter',
-        margin: { top: '0.7in', right: '0.5in', bottom: '0.7in', left: '0.5in' }
+        margin: { top: '0.7in', right: '0.5in', bottom: '0.7in', left: '0.5in' },
       },
       oasis: {
         fontSize: '17px',
@@ -52,7 +52,7 @@ export class PDFStyleService {
         lineHeight: '1.65',
         maxCodeLineLength: 80,
         format: 'Letter',
-        margin: { top: '0.6in', right: '0.4in', bottom: '0.6in', left: '0.4in' }
+        margin: { top: '0.6in', right: '0.4in', bottom: '0.6in', left: '0.4in' },
       },
       scribe: {
         fontSize: '18px',
@@ -60,10 +60,10 @@ export class PDFStyleService {
         lineHeight: '1.7',
         maxCodeLineLength: 90,
         format: 'A4',
-        margin: { top: '1cm', right: '1cm', bottom: '1cm', left: '1cm' }
-      }
+        margin: { top: '1cm', right: '1cm', bottom: '1cm', left: '1cm' },
+      },
     };
-    
+
     // 应用设备配置
     if (this.settings.deviceProfile && this.settings.deviceProfile !== 'default') {
       const profile = this.deviceProfiles[this.settings.deviceProfile];
@@ -84,12 +84,19 @@ export class PDFStyleService {
         // === 阶段1.1：清除浏览器存储中的主题偏好 ===
         // 防止 JavaScript 重新应用深色主题
         const themeKeys = [
-          'theme', 'theme-preference', 'color-mode', 'colorMode', 'themeMode',
-          'next-theme', 'chakra-ui-color-mode', 'mantine-color-scheme',
-          'vuepress-color-scheme', 'docusaurus.theme'
+          'theme',
+          'theme-preference',
+          'color-mode',
+          'colorMode',
+          'themeMode',
+          'next-theme',
+          'chakra-ui-color-mode',
+          'mantine-color-scheme',
+          'vuepress-color-scheme',
+          'docusaurus.theme',
         ];
 
-        themeKeys.forEach(key => {
+        themeKeys.forEach((key) => {
           try {
             localStorage.removeItem(key);
             sessionStorage.removeItem(key);
@@ -132,7 +139,7 @@ export class PDFStyleService {
         }
 
         // === 清理所有元素的深色主题类和属性 ===
-        document.querySelectorAll('*').forEach(el => {
+        document.querySelectorAll('*').forEach((el) => {
           // 移除深色主题类
           el.classList.remove('dark', 'dark-mode', 'theme-dark', 'night-mode');
 
@@ -146,7 +153,7 @@ export class PDFStyleService {
         });
 
         // 清理特定选择器中的深色标识
-        document.querySelectorAll('[data-theme="dark"], .theme-dark').forEach(el => {
+        document.querySelectorAll('[data-theme="dark"], .theme-dark').forEach((el) => {
           el.removeAttribute('data-theme');
           el.classList.remove('dark', 'dark-mode', 'theme-dark');
         });
@@ -168,43 +175,46 @@ export class PDFStyleService {
           // 检查HTML或body的主题类名
           htmlClass: document.documentElement.className,
           bodyClass: document.body.className,
-          
+
           // 检查CSS变量
           cssVars: getComputedStyle(document.documentElement),
-          
+
           // 检查特定的主题属性
-          dataTheme: document.documentElement.getAttribute('data-theme') || 
-                    document.body.getAttribute('data-theme'),
-          
+          dataTheme:
+            document.documentElement.getAttribute('data-theme') ||
+            document.body.getAttribute('data-theme'),
+
           // 检查主要背景色
           bodyBgColor: getComputedStyle(document.body).backgroundColor,
-          
+
           // 检查主要文字颜色
           bodyColor: getComputedStyle(document.body).color,
-          
+
           // 检查是否有主题切换器
-          themeToggle: !!document.querySelector('[data-theme-toggle], .theme-toggle, .dark-mode-toggle')
+          themeToggle: !!document.querySelector(
+            '[data-theme-toggle], .theme-toggle, .dark-mode-toggle'
+          ),
         };
-        
+
         return checks;
       });
-      
+
       // 智能判断主题模式
       let detectedTheme = 'light';
-      
+
       // 方法1: 检查类名
       const classList = `${themeInfo.htmlClass} ${themeInfo.bodyClass}`.toLowerCase();
       if (classList.includes('dark') || classList.includes('night')) {
         detectedTheme = 'dark';
       }
-      
+
       // 方法2: 检查data-theme属性
       if (themeInfo.dataTheme) {
         if (themeInfo.dataTheme.toLowerCase().includes('dark')) {
           detectedTheme = 'dark';
         }
       }
-      
+
       // 方法3: 检查背景色
       if (themeInfo.bodyBgColor) {
         const rgb = themeInfo.bodyBgColor.match(/\d+/g);
@@ -215,17 +225,16 @@ export class PDFStyleService {
           }
         }
       }
-      
-      this.logger.debug('检测到页面主题', { 
-        detected: detectedTheme, 
+
+      this.logger.debug('检测到页面主题', {
+        detected: detectedTheme,
         htmlClass: themeInfo.htmlClass,
         bodyClass: themeInfo.bodyClass,
         dataTheme: themeInfo.dataTheme,
-        bgColor: themeInfo.bodyBgColor 
+        bgColor: themeInfo.bodyBgColor,
       });
-      
+
       return detectedTheme;
-      
     } catch (error) {
       this.logger.warn('主题检测失败，使用默认主题', { error: error.message });
       return 'light';
@@ -242,9 +251,10 @@ export class PDFStyleService {
     const maxCodeLength = this.settings.maxCodeLineLength || 80;
     const fontFamily = this.settings.fontFamily || 'system-ui, -apple-system, sans-serif';
     const codeFont = this.settings.codeFont || 'Consolas, Monaco, monospace';
-    
+
     // Kindle优化的特殊样式
-    const kindleStyles = this.settings.kindleOptimized ? `
+    const kindleStyles = this.settings.kindleOptimized
+      ? `
       /* === Kindle特定优化 === */
       body {
         font-size: ${fontSize} !important;
@@ -283,8 +293,9 @@ export class PDFStyleService {
       h2 { font-size: calc(${fontSize} * 1.3) !important; }
       h3 { font-size: calc(${fontSize} * 1.15) !important; }
       h4, h5, h6 { font-size: ${fontSize} !important; }
-    ` : '';
-    
+    `
+      : '';
+
     return `
       /* === 基础打印优化 - 保持原始样式基础 === */
       * {
@@ -661,50 +672,73 @@ export class PDFStyleService {
       this.logger.info('应用最简化PDF样式', { contentSelector });
 
       // 只做最基础的内容提取和样式优化
-      await page.evaluate((selector, css) => {
-        // 提取内容
-        const contentElement = document.querySelector(selector);
-        if (!contentElement) {
-          throw new Error(`内容选择器未找到: ${selector}`);
-        }
-
-        // 移除交互和导航元素（在内容区域内执行，避免全站影响）
-        const elementsToRemove = [
-          'script', 'noscript',
-          // 交互类
-          'button', 'input', 'textarea', 'select',
-          // 站点导航/侧栏/目录/面包屑/分页
-          'nav', 'aside', '[role="navigation"]', '[role="complementary"]',
-          '[id*="sidebar"]', '[class*="sidebar"]',
-          '.table-of-contents', '.toc', '#on-this-page', '.on-this-page', '[aria-label="On this page"]',
-          '#pagination', '.pagination', '[data-testid="breadcrumb"]', '.breadcrumbs', '[aria-label="breadcrumb"]',
-          // 视觉干扰或无关控件
-          '.theme-toggle', '.dark-mode-toggle', '[data-theme-toggle]', '.copy-page', '[data-action="copy-page"]'
-        ];
-
-        elementsToRemove.forEach(sel => {
-          contentElement.querySelectorAll(sel).forEach(el => {
-            try { el.remove(); } catch {}
-          });
-        });
-
-        // 强制移除深色主题类和属性
-        document.documentElement.classList.remove('dark', 'dark-mode', 'theme-dark');
-        document.body.classList.remove('dark', 'dark-mode', 'theme-dark');
-        document.documentElement.removeAttribute('data-theme');
-        document.body.removeAttribute('data-theme');
-        document.documentElement.setAttribute('data-theme', 'light');
-        
-        // 移除所有元素的深色主题相关类和属性
-        document.querySelectorAll('*').forEach(el => {
-          el.classList.remove('dark', 'dark-mode', 'theme-dark');
-          if (el.hasAttribute('data-theme')) {
-            el.removeAttribute('data-theme');
+      await page.evaluate(
+        (selector, css) => {
+          // 提取内容
+          const contentElement = document.querySelector(selector);
+          if (!contentElement) {
+            throw new Error(`内容选择器未找到: ${selector}`);
           }
-        });
-        
-        // === 最小干预：仅添加换行支持，保留原始样式 ===
-        const codeElements = contentElement.querySelectorAll(`
+
+          // 移除交互和导航元素（在内容区域内执行，避免全站影响）
+          const elementsToRemove = [
+            'script',
+            'noscript',
+            // 交互类
+            'button',
+            'input',
+            'textarea',
+            'select',
+            // 站点导航/侧栏/目录/面包屑/分页
+            'nav',
+            'aside',
+            '[role="navigation"]',
+            '[role="complementary"]',
+            '[id*="sidebar"]',
+            '[class*="sidebar"]',
+            '.table-of-contents',
+            '.toc',
+            '#on-this-page',
+            '.on-this-page',
+            '[aria-label="On this page"]',
+            '#pagination',
+            '.pagination',
+            '[data-testid="breadcrumb"]',
+            '.breadcrumbs',
+            '[aria-label="breadcrumb"]',
+            // 视觉干扰或无关控件
+            '.theme-toggle',
+            '.dark-mode-toggle',
+            '[data-theme-toggle]',
+            '.copy-page',
+            '[data-action="copy-page"]',
+          ];
+
+          elementsToRemove.forEach((sel) => {
+            contentElement.querySelectorAll(sel).forEach((el) => {
+              try {
+                el.remove();
+              } catch {}
+            });
+          });
+
+          // 强制移除深色主题类和属性
+          document.documentElement.classList.remove('dark', 'dark-mode', 'theme-dark');
+          document.body.classList.remove('dark', 'dark-mode', 'theme-dark');
+          document.documentElement.removeAttribute('data-theme');
+          document.body.removeAttribute('data-theme');
+          document.documentElement.setAttribute('data-theme', 'light');
+
+          // 移除所有元素的深色主题相关类和属性
+          document.querySelectorAll('*').forEach((el) => {
+            el.classList.remove('dark', 'dark-mode', 'theme-dark');
+            if (el.hasAttribute('data-theme')) {
+              el.removeAttribute('data-theme');
+            }
+          });
+
+          // === 最小干预：仅添加换行支持，保留原始样式 ===
+          const codeElements = contentElement.querySelectorAll(`
           pre, 
           pre[class*="language-"],
           pre[class*="hljs"],
@@ -712,24 +746,24 @@ export class PDFStyleService {
           .code-block,
           .CodeMirror
         `);
-        
-        codeElements.forEach(el => {
-          // 添加换行支持和强制浅色样式
-          el.style.setProperty('white-space', 'pre-wrap', 'important');
-          el.style.setProperty('word-wrap', 'break-word', 'important');
-          el.style.setProperty('overflow-wrap', 'break-word', 'important');
-          el.style.setProperty('overflow', 'visible', 'important');
-          el.style.setProperty('overflow-x', 'visible', 'important');
-          el.style.setProperty('max-width', '100%', 'important');
-          el.style.setProperty('box-sizing', 'border-box', 'important');
-          
-          // 强制设置浅色背景和深色文本
-          el.style.setProperty('background-color', '#f8fafc', 'important');
-          el.style.setProperty('color', '#1e293b', 'important');
-        });
-        
-        // === 确保代码块内元素也支持换行 ===
-        const codeChildren = contentElement.querySelectorAll(`
+
+          codeElements.forEach((el) => {
+            // 添加换行支持和强制浅色样式
+            el.style.setProperty('white-space', 'pre-wrap', 'important');
+            el.style.setProperty('word-wrap', 'break-word', 'important');
+            el.style.setProperty('overflow-wrap', 'break-word', 'important');
+            el.style.setProperty('overflow', 'visible', 'important');
+            el.style.setProperty('overflow-x', 'visible', 'important');
+            el.style.setProperty('max-width', '100%', 'important');
+            el.style.setProperty('box-sizing', 'border-box', 'important');
+
+            // 强制设置浅色背景和深色文本
+            el.style.setProperty('background-color', '#f8fafc', 'important');
+            el.style.setProperty('color', '#1e293b', 'important');
+          });
+
+          // === 确保代码块内元素也支持换行 ===
+          const codeChildren = contentElement.querySelectorAll(`
           pre *, 
           pre[class*="language-"] *,
           pre[class*="hljs"] *,
@@ -737,114 +771,123 @@ export class PDFStyleService {
           .code-block *,
           .CodeMirror *
         `);
-        
-        codeChildren.forEach(el => {
-          // 添加换行支持并确保文本可见
-          el.style.setProperty('white-space', 'pre-wrap', 'important');
-          el.style.setProperty('word-wrap', 'break-word', 'important');
-          el.style.setProperty('overflow-wrap', 'break-word', 'important');
-          el.style.setProperty('overflow', 'visible', 'important');
-          el.style.setProperty('max-width', '100%', 'important');
-          
-          // 确保所有代码子元素都有适当的颜色对比度
-          const computedColor = window.getComputedStyle(el).color;
-          const computedBg = window.getComputedStyle(el).backgroundColor;
-          
-          // 检查是否是白色或接近白色的文本
-          if (computedColor && (computedColor.includes('rgb(255, 255, 255)') || 
-                               computedColor.includes('#fff') || 
-                               computedColor.includes('#ffffff') || 
-                               computedColor.includes('white'))) {
-            el.style.setProperty('color', '#1e293b', 'important');
-          }
-          
-          // 检查是否是深色背景
-          if (computedBg && (computedBg.includes('rgb(0, 0, 0)') || 
-                            computedBg.includes('#000') || 
-                            computedBg.includes('#111') || 
-                            computedBg.includes('#222') || 
-                            computedBg.includes('#333'))) {
-            el.style.setProperty('background-color', 'transparent', 'important');
-          }
-        });
 
-        // 替换body内容为提炼后的主要内容
-        document.body.innerHTML = contentElement.outerHTML;
+          codeChildren.forEach((el) => {
+            // 添加换行支持并确保文本可见
+            el.style.setProperty('white-space', 'pre-wrap', 'important');
+            el.style.setProperty('word-wrap', 'break-word', 'important');
+            el.style.setProperty('overflow-wrap', 'break-word', 'important');
+            el.style.setProperty('overflow', 'visible', 'important');
+            el.style.setProperty('max-width', '100%', 'important');
 
-        // 强制移除内容中的深色主题
-        document.querySelectorAll('[data-theme="dark"], [class*="dark"], .theme-dark').forEach(el => {
-          el.removeAttribute('data-theme');
-          el.classList.remove('dark', 'dark-mode', 'theme-dark');
-        });
+            // 确保所有代码子元素都有适当的颜色对比度
+            const computedColor = window.getComputedStyle(el).color;
+            const computedBg = window.getComputedStyle(el).backgroundColor;
 
-        // === 阶段3：强制设置所有元素为浅色（全局颜色检测和转换）===
-        // 强制设置 body 和根元素的颜色
-        document.body.style.setProperty('background-color', '#ffffff', 'important');
-        document.body.style.setProperty('color', '#000000', 'important');
-        document.documentElement.style.setProperty('background-color', '#ffffff', 'important');
-        document.documentElement.style.setProperty('color', '#000000', 'important');
+            // 检查是否是白色或接近白色的文本
+            if (
+              computedColor &&
+              (computedColor.includes('rgb(255, 255, 255)') ||
+                computedColor.includes('#fff') ||
+                computedColor.includes('#ffffff') ||
+                computedColor.includes('white'))
+            ) {
+              el.style.setProperty('color', '#1e293b', 'important');
+            }
 
-        // 处理所有可能的深色容器
-        const allElements = document.querySelectorAll('*');
-        let darkElementsFixed = 0;
+            // 检查是否是深色背景
+            if (
+              computedBg &&
+              (computedBg.includes('rgb(0, 0, 0)') ||
+                computedBg.includes('#000') ||
+                computedBg.includes('#111') ||
+                computedBg.includes('#222') ||
+                computedBg.includes('#333'))
+            ) {
+              el.style.setProperty('background-color', 'transparent', 'important');
+            }
+          });
 
-        allElements.forEach(el => {
-          const computedStyle = window.getComputedStyle(el);
-          const bgColor = computedStyle.backgroundColor;
-          const textColor = computedStyle.color;
+          // 替换body内容为提炼后的主要内容
+          document.body.innerHTML = contentElement.outerHTML;
 
-          // 检测深色背景并强制转换为白色
-          if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
-            const rgbMatch = bgColor.match(/rgb[a]?\((\d+),\s*(\d+),\s*(\d+)/);
-            if (rgbMatch) {
-              const r = parseInt(rgbMatch[1]);
-              const g = parseInt(rgbMatch[2]);
-              const b = parseInt(rgbMatch[3]);
+          // 强制移除内容中的深色主题
+          document
+            .querySelectorAll('[data-theme="dark"], [class*="dark"], .theme-dark')
+            .forEach((el) => {
+              el.removeAttribute('data-theme');
+              el.classList.remove('dark', 'dark-mode', 'theme-dark');
+            });
 
-              // 如果背景色的RGB值都小于50（很深的颜色）
-              if (r < 50 && g < 50 && b < 50) {
-                el.style.setProperty('background-color', '#ffffff', 'important');
-                darkElementsFixed++;
+          // === 阶段3：强制设置所有元素为浅色（全局颜色检测和转换）===
+          // 强制设置 body 和根元素的颜色
+          document.body.style.setProperty('background-color', '#ffffff', 'important');
+          document.body.style.setProperty('color', '#000000', 'important');
+          document.documentElement.style.setProperty('background-color', '#ffffff', 'important');
+          document.documentElement.style.setProperty('color', '#000000', 'important');
+
+          // 处理所有可能的深色容器
+          const allElements = document.querySelectorAll('*');
+          let darkElementsFixed = 0;
+
+          allElements.forEach((el) => {
+            const computedStyle = window.getComputedStyle(el);
+            const bgColor = computedStyle.backgroundColor;
+            const textColor = computedStyle.color;
+
+            // 检测深色背景并强制转换为白色
+            if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
+              const rgbMatch = bgColor.match(/rgb[a]?\((\d+),\s*(\d+),\s*(\d+)/);
+              if (rgbMatch) {
+                const r = parseInt(rgbMatch[1]);
+                const g = parseInt(rgbMatch[2]);
+                const b = parseInt(rgbMatch[3]);
+
+                // 如果背景色的RGB值都小于50（很深的颜色）
+                if (r < 50 && g < 50 && b < 50) {
+                  el.style.setProperty('background-color', '#ffffff', 'important');
+                  darkElementsFixed++;
+                }
               }
             }
-          }
 
-          // 检测浅色文本（在深色背景上的白色文本）并转换为深色
-          if (textColor) {
-            const rgbMatch = textColor.match(/rgb[a]?\((\d+),\s*(\d+),\s*(\d+)/);
-            if (rgbMatch) {
-              const r = parseInt(rgbMatch[1]);
-              const g = parseInt(rgbMatch[2]);
-              const b = parseInt(rgbMatch[3]);
+            // 检测浅色文本（在深色背景上的白色文本）并转换为深色
+            if (textColor) {
+              const rgbMatch = textColor.match(/rgb[a]?\((\d+),\s*(\d+),\s*(\d+)/);
+              if (rgbMatch) {
+                const r = parseInt(rgbMatch[1]);
+                const g = parseInt(rgbMatch[2]);
+                const b = parseInt(rgbMatch[3]);
 
-              // 如果文本颜色的RGB值都大于200（很浅的颜色，如白色）
-              if (r > 200 && g > 200 && b > 200) {
-                el.style.setProperty('color', '#000000', 'important');
+                // 如果文本颜色的RGB值都大于200（很浅的颜色，如白色）
+                if (r > 200 && g > 200 && b > 200) {
+                  el.style.setProperty('color', '#000000', 'important');
+                }
               }
             }
+          });
+
+          // 只添加最基础的PDF打印优化样式
+          const existingStyle = document.querySelector('#pdf-style');
+          if (existingStyle) {
+            existingStyle.remove();
           }
-        });
 
-        // 只添加最基础的PDF打印优化样式
-        const existingStyle = document.querySelector('#pdf-style');
-        if (existingStyle) {
-          existingStyle.remove();
-        }
-
-        const style = document.createElement('style');
-        style.id = 'pdf-style';
-        style.textContent = css;
-        document.head.appendChild(style);
-
-      }, contentSelector, this.getPDFOptimizedCSS());
+          const style = document.createElement('style');
+          style.id = 'pdf-style';
+          style.textContent = css;
+          document.head.appendChild(style);
+        },
+        contentSelector,
+        this.getPDFOptimizedCSS()
+      );
 
       this.logger.debug('PDF样式应用完成');
       return { success: true };
-
     } catch (error) {
-      this.logger.error('PDF样式应用失败', { 
+      this.logger.error('PDF样式应用失败', {
         error: error.message,
-        contentSelector 
+        contentSelector,
       });
       throw error;
     }
@@ -861,9 +904,9 @@ export class PDFStyleService {
       preferCSSPageSize: this.settings.preferCSSPageSize || false,
       displayHeaderFooter: false,
       scale: 1,
-      tagged: this.settings.tagged || false
+      tagged: this.settings.tagged || false,
     };
-    
+
     // 处理页边距
     if (this.settings.margin) {
       if (typeof this.settings.margin === 'string') {
@@ -871,7 +914,7 @@ export class PDFStyleService {
         const marginPresets = {
           narrow: { top: '0.5in', right: '0.5in', bottom: '0.5in', left: '0.5in' },
           normal: { top: '1in', right: '1in', bottom: '1in', left: '1in' },
-          wide: { top: '1.5in', right: '1.5in', bottom: '1.5in', left: '1.5in' }
+          wide: { top: '1.5in', right: '1.5in', bottom: '1.5in', left: '1.5in' },
         };
         options.margin = marginPresets[this.settings.margin] || marginPresets.normal;
       } else {
@@ -882,30 +925,32 @@ export class PDFStyleService {
         top: '1.5cm',
         right: '1.5cm',
         bottom: '1.5cm',
-        left: '1.5cm'
+        left: '1.5cm',
       };
     }
-    
+
     // Kindle优化
     if (this.settings.kindleOptimized) {
       options = {
         ...options,
         format: this.settings.pageFormat || this.settings.format || 'Letter',
-        tagged: true,  // 提高可访问性
+        tagged: true, // 提高可访问性
         preferCSSPageSize: true,
         // 针对Kindle的特殊设置
-        ...(this.settings.deviceProfile === 'kindle7' ? {
-          scale: 0.95  // 稍微缩小以适应7英寸屏幕
-        } : {})
+        ...(this.settings.deviceProfile === 'kindle7'
+          ? {
+              scale: 0.95, // 稍微缩小以适应7英寸屏幕
+            }
+          : {}),
       };
-      
-      this.logger.debug('应用Kindle优化的PDF选项', { 
+
+      this.logger.debug('应用Kindle优化的PDF选项', {
         deviceProfile: this.settings.deviceProfile,
         format: options.format,
-        margin: options.margin 
+        margin: options.margin,
       });
     }
-    
+
     return options;
   }
 
@@ -923,11 +968,19 @@ export class PDFStyleService {
         const contentRoot = document.querySelector('main, article, [role="main"], .main-content');
         const shouldSkipHidden = (el) => {
           // 跳过模态、对话框、全屏遮罩和全局浮层
-          if (el.closest('[role="dialog"], [aria-modal="true"], .modal, .overlay, [data-overlay], [class*="overlay"], [class*="modal"]')) {
+          if (
+            el.closest(
+              '[role="dialog"], [aria-modal="true"], .modal, .overlay, [data-overlay], [class*="overlay"], [class*="modal"]'
+            )
+          ) {
             return true;
           }
           // 跳过导航/目录容器，避免错误地显示侧边栏目录
-          if (el.closest('nav, aside, [role="navigation"], .table-of-contents, .toc, #on-this-page, .on-this-page')) {
+          if (
+            el.closest(
+              'nav, aside, [role="navigation"], .table-of-contents, .toc, #on-this-page, .on-this-page'
+            )
+          ) {
             return true;
           }
           // 若能定位到主要内容，只处理其内部节点
@@ -938,7 +991,7 @@ export class PDFStyleService {
         };
 
         // 处理Mermaid图表
-        document.querySelectorAll('.mermaid').forEach(el => {
+        document.querySelectorAll('.mermaid').forEach((el) => {
           if (el.querySelector('svg')) {
             el.style.overflow = 'visible';
             el.style.maxWidth = '100%';
@@ -946,13 +999,13 @@ export class PDFStyleService {
         });
 
         // 处理代码高亮
-        document.querySelectorAll('[class*="highlight"], [class*="hljs"]').forEach(el => {
+        document.querySelectorAll('[class*="highlight"], [class*="hljs"]').forEach((el) => {
           el.style.overflow = 'visible';
           el.style.whiteSpace = 'pre-wrap';
         });
 
         // 1. 处理标准 <details> 元素
-        document.querySelectorAll('details').forEach(details => {
+        document.querySelectorAll('details').forEach((details) => {
           details.open = true;
           expandedElementsCount++;
 
@@ -972,7 +1025,7 @@ export class PDFStyleService {
         });
 
         // 2. 处理 aria-expanded 控制的折叠元素（OpenAI 等网站）
-        document.querySelectorAll('[aria-expanded="false"]').forEach(trigger => {
+        document.querySelectorAll('[aria-expanded="false"]').forEach((trigger) => {
           // 设置为展开状态
           trigger.setAttribute('aria-expanded', 'true');
           ariaExpandedCount++;
@@ -1008,7 +1061,9 @@ export class PDFStyleService {
           // 方法 3: 检查父元素的子元素（用于某些嵌套结构）
           const parent = trigger.parentElement;
           if (parent) {
-            const contentSibling = parent.querySelector('.expn-content, [class*="content"], [class*="body"]');
+            const contentSibling = parent.querySelector(
+              '.expn-content, [class*="content"], [class*="body"]'
+            );
             if (contentSibling && contentSibling !== trigger) {
               contentSibling.classList.remove('hidden', 'collapsed');
               contentSibling.style.setProperty('display', 'block', 'important');
@@ -1020,7 +1075,7 @@ export class PDFStyleService {
         });
 
         // 3. 强制显示主要内容区域中带有 hidden 类的内容
-        document.querySelectorAll('.hidden, .collapsed, [hidden]').forEach(el => {
+        document.querySelectorAll('.hidden, .collapsed, [hidden]').forEach((el) => {
           if (shouldSkipHidden(el)) {
             return;
           }
@@ -1045,7 +1100,7 @@ export class PDFStyleService {
         });
 
         // 4. 处理折叠面板（accordion）
-        document.querySelectorAll('.accordion-item, [class*="accordion"]').forEach(item => {
+        document.querySelectorAll('.accordion-item, [class*="accordion"]').forEach((item) => {
           const content = item.querySelector('.accordion-content, [class*="content"]');
           if (content) {
             content.style.setProperty('display', 'block', 'important');
@@ -1055,7 +1110,7 @@ export class PDFStyleService {
         });
 
         // 5. 处理标签页内容（显示所有 tab panels）
-        document.querySelectorAll('[role="tabpanel"]').forEach(panel => {
+        document.querySelectorAll('[role="tabpanel"]').forEach((panel) => {
           panel.style.setProperty('display', 'block', 'important');
           panel.style.setProperty('visibility', 'visible', 'important');
           panel.setAttribute('aria-hidden', 'false');
@@ -1069,10 +1124,10 @@ export class PDFStyleService {
           'astro-island[component-url*=\"PageActions\"]',
           '[data-page-actions]',
           '.copy-page, [data-action=\"copy-page\"]',
-          '[data-anchor-id]'
+          '[data-anchor-id]',
         ];
-        selectorsToHide.forEach(sel => {
-          document.querySelectorAll(sel).forEach(el => {
+        selectorsToHide.forEach((sel) => {
+          document.querySelectorAll(sel).forEach((el) => {
             el.style.setProperty('display', 'none', 'important');
             el.style.setProperty('visibility', 'hidden', 'important');
           });
@@ -1092,7 +1147,7 @@ export class PDFStyleService {
           document.body.appendChild(cloned);
 
           // 确保 html/body 不限制高度，允许多页打印
-          [document.documentElement, document.body].forEach(el => {
+          [document.documentElement, document.body].forEach((el) => {
             el.style.setProperty('height', 'auto', 'important');
             el.style.setProperty('max-height', 'none', 'important');
             el.style.setProperty('overflow', 'visible', 'important');
@@ -1104,7 +1159,7 @@ export class PDFStyleService {
         return {
           detailsExpanded: expandedElementsCount,
           ariaExpandedFixed: ariaExpandedCount,
-          hiddenContentRevealed: hiddenContentCount
+          hiddenContentRevealed: hiddenContentCount,
         };
       });
 

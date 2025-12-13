@@ -18,7 +18,7 @@ describe('PandocPdfService', () => {
       info: jest.fn(),
       error: jest.fn(),
       warn: jest.fn(),
-      debug: jest.fn()
+      debug: jest.fn(),
     };
 
     service = new PandocPdfService({
@@ -28,10 +28,10 @@ describe('PandocPdfService', () => {
           highlightStyle: 'github',
           pdfOptions: {
             format: 'A4',
-            margin: '20mm'
-          }
-        }
-      }
+            margin: '20mm',
+          },
+        },
+      },
     });
   });
 
@@ -51,7 +51,7 @@ describe('PandocPdfService', () => {
 
     it('should accept custom pandoc binary path', () => {
       const customService = new PandocPdfService({
-        pandocBinary: '/custom/path/pandoc'
+        pandocBinary: '/custom/path/pandoc',
       });
       expect(customService.pandocBinary).toBe('/custom/path/pandoc');
     });
@@ -68,7 +68,7 @@ describe('PandocPdfService', () => {
 
     it('should include format option', () => {
       const args = service._buildPandocArgs('input.md', 'output.pdf', {
-        pdfOptions: { format: 'A4' }
+        pdfOptions: { format: 'A4' },
       });
       expect(args).toContain('--variable');
       expect(args).toContain('papersize=a4');
@@ -76,7 +76,7 @@ describe('PandocPdfService', () => {
 
     it('should include margin option', () => {
       const args = service._buildPandocArgs('input.md', 'output.pdf', {
-        pdfOptions: { margin: '1in' }
+        pdfOptions: { margin: '1in' },
       });
       expect(args).toContain('--variable');
       expect(args).toContain('geometry:margin=1in');
@@ -90,14 +90,14 @@ describe('PandocPdfService', () => {
 
     it('should exclude TOC when disabled', () => {
       const args = service._buildPandocArgs('input.md', 'output.pdf', {
-        toc: false
+        toc: false,
       });
       expect(args).not.toContain('--toc');
     });
 
     it('should include highlight style', () => {
       const args = service._buildPandocArgs('input.md', 'output.pdf', {
-        highlightStyle: 'tango'
+        highlightStyle: 'tango',
       });
       expect(args).toContain('--highlight-style');
       expect(args).toContain('tango');
@@ -105,7 +105,7 @@ describe('PandocPdfService', () => {
 
     it('should convert github style to pygments', () => {
       const args = service._buildPandocArgs('input.md', 'output.pdf', {
-        highlightStyle: 'github'
+        highlightStyle: 'github',
       });
       expect(args).toContain('--highlight-style');
       expect(args).toContain('pygments');
@@ -139,8 +139,9 @@ describe('PandocPdfService', () => {
       await service.convertContentToPdf(content, outputPath);
 
       // 检查临时文件是否被清理
-      const tempFiles = fs.readdirSync(path.join(process.cwd(), '.temp'))
-        .filter(f => f.startsWith('temp_') && f.endsWith('.md'));
+      const tempFiles = fs
+        .readdirSync(path.join(process.cwd(), '.temp'))
+        .filter((f) => f.startsWith('temp_') && f.endsWith('.md'));
 
       expect(tempFiles.length).toBe(0);
     });
@@ -151,8 +152,9 @@ describe('PandocPdfService', () => {
 
       service._runPandoc = jest.fn().mockRejectedValue(new Error('Pandoc error'));
 
-      await expect(service.convertContentToPdf(content, outputPath))
-        .rejects.toThrow('Pandoc error');
+      await expect(service.convertContentToPdf(content, outputPath)).rejects.toThrow(
+        'Pandoc error'
+      );
 
       expect(mockLogger.error).toHaveBeenCalled();
     });
@@ -169,11 +171,7 @@ describe('PandocPdfService', () => {
 
       await service.convertToPdf(inputPath, outputPath);
 
-      expect(service._runPandoc).toHaveBeenCalledWith(
-        inputPath,
-        outputPath,
-        expect.any(Object)
-      );
+      expect(service._runPandoc).toHaveBeenCalledWith(inputPath, outputPath, expect.any(Object));
       expect(mockLogger.info).toHaveBeenCalled();
     });
 
@@ -183,8 +181,7 @@ describe('PandocPdfService', () => {
 
       service._runPandoc = jest.fn().mockRejectedValue(new Error('File error'));
 
-      await expect(service.convertToPdf(inputPath, outputPath))
-        .rejects.toThrow('File error');
+      await expect(service.convertToPdf(inputPath, outputPath)).rejects.toThrow('File error');
 
       expect(mockLogger.error).toHaveBeenCalled();
     });
@@ -207,13 +204,12 @@ describe('PandocPdfService', () => {
             if (event === 'close') {
               setTimeout(() => callback(0), 10); // Exit code 0
             }
-          })
+          }),
         };
         return mockChild;
       });
 
-      await expect(service._runPandoc(inputPath, outputPath, {}))
-        .rejects.toThrow('PDF 文件未生成');
+      await expect(service._runPandoc(inputPath, outputPath, {})).rejects.toThrow('PDF 文件未生成');
 
       require('child_process').spawn.mockRestore();
     });

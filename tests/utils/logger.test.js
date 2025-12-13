@@ -8,9 +8,9 @@ import path from 'path';
 jest.mock('winston', () => {
   const mockTransports = {
     File: jest.fn(),
-    Console: jest.fn()
+    Console: jest.fn(),
   };
-  
+
   const mockFormat = {
     combine: jest.fn().mockReturnValue({}),
     colorize: jest.fn().mockReturnValue({}),
@@ -18,7 +18,7 @@ jest.mock('winston', () => {
     timestamp: jest.fn().mockReturnValue({}),
     errors: jest.fn().mockReturnValue({}),
     json: jest.fn().mockReturnValue({}),
-    printf: jest.fn().mockReturnValue({})
+    printf: jest.fn().mockReturnValue({}),
   };
 
   const mockLogger = {
@@ -26,18 +26,18 @@ jest.mock('winston', () => {
     error: jest.fn(),
     warn: jest.fn(),
     debug: jest.fn(),
-    logProgress: jest.fn()
+    logProgress: jest.fn(),
   };
 
   return {
     createLogger: jest.fn().mockReturnValue(mockLogger),
     transports: mockTransports,
-    format: mockFormat
+    format: mockFormat,
   };
 });
 
 jest.mock('fs/promises', () => ({
-  mkdir: jest.fn().mockResolvedValue(undefined)
+  mkdir: jest.fn().mockResolvedValue(undefined),
 }));
 
 describe('Logger', () => {
@@ -54,7 +54,7 @@ describe('Logger', () => {
       expect(winston.createLogger).toHaveBeenCalledWith(
         expect.objectContaining({
           level: 'info',
-          defaultMeta: { service: 'pdf-scraper' }
+          defaultMeta: { service: 'pdf-scraper' },
         })
       );
       expect(logger).toHaveProperty('info');
@@ -69,7 +69,7 @@ describe('Logger', () => {
 
       expect(winston.createLogger).toHaveBeenCalledWith(
         expect.objectContaining({
-          level: 'debug'
+          level: 'debug',
         })
       );
     });
@@ -79,7 +79,7 @@ describe('Logger', () => {
 
       expect(winston.createLogger).toHaveBeenCalledWith(
         expect.objectContaining({
-          level: 'warn'
+          level: 'warn',
         })
       );
     });
@@ -90,9 +90,9 @@ describe('Logger', () => {
 
       const createLoggerCall = winston.createLogger.mock.calls[0][0];
       const transports = createLoggerCall.transports;
-      
+
       // 验证没有文件传输
-      const fileTransports = transports.filter(t => 
+      const fileTransports = transports.filter((t) =>
         winston.transports.File.mock.instances.includes(t)
       );
       expect(fileTransports).toHaveLength(0);
@@ -108,14 +108,14 @@ describe('Logger', () => {
           filename: expect.stringContaining('error.log'),
           level: 'error',
           maxsize: 10485760,
-          maxFiles: 5
+          maxFiles: 5,
         })
       );
       expect(winston.transports.File).toHaveBeenCalledWith(
         expect.objectContaining({
           filename: expect.stringContaining('combined.log'),
           maxsize: 10485760,
-          maxFiles: 5
+          maxFiles: 5,
         })
       );
     });
@@ -143,7 +143,7 @@ describe('Logger', () => {
       createLogger();
 
       expect(winston.format.timestamp).toHaveBeenCalledWith({
-        format: 'HH:mm:ss'
+        format: 'HH:mm:ss',
       });
       expect(winston.format.printf).toHaveBeenCalled();
     });
@@ -151,10 +151,7 @@ describe('Logger', () => {
     test('应该创建日志目录', () => {
       createLogger();
 
-      expect(fs.mkdir).toHaveBeenCalledWith(
-        expect.stringContaining('logs'),
-        { recursive: true }
-      );
+      expect(fs.mkdir).toHaveBeenCalledWith(expect.stringContaining('logs'), { recursive: true });
     });
 
     test('应该处理日志目录创建失败', async () => {
@@ -164,7 +161,7 @@ describe('Logger', () => {
       createLogger();
 
       // 等待异步操作完成
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       expect(consoleSpy).toHaveBeenCalledWith('创建日志目录失败:', expect.any(Error));
       consoleSpy.mockRestore();
@@ -179,7 +176,7 @@ describe('Logger', () => {
       expect(mockInfo).toHaveBeenCalledWith('处理中', {
         type: 'progress',
         current: 10,
-        total: 100
+        total: 100,
       });
     });
   });
@@ -188,10 +185,7 @@ describe('Logger', () => {
     test('应该等待目录创建并返回logger', async () => {
       const logger = await createLoggerAsync();
 
-      expect(fs.mkdir).toHaveBeenCalledWith(
-        expect.stringContaining('logs'),
-        { recursive: true }
-      );
+      expect(fs.mkdir).toHaveBeenCalledWith(expect.stringContaining('logs'), { recursive: true });
       expect(winston.createLogger).toHaveBeenCalled();
       expect(logger).toHaveProperty('info');
       expect(logger).toHaveProperty('logProgress');
@@ -201,12 +195,12 @@ describe('Logger', () => {
       const originalEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = 'production'; // 设置为非测试环境
       jest.clearAllMocks(); // 清除之前测试的mock调用
-      
+
       await createLoggerAsync();
 
       // createLoggerAsync 强制 includeFileTransports: true
       expect(winston.transports.File).toHaveBeenCalledTimes(2); // error.log 和 combined.log
-      
+
       process.env.NODE_ENV = originalEnv; // 恢复原始环境
     });
 
@@ -219,7 +213,7 @@ describe('Logger', () => {
       expect(consoleSpy).toHaveBeenCalledWith('创建日志目录失败:', expect.any(Error));
       expect(winston.createLogger).toHaveBeenCalled();
       expect(logger).toBeDefined();
-      
+
       consoleSpy.mockRestore();
     });
 
@@ -228,7 +222,7 @@ describe('Logger', () => {
 
       expect(winston.createLogger).toHaveBeenCalledWith(
         expect.objectContaining({
-          level: 'debug'
+          level: 'debug',
         })
       );
     });
@@ -241,12 +235,12 @@ describe('Logger', () => {
       consoleSpy = {
         log: jest.spyOn(console, 'log').mockImplementation(),
         warn: jest.spyOn(console, 'warn').mockImplementation(),
-        error: jest.spyOn(console, 'error').mockImplementation()
+        error: jest.spyOn(console, 'error').mockImplementation(),
       };
     });
 
     afterEach(() => {
-      Object.values(consoleSpy).forEach(spy => spy.mockRestore());
+      Object.values(consoleSpy).forEach((spy) => spy.mockRestore());
     });
 
     test('应该提供基本的日志方法', () => {
@@ -280,10 +274,7 @@ describe('Logger', () => {
     test('logProgress应该格式化进度消息', () => {
       consoleLogger.logProgress('处理中', { current: 10, total: 100 });
 
-      expect(consoleSpy.log).toHaveBeenCalledWith(
-        '[PROGRESS] 处理中',
-        { current: 10, total: 100 }
-      );
+      expect(consoleSpy.log).toHaveBeenCalledWith('[PROGRESS] 处理中', { current: 10, total: 100 });
     });
   });
 });

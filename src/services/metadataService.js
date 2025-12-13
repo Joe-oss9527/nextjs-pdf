@@ -51,7 +51,7 @@ export class MetadataService {
       url,
       index,
       error: error.message || String(error),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
     this.logger.warn(`记录失败链接: ${url}`, { error: error.message });
   }
@@ -69,10 +69,7 @@ export class MetadataService {
    */
   async removeFromFailedLinks(url) {
     const filePath = this.pathService.getMetadataPath('failed');
-    await this.fileService.removeFromJsonArray(
-      filePath,
-      item => item.url === url
-    );
+    await this.fileService.removeFromJsonArray(filePath, (item) => item.url === url);
     this.logger.debug(`从失败列表移除: ${url}`);
   }
 
@@ -84,12 +81,12 @@ export class MetadataService {
     const failures = await this.fileService.readJson(filePath, []);
 
     // 检查是否已存在
-    const exists = failures.some(f => f.url === url && f.index === index);
+    const exists = failures.some((f) => f.url === url && f.index === index);
     if (!exists) {
       failures.push({
         url,
         index,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
       await this.fileService.writeJson(filePath, failures);
       this.logger.warn(`记录图片加载失败: ${url}`);
@@ -112,7 +109,7 @@ export class MetadataService {
     const mapping = await this.fileService.readJson(filePath, {});
     mapping[url] = {
       path: pdfPath,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
     await this.fileService.writeJson(filePath, mapping);
   }

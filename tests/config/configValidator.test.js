@@ -5,7 +5,7 @@ import {
   validatePartialConfig,
   getConfigSchema,
   getDefaultConfig,
-  ValidationError
+  ValidationError,
 } from '../../src/config/configValidator.js';
 
 // Mock logger
@@ -14,8 +14,8 @@ jest.mock('../../src/utils/logger.js', () => ({
     debug: jest.fn(),
     info: jest.fn(),
     warn: jest.fn(),
-    error: jest.fn()
-  }))
+    error: jest.fn(),
+  })),
 }));
 
 describe('ConfigValidator', () => {
@@ -25,7 +25,7 @@ describe('ConfigValidator', () => {
         rootURL: 'https://example.com',
         pdfDir: './pdfs',
         navLinksSelector: 'nav a',
-        contentSelector: 'main'
+        contentSelector: 'main',
       };
 
       const result = validateConfig(config);
@@ -40,7 +40,7 @@ describe('ConfigValidator', () => {
       const config = {
         pdfDir: './pdfs',
         navLinksSelector: 'nav a',
-        contentSelector: 'main'
+        contentSelector: 'main',
       };
 
       expect(() => validateConfig(config)).toThrow(ValidationError);
@@ -51,7 +51,7 @@ describe('ConfigValidator', () => {
         rootURL: 'not-a-valid-url',
         pdfDir: './pdfs',
         navLinksSelector: 'nav a',
-        contentSelector: 'main'
+        contentSelector: 'main',
       };
 
       expect(() => validateConfig(config)).toThrow(ValidationError);
@@ -62,7 +62,7 @@ describe('ConfigValidator', () => {
         rootURL: 'https://example.com',
         pdfDir: './pdfs',
         navLinksSelector: 'nav a',
-        contentSelector: 'main'
+        contentSelector: 'main',
       };
 
       const result = validateConfig(config);
@@ -81,7 +81,7 @@ describe('ConfigValidator', () => {
         pdfDir: './pdfs',
         navLinksSelector: 'nav a',
         contentSelector: 'main',
-        concurrency: 15 // 超过最大值10
+        concurrency: 15, // 超过最大值10
       };
 
       expect(() => validateConfig(config)).toThrow(ValidationError);
@@ -98,9 +98,9 @@ describe('ConfigValidator', () => {
           slowMo: 100,
           viewport: {
             width: 1280,
-            height: 720
-          }
-        }
+            height: 720,
+          },
+        },
       };
 
       const result = validateConfig(config);
@@ -121,10 +121,10 @@ describe('ConfigValidator', () => {
           format: 'A3',
           margin: {
             top: '2cm',
-            bottom: '2cm'
+            bottom: '2cm',
           },
-          quality: 'high'
-        }
+          quality: 'high',
+        },
       };
 
       const result = validateConfig(config);
@@ -142,8 +142,8 @@ describe('ConfigValidator', () => {
         navLinksSelector: 'nav a',
         contentSelector: 'main',
         pdf: {
-          engine: 'invalid-engine'
-        }
+          engine: 'invalid-engine',
+        },
       };
 
       expect(() => validateConfig(config)).toThrow(ValidationError);
@@ -156,8 +156,8 @@ describe('ConfigValidator', () => {
         navLinksSelector: 'nav a',
         contentSelector: 'main',
         pdf: {
-          engine: 'puppeteer'
-        }
+          engine: 'puppeteer',
+        },
       };
 
       const result = validateConfig(config);
@@ -174,9 +174,9 @@ describe('ConfigValidator', () => {
           executable: '/usr/bin/python3',
           timeout: 120000,
           env: {
-            PYTHONPATH: '/custom/path'
-          }
-        }
+            PYTHONPATH: '/custom/path',
+          },
+        },
       };
 
       const result = validateConfig(config);
@@ -192,7 +192,7 @@ describe('ConfigValidator', () => {
         baseUrl: 'https://example.com/docs/api',
         pdfDir: './pdfs',
         navLinksSelector: 'nav a',
-        contentSelector: 'main'
+        contentSelector: 'main',
       };
 
       const result = validateConfig(config);
@@ -209,8 +209,8 @@ describe('ConfigValidator', () => {
         state: {
           saveInterval: 60000,
           backupCount: 5,
-          autoSave: false
-        }
+          autoSave: false,
+        },
       };
 
       const result = validateConfig(config);
@@ -229,8 +229,8 @@ describe('ConfigValidator', () => {
         network: {
           requestTimeout: 60000,
           maxRedirects: 10,
-          retryOn429: false
-        }
+          retryOn429: false,
+        },
       };
 
       const result = validateConfig(config);
@@ -247,8 +247,8 @@ describe('ConfigValidator', () => {
         navLinksSelector: 'nav a',
         contentSelector: 'main',
         translation: {
-          enabled: true
-        }
+          enabled: true,
+        },
       };
 
       const result = validateConfig(config);
@@ -269,8 +269,8 @@ describe('ConfigValidator', () => {
           enabled: true,
           maxSegmentRetries: 5,
           maxDelay: 10000,
-          jitterStrategy: 'full'
-        }
+          jitterStrategy: 'full',
+        },
       };
 
       const result = validateConfig(config);
@@ -287,7 +287,7 @@ describe('ConfigValidator', () => {
         pdfDir: './pdfs',
         navLinksSelector: 'nav a',
         contentSelector: 'main',
-        unknownField: 'should be removed'
+        unknownField: 'should be removed',
       };
 
       const result = validateConfig(config);
@@ -301,7 +301,7 @@ describe('ConfigValidator', () => {
         pdfDir: './pdfs',
         navLinksSelector: 'nav a',
         contentSelector: 'main',
-        customField: 'keep this'
+        customField: 'keep this',
       };
 
       const result = validateConfig(config, { allowUnknown: true, stripUnknown: false });
@@ -316,7 +316,7 @@ describe('ConfigValidator', () => {
         rootURL: 'https://example.com',
         pdfDir: './pdfs',
         navLinksSelector: 'nav a',
-        contentSelector: 'main'
+        contentSelector: 'main',
       };
 
       const result = await validateConfigAsync(config);
@@ -330,7 +330,7 @@ describe('ConfigValidator', () => {
         rootURL: 'invalid-url',
         pdfDir: './pdfs',
         navLinksSelector: 'nav a',
-        contentSelector: 'main'
+        contentSelector: 'main',
       };
 
       await expect(validateConfigAsync(config)).rejects.toThrow(ValidationError);
@@ -341,7 +341,7 @@ describe('ConfigValidator', () => {
     test('应该验证部分配置', () => {
       const partialConfig = {
         concurrency: 3,
-        logLevel: 'debug'
+        logLevel: 'debug',
       };
 
       const result = validatePartialConfig(partialConfig);
@@ -354,20 +354,20 @@ describe('ConfigValidator', () => {
 
     test('应该验证指定的必需字段', () => {
       const partialConfig = {
-        pdfDir: './pdfs'
+        pdfDir: './pdfs',
       };
 
       const result = validatePartialConfig(partialConfig, ['rootURL', 'pdfDir']);
 
       expect(result.valid).toBe(false);
       expect(result.errors).toBeDefined();
-      expect(result.errors.some(e => e.path.join('.').includes('rootURL'))).toBe(true);
+      expect(result.errors.some((e) => e.path.join('.').includes('rootURL'))).toBe(true);
     });
 
     test('应该允许未知字段在部分验证中', () => {
       const partialConfig = {
         concurrency: 3,
-        customField: 'value'
+        customField: 'value',
       };
 
       const result = validatePartialConfig(partialConfig);
@@ -378,7 +378,7 @@ describe('ConfigValidator', () => {
 
     test('应该处理无效的部分配置', () => {
       const partialConfig = {
-        concurrency: 20 // 超过最大值
+        concurrency: 20, // 超过最大值
       };
 
       const result = validatePartialConfig(partialConfig);
@@ -434,7 +434,7 @@ describe('ConfigValidator', () => {
     test('应该创建自定义验证错误', () => {
       const error = new ValidationError('Test error', {
         field: 'testField',
-        value: 'invalid'
+        value: 'invalid',
       });
 
       expect(error).toBeInstanceOf(Error);
@@ -443,7 +443,7 @@ describe('ConfigValidator', () => {
       expect(error.message).toBe('Test error');
       expect(error.details).toEqual({
         field: 'testField',
-        value: 'invalid'
+        value: 'invalid',
       });
     });
 
@@ -476,23 +476,23 @@ describe('ConfigValidator', () => {
           headless: true,
           slowMo: 50,
           viewport: { width: 1920, height: 1080 },
-          userAgent: 'Mozilla/5.0 PDF Scraper'
+          userAgent: 'Mozilla/5.0 PDF Scraper',
         },
         pdf: {
           engine: 'puppeteer',
           format: 'A4',
           margin: { top: '2cm', right: '2cm', bottom: '2cm', left: '2cm' },
           printBackground: true,
-          quality: 'high'
+          quality: 'high',
         },
         python: {
           executable: 'python3',
-          timeout: 300000
+          timeout: 300000,
         },
         state: {
           saveInterval: 60000,
-          autoSave: true
-        }
+          autoSave: true,
+        },
       };
 
       const result = validateConfig(config);
@@ -513,8 +513,8 @@ describe('ConfigValidator', () => {
         logLevel: 'invalid-level',
         pdf: {
           engine: 'invalid-engine',
-          format: 'invalid-format'
-        }
+          format: 'invalid-format',
+        },
       };
 
       try {

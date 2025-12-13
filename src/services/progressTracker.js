@@ -1,6 +1,6 @@
 // src/services/progressTracker.js
-import { EventEmitter } from "events";
-import chalk from "chalk";
+import { EventEmitter } from 'events';
+import chalk from 'chalk';
 
 export class ProgressTracker extends EventEmitter {
   constructor(logger) {
@@ -21,7 +21,7 @@ export class ProgressTracker extends EventEmitter {
 
     this.urlStats = new Map(); // 每个URL的详细统计
     this.progressInterval = null;
-    this.displayMode = "detailed"; // 'simple' | 'detailed'
+    this.displayMode = 'detailed'; // 'simple' | 'detailed'
   }
 
   /**
@@ -30,17 +30,17 @@ export class ProgressTracker extends EventEmitter {
   start(total, options = {}) {
     this.stats.total = total;
     this.stats.startTime = Date.now();
-    this.displayMode = options.displayMode || "detailed";
+    this.displayMode = options.displayMode || 'detailed';
 
-    this.logger.info("开始爬取任务", {
+    this.logger.info('开始爬取任务', {
       总数: total,
       模式: this.displayMode,
     });
 
-    this.emit("start", { total });
+    this.emit('start', { total });
 
     // 开始定期显示进度
-    if (this.displayMode === "detailed") {
+    if (this.displayMode === 'detailed') {
       this.startProgressDisplay();
     }
   }
@@ -50,22 +50,22 @@ export class ProgressTracker extends EventEmitter {
    */
   success(url, details = {}) {
     const urlStat = this.getOrCreateUrlStat(url);
-    
+
     // 只有当URL状态不是success时才增加completed计数
     // 这样可以避免重试时重复计数
-    if (urlStat.status !== "success") {
+    if (urlStat.status !== 'success') {
       this.stats.completed++;
     }
-    
+
     this.stats.currentUrl = null;
-    urlStat.status = "success";
+    urlStat.status = 'success';
     urlStat.endTime = Date.now();
     urlStat.duration = urlStat.endTime - urlStat.startTime;
     urlStat.details = details;
 
     this.updateETA();
-    this.logProgress("success", url);
-    this.emit("success", { url, stats: this.getStats() });
+    this.logProgress('success', url);
+    this.emit('success', { url, stats: this.getStats() });
   }
 
   /**
@@ -73,39 +73,39 @@ export class ProgressTracker extends EventEmitter {
    */
   failure(url, error, willRetry = false) {
     const urlStat = this.getOrCreateUrlStat(url);
-    
+
     // 只有确认最终失败时才增加失败计数
-    if (!willRetry && urlStat.status !== "failed") {
+    if (!willRetry && urlStat.status !== 'failed') {
       this.stats.failed++;
     }
-    
+
     this.stats.currentUrl = null;
-    urlStat.status = willRetry ? "pending-retry" : "failed";
+    urlStat.status = willRetry ? 'pending-retry' : 'failed';
     urlStat.error = error.message || String(error);
     urlStat.attempts = (urlStat.attempts || 0) + 1;
 
     this.updateETA();
-    this.logProgress("failure", url, error);
-    this.emit("failure", { url, error, stats: this.getStats() });
+    this.logProgress('failure', url, error);
+    this.emit('failure', { url, error, stats: this.getStats() });
   }
 
   /**
    * 记录跳过
    */
-  skip(url, reason = "") {
+  skip(url, reason = '') {
     const urlStat = this.getOrCreateUrlStat(url);
-    
+
     // 只有当URL状态不是skipped时才增加跳过计数
-    if (urlStat.status !== "skipped") {
+    if (urlStat.status !== 'skipped') {
       this.stats.skipped++;
     }
 
-    urlStat.status = "skipped";
+    urlStat.status = 'skipped';
     urlStat.reason = reason;
 
     this.updateETA();
-    this.logProgress("skip", url, reason);
-    this.emit("skip", { url, reason, stats: this.getStats() });
+    this.logProgress('skip', url, reason);
+    this.emit('skip', { url, reason, stats: this.getStats() });
   }
 
   /**
@@ -115,11 +115,11 @@ export class ProgressTracker extends EventEmitter {
     this.stats.retried++;
 
     const urlStat = this.getOrCreateUrlStat(url);
-    urlStat.status = "retrying";
+    urlStat.status = 'retrying';
     urlStat.attempts = attempt;
 
     this.logger.warn(`重试 [${attempt}]: ${url}`);
-    this.emit("retry", { url, attempt });
+    this.emit('retry', { url, attempt });
   }
 
   /**
@@ -130,9 +130,9 @@ export class ProgressTracker extends EventEmitter {
 
     const urlStat = this.getOrCreateUrlStat(url);
     urlStat.startTime = Date.now();
-    urlStat.status = "processing";
+    urlStat.status = 'processing';
 
-    this.emit("url-start", { url });
+    this.emit('url-start', { url });
   }
 
   /**
@@ -145,13 +145,13 @@ export class ProgressTracker extends EventEmitter {
     const duration = (this.stats.endTime - this.stats.startTime) / 1000;
     const summary = this.getSummary();
 
-    this.logger.info("爬取任务完成", {
+    this.logger.info('爬取任务完成', {
       ...summary,
       总耗时: `${duration.toFixed(2)}秒`, // 使用 duration
     });
     this.displayFinalReport();
 
-    this.emit("finish", { stats: this.getStats(), summary, duration });
+    this.emit('finish', { stats: this.getStats(), summary, duration });
   }
 
   /**
@@ -161,7 +161,7 @@ export class ProgressTracker extends EventEmitter {
     if (!this.urlStats.has(url)) {
       this.urlStats.set(url, {
         url,
-        status: "pending",
+        status: 'pending',
         startTime: null,
         endTime: null,
         duration: null,
@@ -176,14 +176,13 @@ export class ProgressTracker extends EventEmitter {
    * 更新预计完成时间
    */
   updateETA() {
-    const processed =
-      this.stats.completed + this.stats.failed + this.stats.skipped;
+    const processed = this.stats.completed + this.stats.failed + this.stats.skipped;
     if (processed === 0) return;
 
     const elapsed = Date.now() - this.stats.startTime;
     const rate = processed / elapsed;
     const remaining = Math.max(0, this.stats.total - processed); // Ensure remaining is not negative
-    
+
     // Only calculate ETA if there are remaining items and rate is reasonable
     if (remaining > 0 && rate > 0) {
       this.stats.eta = remaining / rate;
@@ -198,13 +197,11 @@ export class ProgressTracker extends EventEmitter {
   getStats() {
     // 计算基于实际处理的唯一URL数量
     const processedUrls = Array.from(this.urlStats.values()).filter(
-      stat => stat.status === 'success' || stat.status === 'failed' || stat.status === 'skipped'
+      (stat) => stat.status === 'success' || stat.status === 'failed' || stat.status === 'skipped'
     ).length;
-    
+
     const percentage =
-      this.stats.total > 0
-        ? ((processedUrls / this.stats.total) * 100).toFixed(2)
-        : 0;
+      this.stats.total > 0 ? ((processedUrls / this.stats.total) * 100).toFixed(2) : 0;
 
     const elapsed = (Date.now() - this.stats.startTime) / 1000;
     const rate = processedUrls > 0 ? processedUrls / elapsed : 0;
@@ -223,18 +220,15 @@ export class ProgressTracker extends EventEmitter {
    * 获取摘要
    */
   getSummary() {
-    const duration = this.stats.endTime
-      ? (this.stats.endTime - this.stats.startTime) / 1000
-      : 0;
+    const duration = this.stats.endTime ? (this.stats.endTime - this.stats.startTime) / 1000 : 0;
 
     // 计算基于唯一URL的成功数量
     const successUrls = Array.from(this.urlStats.values()).filter(
-      stat => stat.status === 'success'
+      (stat) => stat.status === 'success'
     ).length;
 
-    const successRate = this.stats.total > 0 
-      ? ((successUrls / this.stats.total) * 100).toFixed(2)
-      : '0.00';
+    const successRate =
+      this.stats.total > 0 ? ((successUrls / this.stats.total) * 100).toFixed(2) : '0.00';
 
     return {
       总数: this.stats.total,
@@ -255,32 +249,33 @@ export class ProgressTracker extends EventEmitter {
     const stats = this.getStats();
     const processed = stats.processed;
 
-    if (this.displayMode === "simple") {
+    if (this.displayMode === 'simple') {
       return; // 简单模式下不输出每个URL的日志
     }
 
     const progressBar = this.createProgressBar(stats.percentage);
-    const etaStr = stats.etaSeconds && stats.etaSeconds > 0
-      ? `预计剩余: ${this.formatTime(stats.etaSeconds)}`
-      : "";
+    const etaStr =
+      stats.etaSeconds && stats.etaSeconds > 0
+        ? `预计剩余: ${this.formatTime(stats.etaSeconds)}`
+        : '';
 
     switch (type) {
-      case "success":
+      case 'success':
         this.logger.info(
           chalk.green(`✓ [${processed}/${this.stats.total}] ${url}`) +
-            ` ${progressBar} ${stats.percentage}% ${etaStr}`,
+            ` ${progressBar} ${stats.percentage}% ${etaStr}`
         );
         break;
-      case "failure":
+      case 'failure':
         this.logger.error(
           chalk.red(`✗ [${processed}/${this.stats.total}] ${url}`) +
-            ` - ${extra?.message || "未知错误"}`,
+            ` - ${extra?.message || '未知错误'}`
         );
         break;
-      case "skip":
+      case 'skip':
         this.logger.info(
           chalk.yellow(`⚠ [${processed}/${this.stats.total}] 跳过: ${url}`) +
-            (extra ? ` - ${extra}` : ""),
+            (extra ? ` - ${extra}` : '')
         );
         break;
     }
@@ -291,17 +286,17 @@ export class ProgressTracker extends EventEmitter {
    */
   createProgressBar(percentage) {
     const width = 20;
-    
+
     // 限制百分比在0-100之间，防止进度条计算错误
     const clampedPercentage = Math.max(0, Math.min(100, percentage));
     const filled = Math.round((width * clampedPercentage) / 100);
     const empty = Math.max(0, width - filled); // 确保empty不为负数
-    
+
     // 额外检查，确保字符串重复次数不为负数
     const filledCount = Math.max(0, filled);
     const emptyCount = Math.max(0, empty);
-    
-    return chalk.green("█".repeat(filledCount)) + chalk.gray("░".repeat(emptyCount));
+
+    return chalk.green('█'.repeat(filledCount)) + chalk.gray('░'.repeat(emptyCount));
   }
 
   /**
@@ -333,7 +328,7 @@ export class ProgressTracker extends EventEmitter {
             `速率: ${stats.rate} 页/秒 ` +
             (stats.etaSeconds && stats.etaSeconds > 0
               ? `剩余: ${this.formatTime(stats.etaSeconds)}`
-              : ""),
+              : '')
         );
       }
     }, 5000); // 每5秒更新一次
@@ -353,25 +348,25 @@ export class ProgressTracker extends EventEmitter {
    * 显示最终报告
    */
   displayFinalReport() {
-    console.log("\n" + chalk.bold("=== 爬取任务完成报告 ==="));
+    console.log('\n' + chalk.bold('=== 爬取任务完成报告 ==='));
     const summary = this.getSummary();
 
     Object.entries(summary).forEach(([key, value]) => {
-      const color = key === "失败" && value > 0 ? chalk.red : chalk.green;
+      const color = key === '失败' && value > 0 ? chalk.red : chalk.green;
       console.log(`${key}: ${color(value)}`);
     });
 
     // 显示失败的URL
     if (this.stats.failed > 0) {
-      console.log("\n" + chalk.red("失败的URL:"));
+      console.log('\n' + chalk.red('失败的URL:'));
       this.urlStats.forEach((stat, url) => {
-        if (stat.status === "failed") {
+        if (stat.status === 'failed') {
           console.log(chalk.red(`  - ${url}: ${stat.error}`));
         }
       });
     }
 
-    console.log(chalk.bold("\n======================\n"));
+    console.log(chalk.bold('\n======================\n'));
   }
 
   /**
@@ -386,7 +381,7 @@ export class ProgressTracker extends EventEmitter {
     };
 
     await fileService.writeJson(outputPath, report);
-    this.logger.info("导出详细进度报告", { path: outputPath });
+    this.logger.info('导出详细进度报告', { path: outputPath });
 
     return report;
   }

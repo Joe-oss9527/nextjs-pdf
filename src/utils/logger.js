@@ -7,7 +7,7 @@ export const createLogger = (config = {}) => {
   const logDir = path.join(process.cwd(), 'logs');
 
   // 异步确保日志目录存在（不阻塞logger创建）
-  fs.mkdir(logDir, { recursive: true }).catch(error => {
+  fs.mkdir(logDir, { recursive: true }).catch((error) => {
     console.error('创建日志目录失败:', error);
   });
 
@@ -21,40 +21,38 @@ export const createLogger = (config = {}) => {
         filename: path.join(logDir, 'error.log'),
         level: 'error',
         maxsize: 10485760, // 10MB
-        maxFiles: 5
+        maxFiles: 5,
       }),
       // 完整日志文件
       new winston.transports.File({
         filename: path.join(logDir, 'combined.log'),
         maxsize: 10485760, // 10MB
-        maxFiles: 5
+        maxFiles: 5,
       })
     );
   }
 
   // 控制台输出（总是包含，除非明确禁用）
   if (config.transports?.includes('console') !== false) {
-    const consoleFormat = config.format === 'simple' 
-      ? winston.format.combine(
-          winston.format.colorize(),
-          winston.format.simple()
-        )
-      : winston.format.combine(
-          winston.format.colorize(),
-          winston.format.timestamp({
-            format: 'HH:mm:ss'
-          }),
-          winston.format.printf(({ timestamp, level, message, ...rest }) => {
-            const restString = Object.keys(rest).length
-              ? '\n' + JSON.stringify(rest, null, 2)
-              : '';
-            return `${timestamp} [${level}]: ${message}${restString}`;
-          })
-        );
+    const consoleFormat =
+      config.format === 'simple'
+        ? winston.format.combine(winston.format.colorize(), winston.format.simple())
+        : winston.format.combine(
+            winston.format.colorize(),
+            winston.format.timestamp({
+              format: 'HH:mm:ss',
+            }),
+            winston.format.printf(({ timestamp, level, message, ...rest }) => {
+              const restString = Object.keys(rest).length
+                ? '\n' + JSON.stringify(rest, null, 2)
+                : '';
+              return `${timestamp} [${level}]: ${message}${restString}`;
+            })
+          );
 
     transports.push(
       new winston.transports.Console({
-        format: consoleFormat
+        format: consoleFormat,
       })
     );
   }
@@ -63,17 +61,17 @@ export const createLogger = (config = {}) => {
     level: config.level || config.logLevel || 'info',
     format: winston.format.combine(
       winston.format.timestamp({
-        format: 'YYYY-MM-DD HH:mm:ss'
+        format: 'YYYY-MM-DD HH:mm:ss',
       }),
       winston.format.errors({ stack: true }),
       winston.format.json()
     ),
     defaultMeta: { service: 'pdf-scraper' },
-    transports: transports
+    transports: transports,
   });
 
   // 添加便捷方法
-  logger.logProgress = function(message, stats) {
+  logger.logProgress = function (message, stats) {
     this.info(message, { type: 'progress', ...stats });
   };
 
@@ -100,5 +98,5 @@ export const consoleLogger = {
   info: console.log,
   warn: console.warn,
   error: console.error,
-  logProgress: (message, stats) => console.log(`[PROGRESS] ${message}`, stats)
+  logProgress: (message, stats) => console.log(`[PROGRESS] ${message}`, stats),
 };

@@ -6,7 +6,7 @@ puppeteer.use(StealthPlugin());
 async function inspectContentArea() {
   const browser = await puppeteer.launch({
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
 
   const page = await browser.newPage();
@@ -14,10 +14,10 @@ async function inspectContentArea() {
   console.log('Loading page...');
   await page.goto('https://code.claude.com/docs/en/overview', {
     waitUntil: 'domcontentloaded',
-    timeout: 15000
+    timeout: 15000,
   });
 
-  await new Promise(resolve => setTimeout(resolve, 3000));
+  await new Promise((resolve) => setTimeout(resolve, 3000));
 
   console.log('\n=== Analyzing #content-area Structure ===\n');
 
@@ -33,12 +33,12 @@ async function inspectContentArea() {
       sideNav: contentArea.querySelector('[id*="sidebar"]'),
       asideElements: contentArea.querySelectorAll('aside'),
       navLinks: contentArea.querySelectorAll('nav a, [id*="sidebar"] a'),
-      allChildren: Array.from(contentArea.children).map(child => ({
+      allChildren: Array.from(contentArea.children).map((child) => ({
         tag: child.tagName,
         id: child.id,
         className: child.className,
-        textPreview: child.textContent?.substring(0, 80).trim()
-      }))
+        textPreview: child.textContent?.substring(0, 80).trim(),
+      })),
     };
 
     // Get the article/main content area inside #content-area
@@ -51,17 +51,19 @@ async function inspectContentArea() {
       asideCount: navElements.asideElements.length,
       navLinkCount: navElements.navLinks.length,
       hasArticle: !!article,
-      articleInfo: article ? {
-        tag: article.tagName,
-        id: article.id,
-        className: article.className
-      } : null,
+      articleInfo: article
+        ? {
+            tag: article.tagName,
+            id: article.id,
+            className: article.className,
+          }
+        : null,
       directChildren: navElements.allChildren,
-      firstFewDivs: contentDivs.map(div => ({
+      firstFewDivs: contentDivs.map((div) => ({
         id: div.id,
         className: div.className?.substring(0, 100),
-        textPreview: div.textContent?.substring(0, 60).trim()
-      }))
+        textPreview: div.textContent?.substring(0, 60).trim(),
+      })),
     };
   });
 
@@ -72,20 +74,20 @@ async function inspectContentArea() {
 
   const betterSelectors = await page.evaluate(() => {
     const results = {};
-    
+
     // Try to find the actual article content (without nav)
     const selectors = [
       '#content-area > article',
-      '#content-area > div > article', 
+      '#content-area > div > article',
       '#content-area [role="article"]',
       '#content-area > div[class*="prose"]',
       '#content-area > div > div[class*="prose"]',
       '#content-area > div:not([id*="sidebar"]):not(nav)',
       '#content-area article',
-      '#content-area main'
+      '#content-area main',
     ];
 
-    selectors.forEach(selector => {
+    selectors.forEach((selector) => {
       const el = document.querySelector(selector);
       if (el) {
         results[selector] = {
@@ -94,7 +96,7 @@ async function inspectContentArea() {
           className: el.className?.substring(0, 100),
           textPreview: el.textContent?.substring(0, 80).trim(),
           hasNav: !!el.querySelector('nav'),
-          hasSidebar: !!el.querySelector('[id*="sidebar"]')
+          hasSidebar: !!el.querySelector('[id*="sidebar"]'),
         };
       } else {
         results[selector] = { found: false };
@@ -113,10 +115,12 @@ async function inspectContentArea() {
     return {
       htmlClass: document.documentElement.className,
       bodyClass: document.body.className,
-      dataTheme: document.documentElement.getAttribute('data-theme') || document.body.getAttribute('data-theme'),
+      dataTheme:
+        document.documentElement.getAttribute('data-theme') ||
+        document.body.getAttribute('data-theme'),
       htmlStyle: document.documentElement.getAttribute('style'),
       bodyBgColor: getComputedStyle(document.body).backgroundColor,
-      bodyColor: getComputedStyle(document.body).color
+      bodyColor: getComputedStyle(document.body).color,
     };
   });
 

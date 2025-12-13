@@ -6,7 +6,7 @@ describe('MarkdownService', () => {
     debug: jest.fn(),
     info: jest.fn(),
     warn: jest.fn(),
-    error: jest.fn()
+    error: jest.fn(),
   };
 
   beforeEach(() => {
@@ -38,15 +38,15 @@ describe('MarkdownService', () => {
       logger,
       config: {
         markdown: {
-          includeFrontmatter: true
-        }
-      }
+          includeFrontmatter: true,
+        },
+      },
     });
 
     const markdown = 'Content';
     const result = service.addFrontmatter(markdown, {
       title: 'Test',
-      index: 1
+      index: 1,
     });
 
     expect(result.startsWith('---\n')).toBe(true);
@@ -65,7 +65,7 @@ describe('MarkdownService', () => {
       '---',
       '',
       '# Heading',
-      'Body'
+      'Body',
     ].join('\n');
 
     const { metadata, content } = service.parseFrontmatter(markdown);
@@ -73,7 +73,7 @@ describe('MarkdownService', () => {
     expect(metadata).toEqual({
       title: 'Test',
       index: 2,
-      published: true
+      published: true,
     });
     expect(content).toContain('# Heading');
     expect(content).toContain('Body');
@@ -84,8 +84,8 @@ describe('MarkdownService', () => {
     const page = {
       evaluate: jest.fn(async () => ({
         html: '<h1>Title</h1><p>Body</p>',
-        svgCount: 0
-      }))
+        svgCount: 0,
+      })),
     };
 
     const markdown = await service.extractAndConvertPage(page, 'main');
@@ -95,4 +95,3 @@ describe('MarkdownService', () => {
     expect(markdown).toContain('Body');
   });
 });
-

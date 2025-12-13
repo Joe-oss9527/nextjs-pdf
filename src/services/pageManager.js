@@ -18,7 +18,7 @@ export class PageManager extends EventEmitter {
       blockedResourceTypes: options.blockedResourceTypes || [],
       userAgent: options.userAgent || null,
       viewport: options.viewport || { width: 1920, height: 1080 },
-      ...options
+      ...options,
     };
 
     this.logger = options.logger;
@@ -32,7 +32,7 @@ export class PageManager extends EventEmitter {
       errors: 0,
       active: 0,
       totalRequests: 0,
-      blockedRequests: 0
+      blockedRequests: 0,
     };
   }
 
@@ -75,19 +75,18 @@ export class PageManager extends EventEmitter {
         createdAt: Date.now(),
         lastActivity: Date.now(),
         requestCount: 0,
-        errorCount: 0
+        errorCount: 0,
       };
 
       this.pages.set(id, pageInfo);
 
       this.logger?.debug(`创建页面成功 [${id}]`, {
         totalPages: this.pages.size,
-        activeBrowsers: this.browserPool.getStatus().busyBrowsers
+        activeBrowsers: this.browserPool.getStatus().busyBrowsers,
       });
 
       this.emit('page-created', { id, pageInfo });
       return page;
-
     } catch (error) {
       this.stats.errors++;
 
@@ -161,19 +160,27 @@ export class PageManager extends EventEmitter {
         Object.defineProperty(navigator, 'plugins', {
           get: () => [
             {
-              0: {type: "application/x-google-chrome-pdf", suffixes: "pdf", description: "Portable Document Format"},
-              description: "Portable Document Format",
-              filename: "internal-pdf-viewer",
+              0: {
+                type: 'application/x-google-chrome-pdf',
+                suffixes: 'pdf',
+                description: 'Portable Document Format',
+              },
+              description: 'Portable Document Format',
+              filename: 'internal-pdf-viewer',
               length: 1,
-              name: "Chrome PDF Plugin"
+              name: 'Chrome PDF Plugin',
             },
             {
-              0: {type: "application/pdf", suffixes: "pdf", description: "Portable Document Format"},
-              description: "Portable Document Format",
-              filename: "mhjfbmdgcfjbbpaeojofohoefgiehjai",
+              0: {
+                type: 'application/pdf',
+                suffixes: 'pdf',
+                description: 'Portable Document Format',
+              },
+              description: 'Portable Document Format',
+              filename: 'mhjfbmdgcfjbbpaeojofohoefgiehjai',
               length: 1,
-              name: "Chrome PDF Viewer"
-            }
+              name: 'Chrome PDF Viewer',
+            },
           ],
         });
 
@@ -186,9 +193,8 @@ export class PageManager extends EventEmitter {
         const originalQuery = window.navigator.permissions.query;
         window.navigator.permissions.query = (parameters) => {
           if (parameters.name === 'notifications') {
-            const permission = typeof Notification !== 'undefined'
-              ? Notification.permission
-              : 'default';
+            const permission =
+              typeof Notification !== 'undefined' ? Notification.permission : 'default';
             return Promise.resolve({ state: permission });
           }
           return originalQuery(parameters);
@@ -217,12 +223,12 @@ export class PageManager extends EventEmitter {
 
         // 伪装 Chrome 运行时
         window.chrome = {
-          runtime: {}
+          runtime: {},
         };
 
         // 覆盖 toString 以防止检测
         const originalToString = Function.prototype.toString;
-        Function.prototype.toString = function() {
+        Function.prototype.toString = function () {
           if (this === window.navigator.permissions.query) {
             return 'function query() { [native code] }';
           }
@@ -235,7 +241,7 @@ export class PageManager extends EventEmitter {
             effectiveType: '4g',
             rtt: 50,
             downlink: 10,
-            saveData: false
+            saveData: false,
           }),
         });
 
@@ -249,7 +255,6 @@ export class PageManager extends EventEmitter {
           get: () => 8,
         });
       });
-
     } catch (error) {
       throw new NetworkError(`页面配置失败: ${error.message}`, { cause: error });
     }
@@ -310,7 +315,7 @@ export class PageManager extends EventEmitter {
       this.emit('page-response', {
         id,
         url: response.url(),
-        status: response.status()
+        status: response.status(),
       });
     });
 
@@ -327,13 +332,13 @@ export class PageManager extends EventEmitter {
    */
   isIgnorableJSError(error) {
     const message = error.message || '';
-    
+
     // Next.js路由相关错误
     const nextjsErrors = [
       'Invariant: attempted to hard navigate to the same URL',
       'Navigation cancelled by a newer navigation',
       'AbortError: The operation was aborted',
-      'ResizeObserver loop limit exceeded'
+      'ResizeObserver loop limit exceeded',
     ];
 
     // 第三方脚本错误
@@ -347,12 +352,14 @@ export class PageManager extends EventEmitter {
       'ReferenceError: Notification is not defined',
       'require is not defined',
       'ReferenceError: require is not defined',
-      'exports is not defined in ES module scope'
+      'exports is not defined in ES module scope',
     ];
 
     // 检查是否为已知的可忽略错误
-    return nextjsErrors.some(pattern => message.includes(pattern)) ||
-           thirdPartyErrors.some(pattern => message.includes(pattern));
+    return (
+      nextjsErrors.some((pattern) => message.includes(pattern)) ||
+      thirdPartyErrors.some((pattern) => message.includes(pattern))
+    );
   }
 
   /**
@@ -366,11 +373,11 @@ export class PageManager extends EventEmitter {
       'googlesyndication.com',
       'doubleclick.net',
       'facebook.com/tr',
-      'connect.facebook.net'
+      'connect.facebook.net',
     ];
 
     const shouldBlockByType = ['media'].includes(resourceType);
-    const shouldBlockByDomain = blockedDomains.some(domain => url.includes(domain));
+    const shouldBlockByDomain = blockedDomains.some((domain) => url.includes(domain));
 
     return shouldBlockByType || shouldBlockByDomain;
   }
@@ -408,7 +415,6 @@ export class PageManager extends EventEmitter {
 
       this.stats.closed++;
       this.stats.active = Math.max(0, this.stats.active - 1);
-
     } catch (error) {
       this.logger?.warn(`关闭页面失败 [${id}]`, { error: error.message });
     } finally {
@@ -422,7 +428,7 @@ export class PageManager extends EventEmitter {
 
       this.logger?.debug(`页面已关闭 [${id}]`, {
         totalPages: this.pages.size,
-        duration: Date.now() - pageInfo.createdAt
+        duration: Date.now() - pageInfo.createdAt,
       });
 
       this.emit('page-closed', { id, pageInfo });
@@ -436,8 +442,8 @@ export class PageManager extends EventEmitter {
     const pageIds = Array.from(this.pages.keys());
     this.logger?.info(`开始关闭所有页面 (${pageIds.length} 个)`);
 
-    const closePromises = pageIds.map(id =>
-      this.closePage(id).catch(error =>
+    const closePromises = pageIds.map((id) =>
+      this.closePage(id).catch((error) =>
         this.logger?.error(`关闭页面 [${id}] 时出错`, { error: error.message })
       )
     );
@@ -449,7 +455,8 @@ export class PageManager extends EventEmitter {
   /**
    * 清理超时或无效的页面
    */
-  async cleanup(maxIdleTime = 300000) { // 5分钟超时
+  async cleanup(maxIdleTime = 300000) {
+    // 5分钟超时
     const now = Date.now();
     const toCleanup = [];
 
@@ -465,7 +472,7 @@ export class PageManager extends EventEmitter {
     if (toCleanup.length > 0) {
       this.logger?.info(`清理 ${toCleanup.length} 个超时页面`);
 
-      const cleanupPromises = toCleanup.map(id => this.closePage(id));
+      const cleanupPromises = toCleanup.map((id) => this.closePage(id));
       await Promise.all(cleanupPromises);
     }
 
@@ -483,14 +490,14 @@ export class PageManager extends EventEmitter {
       totalPages: this.pages.size,
       activeBrowsers: this.browserPool.getStatus().busyBrowsers,
       stats: { ...this.stats },
-      pages: pages.map(p => ({
+      pages: pages.map((p) => ({
         id: p.id,
         createdAt: p.createdAt,
         lastActivity: p.lastActivity,
         requestCount: p.requestCount,
         errorCount: p.errorCount,
-        idleTime: Date.now() - p.lastActivity
-      }))
+        idleTime: Date.now() - p.lastActivity,
+      })),
     };
   }
 

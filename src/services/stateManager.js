@@ -10,14 +10,14 @@ export class StateManager extends EventEmitter {
 
     // 内存中的状态
     this.state = {
-      processedUrls: new Set(),        // 已处理的URL
-      failedUrls: new Map(),           // 失败的URL及错误信息
-      urlToIndex: new Map(),           // URL到索引的映射
-      indexToUrl: new Map(),           // 索引到URL的映射
-      imageLoadFailures: new Set(),    // 图片加载失败的URL
-      urlToFile: new Map(),            // URL到文件路径的映射
-      startTime: null,                 // 开始时间
-      lastSaveTime: null               // 最后保存时间
+      processedUrls: new Set(), // 已处理的URL
+      failedUrls: new Map(), // 失败的URL及错误信息
+      urlToIndex: new Map(), // URL到索引的映射
+      indexToUrl: new Map(), // 索引到URL的映射
+      imageLoadFailures: new Set(), // 图片加载失败的URL
+      urlToFile: new Map(), // URL到文件路径的映射
+      startTime: null, // 开始时间
+      lastSaveTime: null, // 最后保存时间
     };
 
     // 自动保存配置
@@ -39,15 +39,13 @@ export class StateManager extends EventEmitter {
           processedUrls: [],
           failedUrls: [],
           urlToIndex: {},
-          startTime: null
+          startTime: null,
         }
       );
 
       // 恢复Set和Map数据结构
-      progress.processedUrls.forEach(url => this.state.processedUrls.add(url));
-      progress.failedUrls.forEach(({ url, error }) =>
-        this.state.failedUrls.set(url, error)
-      );
+      progress.processedUrls.forEach((url) => this.state.processedUrls.add(url));
+      progress.failedUrls.forEach(({ url, error }) => this.state.failedUrls.set(url, error));
 
       // 恢复URL映射
       if (progress.urlToIndex) {
@@ -72,17 +70,14 @@ export class StateManager extends EventEmitter {
         this.pathService.getMetadataPath('urlMapping'),
         {}
       );
-      Object.entries(urlMapping).forEach(([url, data]) =>
-        this.state.urlToFile.set(url, data.path)
-      );
+      Object.entries(urlMapping).forEach(([url, data]) => this.state.urlToFile.set(url, data.path));
 
       this.logger.info('状态加载完成', {
         已处理: this.state.processedUrls.size,
-        失败: this.state.failedUrls.size
+        失败: this.state.failedUrls.size,
       });
 
       this.emit('loaded', this.getStats());
-
     } catch (error) {
       this.logger.warn('状态加载失败，使用空状态', { error: error.message });
       this.emit('load-error', error);
@@ -97,8 +92,7 @@ export class StateManager extends EventEmitter {
       const now = Date.now();
 
       // 如果不是强制保存，检查是否需要保存
-      if (!force && this.state.lastSaveTime &&
-          now - this.state.lastSaveTime < 5000) {
+      if (!force && this.state.lastSaveTime && now - this.state.lastSaveTime < 5000) {
         return; // 5秒内已保存过
       }
 
@@ -110,24 +104,22 @@ export class StateManager extends EventEmitter {
         urlToIndexObj[url] = index;
       });
 
-      await this.fileService.writeJson(
-        this.pathService.getMetadataPath('progress'),
-        {
-          processedUrls: Array.from(this.state.processedUrls),
-          failedUrls: Array.from(this.state.failedUrls.entries()).map(
-            ([url, error]) => ({ url, error })
-          ),
-          urlToIndex: urlToIndexObj,
-          startTime: this.state.startTime,
-          savedAt: new Date().toISOString(),
-          stats: this.getStats()
-        }
-      );
+      await this.fileService.writeJson(this.pathService.getMetadataPath('progress'), {
+        processedUrls: Array.from(this.state.processedUrls),
+        failedUrls: Array.from(this.state.failedUrls.entries()).map(([url, error]) => ({
+          url,
+          error,
+        })),
+        urlToIndex: urlToIndexObj,
+        startTime: this.state.startTime,
+        savedAt: new Date().toISOString(),
+        stats: this.getStats(),
+      });
 
       // 保存图片加载失败记录
-      const imageFailures = Array.from(this.state.imageLoadFailures).map(url => ({
+      const imageFailures = Array.from(this.state.imageLoadFailures).map((url) => ({
         url,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       }));
       await this.fileService.writeJson(
         this.pathService.getMetadataPath('imageLoadFailures'),
@@ -139,18 +131,14 @@ export class StateManager extends EventEmitter {
       this.state.urlToFile.forEach((path, url) => {
         urlMapping[url] = {
           path,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
       });
-      await this.fileService.writeJson(
-        this.pathService.getMetadataPath('urlMapping'),
-        urlMapping
-      );
+      await this.fileService.writeJson(this.pathService.getMetadataPath('urlMapping'), urlMapping);
 
       this.state.lastSaveTime = now;
       this.logger.debug('状态保存完成');
       this.emit('saved', this.getStats());
-
     } catch (error) {
       this.logger.error('状态保存失败', { error: error.message });
       this.emit('save-error', error);
@@ -166,13 +154,11 @@ export class StateManager extends EventEmitter {
     }
 
     this.autoSaveTimer = setInterval(() => {
-      this.save().catch(error =>
-        this.logger.error('自动保存失败', { error: error.message })
-      );
+      this.save().catch((error) => this.logger.error('自动保存失败', { error: error.message }));
     }, this.autoSaveInterval);
 
     this.logger.info('启动自动保存', {
-      间隔: `${this.autoSaveInterval / 1000}秒`
+      间隔: `${this.autoSaveInterval / 1000}秒`,
     });
   }
 
@@ -264,9 +250,7 @@ export class StateManager extends EventEmitter {
       imageLoadFailures: this.state.imageLoadFailures.size,
       successRate: total > 0 ? ((processed / total) * 100).toFixed(2) : 0,
       startTime: this.state.startTime,
-      elapsed: this.state.startTime
-        ? Date.now() - this.state.startTime
-        : 0
+      elapsed: this.state.startTime ? Date.now() - this.state.startTime : 0,
     };
   }
 
@@ -299,14 +283,16 @@ export class StateManager extends EventEmitter {
   async exportReport(outputPath) {
     const report = {
       summary: this.getStats(),
-      failedUrls: Array.from(this.state.failedUrls.entries()).map(
-        ([url, error]) => ({ url, error })
-      ),
+      failedUrls: Array.from(this.state.failedUrls.entries()).map(([url, error]) => ({
+        url,
+        error,
+      })),
       imageLoadFailures: Array.from(this.state.imageLoadFailures),
-      processedFiles: Array.from(this.state.urlToFile.entries()).map(
-        ([url, path]) => ({ url, path })
-      ),
-      generatedAt: new Date().toISOString()
+      processedFiles: Array.from(this.state.urlToFile.entries()).map(([url, path]) => ({
+        url,
+        path,
+      })),
+      generatedAt: new Date().toISOString(),
     };
 
     await this.fileService.writeJson(outputPath, report);

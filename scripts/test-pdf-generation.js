@@ -30,54 +30,54 @@ async function testPDFGeneration() {
       {
         name: '标准配置',
         browserOpts: {
-          headless: true
-        },
-        pdfOpts: {
-          format: 'A4',
-          printBackground: true
-        }
-      },
-      {
-        name: '简化配置 (无背景)',
-        browserOpts: {
-          headless: true
-        },
-        pdfOpts: {
-          format: 'A4',
-          printBackground: false
-        }
-      },
-      {
-        name: 'Letter 格式',
-        browserOpts: {
-          headless: true
-        },
-        pdfOpts: {
-          format: 'Letter',
-          printBackground: true
-        }
-      },
-      {
-        name: '无 preferCSSPageSize',
-        browserOpts: {
-          headless: true
+          headless: true,
         },
         pdfOpts: {
           format: 'A4',
           printBackground: true,
-          preferCSSPageSize: false
-        }
+        },
+      },
+      {
+        name: '简化配置 (无背景)',
+        browserOpts: {
+          headless: true,
+        },
+        pdfOpts: {
+          format: 'A4',
+          printBackground: false,
+        },
+      },
+      {
+        name: 'Letter 格式',
+        browserOpts: {
+          headless: true,
+        },
+        pdfOpts: {
+          format: 'Letter',
+          printBackground: true,
+        },
+      },
+      {
+        name: '无 preferCSSPageSize',
+        browserOpts: {
+          headless: true,
+        },
+        pdfOpts: {
+          format: 'A4',
+          printBackground: true,
+          preferCSSPageSize: false,
+        },
       },
       {
         name: 'headless new 模式',
         browserOpts: {
-          headless: 'new'
+          headless: 'new',
         },
         pdfOpts: {
           format: 'A4',
-          printBackground: true
-        }
-      }
+          printBackground: true,
+        },
+      },
     ];
 
     for (const config of testConfigs) {
@@ -92,9 +92,9 @@ async function testPDFGeneration() {
             '--no-sandbox',
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
-            '--disable-blink-features=AutomationControlled'
+            '--disable-blink-features=AutomationControlled',
           ],
-          ignoreDefaultArgs: ['--enable-automation']
+          ignoreDefaultArgs: ['--enable-automation'],
         });
 
         const page = await browser.newPage();
@@ -104,13 +104,13 @@ async function testPDFGeneration() {
         console.log('⏳ 加载页面...');
         await page.goto(TEST_URL, {
           waitUntil: 'networkidle2',
-          timeout: 60000
+          timeout: 60000,
         });
 
         console.log('✅ 页面加载成功');
 
         // 等待页面稳定
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise((resolve) => setTimeout(resolve, 2000));
 
         // 生成 PDF
         const fileName = `test-${testConfigs.indexOf(config)}-${config.name.replace(/\s+/g, '-')}.pdf`;
@@ -120,7 +120,7 @@ async function testPDFGeneration() {
 
         const pdfOpts = {
           ...config.pdfOpts,
-          path: outputPath
+          path: outputPath,
         };
 
         await page.pdf(pdfOpts);
@@ -136,7 +136,6 @@ async function testPDFGeneration() {
 
         await browser.close();
         browser = null;
-
       } catch (error) {
         console.log(`❌ 测试失败: ${error.message}`);
         if (browser) {
@@ -149,11 +148,10 @@ async function testPDFGeneration() {
     console.log('\n✨ 测试完成！\n');
     console.log('生成的 PDF 文件:');
     const files = fs.readdirSync(OUTPUT_DIR);
-    files.forEach(file => {
+    files.forEach((file) => {
       const stats = fs.statSync(`${OUTPUT_DIR}/${file}`);
       console.log(`  - ${file} (${(stats.size / 1024).toFixed(2)} KB)`);
     });
-
   } catch (error) {
     console.error('\n❌ 测试失败:', error.message);
     console.error(error.stack);
