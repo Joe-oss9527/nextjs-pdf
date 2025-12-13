@@ -12,5 +12,11 @@
     "enablePDFStyleProcessing": true,
     "navigationStrategy": "load",
     "maxPaginationPages": 1,
-    "paginationSelector": ""
+    "paginationSelector": "",
+    "translation": {
+        "enabled": true,
+        "bilingual": true,
+        "targetLanguage": "Simplified Chinese (简体中文)",
+        "concurrency": 2
+    }
 }

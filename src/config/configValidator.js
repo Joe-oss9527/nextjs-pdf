@@ -474,7 +474,9 @@ const configSchema = Joi.object({
       .default(false)
       .description('Enable bilingual display (original + translated)'),
 
-    targetLanguage: Joi.string().default('Chinese').description('Target language for translation'),
+    targetLanguage: Joi.string()
+      .default('Simplified Chinese (简体中文)')
+      .description('Target language for translation'),
 
     concurrency: Joi.number()
       .integer()

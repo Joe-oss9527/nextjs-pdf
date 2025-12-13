@@ -19,7 +19,7 @@
     "translation": {
         "enabled": true,
         "bilingual": true,
-        "targetLanguage": "Chinese",
+        "targetLanguage": "Simplified Chinese (简体中文)",
         "concurrency": 2
     }
 }

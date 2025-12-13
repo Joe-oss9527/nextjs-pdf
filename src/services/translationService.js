@@ -600,13 +600,37 @@ export class TranslationService {
     });
 
     const instructions = `
-You are a professional technical translator. Translate the following JSON object values into ${this.targetLanguage}.
-Keep the keys unchanged.
-The values may contain Markdown formatting (headings, lists, links, emphasis) or code snippets.
-Preserve all Markdown syntax characters (such as #, *, -, _, [, ], (, ), and backticks) and code fencing; only translate the human language text.
-Do not translate code identifiers, API names, or URLs.
-Output ONLY the valid JSON object with translated values. Do not wrap the result in additional Markdown, code fences, or explanations.
-`;
+You are a professional technical translator for developer-facing documentation.
+Your task is to translate ONLY the JSON object values into ${this.targetLanguage}.
+
+Input format:
+- You receive a single JSON object: { "<id>": "<text>", ... }.
+- Keys are opaque IDs and must stay exactly the same.
+
+Output requirements:
+- Return EXACTLY ONE JSON object with the same keys and translated values.
+- Do NOT add, remove, rename, or reorder any keys.
+- Do NOT add any comments, explanations, or extra fields.
+- Do NOT output any text before or after the JSON.
+- The output must be directly parseable by JSON.parse (no trailing commas, no code fences, no Markdown wrapping).
+
+Content rules:
+- The values may contain Markdown formatting (headings, lists, links, emphasis) and code snippets.
+- Preserve all Markdown syntax characters (such as #, *, -, _, [, ], (, ), backticks, and code fences).
+- Preserve code blocks, inline code, command-line examples, configuration keys, and file paths.
+- Do NOT translate code identifiers, API names, library/package names, CLI commands, configuration keys, or URLs.
+
+	Placeholders and tags:
+	- Do NOT modify or translate placeholders such as {name}, {{ user }}, \${var}, %s, %{count}, or similar patterns.
+	- Do NOT translate HTML/JSX tag names or attribute names (for example <Button onClick={handleClick}>).
+	- Keep anything inside angle brackets that looks like a tag or generic type parameter unchanged.
+
+Style guidelines:
+- Use clear, concise, formal language suitable for technical documentation for software engineers.
+- Prefer terminology commonly used by professional developers when there are multiple valid translations.
+
+Output ONLY the final JSON object with translated values.
+	`;
 
     if (!this.client) {
       this.client = new GeminiClient({
@@ -661,7 +685,7 @@ Output ONLY the valid JSON object with translated values. Do not wrap the result
             attempt,
             maxAttempts: this.maxRetries,
             error: error.message,
-            waitTime: `${waitTime}ms`,
+            waitTime: `${waitTime} ms`,
             jitterStrategy,
           });
         },
@@ -702,7 +726,7 @@ Output ONLY the valid JSON object with translated values. Do not wrap the result
               attempt,
               maxAttempts: maxSegmentRetries,
               error: error.message,
-              waitTime: `${waitTime}ms`,
+              waitTime: `${waitTime} ms`,
             });
           },
         });

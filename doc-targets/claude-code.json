@@ -26,5 +26,11 @@
     "https://code.claude.com/docs/en/legal-and-compliance": "Resources"
   },
   "enablePDFStyleProcessing": true,
-  "navigationStrategy": "load"
+  "navigationStrategy": "load",
+  "translation": {
+    "enabled": true,
+    "bilingual": true,
+    "targetLanguage": "Simplified Chinese (简体中文)",
+    "concurrency": 2
+  }
 }
