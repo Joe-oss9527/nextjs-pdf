@@ -24,20 +24,21 @@ export class TranslationService {
 
     const translationConfig = config.translation || {};
 
-    this.enabled = translationConfig.enabled || false;
-    this.bilingual = translationConfig.bilingual || false;
-    this.targetLanguage = translationConfig.targetLanguage || 'Chinese';
-    this.concurrency = translationConfig.concurrency || 1;
+    // 使用 null 合并运算符以保留合法的 0 / false 等显式配置值
+    this.enabled = translationConfig.enabled ?? false;
+    this.bilingual = translationConfig.bilingual ?? false;
+    this.targetLanguage = translationConfig.targetLanguage ?? 'Chinese';
+    this.concurrency = translationConfig.concurrency ?? 1;
 
     // 超时与重试配置（支持从配置覆盖）
-    this.timeoutMs = translationConfig.timeout || 60000;
-    this.maxRetries = translationConfig.maxRetries || 3;
-    this.retryDelay = translationConfig.retryDelay || 2000;
+    this.timeoutMs = translationConfig.timeout ?? 60000;
+    this.maxRetries = translationConfig.maxRetries ?? 3;
+    this.retryDelay = translationConfig.retryDelay ?? 2000;
 
     // 新增：段落级重试与抖动策略配置（AWS/Netflix 最佳实践）
-    this.maxSegmentRetries = translationConfig.maxSegmentRetries || 2;
-    this.maxDelay = translationConfig.maxDelay || 30000;
-    this.jitterStrategy = translationConfig.jitterStrategy || 'decorrelated';
+    this.maxSegmentRetries = translationConfig.maxSegmentRetries ?? 2;
+    this.maxDelay = translationConfig.maxDelay ?? 30000;
+    this.jitterStrategy = translationConfig.jitterStrategy ?? 'decorrelated';
 
     this.logger.info('TranslationService enabled:', {
       enabled: this.enabled,
@@ -477,15 +478,27 @@ export class TranslationService {
           try {
             // 为每个批次添加独立的超时保护
             const batchTimeout = this.timeoutMs || 60000;
+            let batchTimeoutId;
             const timeoutPromise = new Promise((_, reject) => {
-              setTimeout(
+              batchTimeoutId = setTimeout(
                 () => reject(new Error(`Batch ${batchIndex + 1} timeout after ${batchTimeout}ms`)),
                 batchTimeout
               );
+              // 避免测试环境中因挂起的定时器导致 Jest 报告 open handles
+              if (batchTimeoutId && typeof batchTimeoutId.unref === 'function') {
+                batchTimeoutId.unref();
+              }
             });
 
             const translatePromise = this._translateBatchWithRetry(batch);
-            const res = await Promise.race([translatePromise, timeoutPromise]);
+            let res;
+            try {
+              res = await Promise.race([translatePromise, timeoutPromise]);
+            } finally {
+              if (batchTimeoutId) {
+                clearTimeout(batchTimeoutId);
+              }
+            }
 
             if (res) {
               Object.entries(res).forEach(([id, translated]) => {
@@ -517,11 +530,16 @@ export class TranslationService {
 
       // 为整个批处理过程添加总超时
       const totalTimeout = (this.timeoutMs || 60000) * batches.length;
+      let totalTimeoutId;
       const totalTimeoutPromise = new Promise((_, reject) => {
-        setTimeout(
+        totalTimeoutId = setTimeout(
           () => reject(new Error(`Total translation timeout after ${totalTimeout}ms`)),
           totalTimeout
         );
+        // 同样避免在测试环境中保持事件循环存活
+        if (totalTimeoutId && typeof totalTimeoutId.unref === 'function') {
+          totalTimeoutId.unref();
+        }
       });
 
       try {
@@ -539,6 +557,10 @@ export class TranslationService {
           total: batches.length,
         });
         // 即使超时，也继续处理已完成的翻译
+      } finally {
+        if (totalTimeoutId) {
+          clearTimeout(totalTimeoutId);
+        }
       }
     }
 
@@ -619,9 +641,9 @@ Output ONLY the valid JSON object with translated values. Do not wrap the result
    * @returns {Promise<Object>} Map of id -> translated text
    */
   async _translateBatchWithRetry(batch) {
-    const maxSegmentRetries = this.maxSegmentRetries || 2;
-    const jitterStrategy = this.jitterStrategy || 'decorrelated';
-    const maxDelay = this.maxDelay || 30000;
+    const maxSegmentRetries = this.maxSegmentRetries ?? 2;
+    const jitterStrategy = this.jitterStrategy ?? 'decorrelated';
+    const maxDelay = this.maxDelay ?? 30000;
 
     // First attempt: try the entire batch
     let results = {};
@@ -647,8 +669,9 @@ Output ONLY the valid JSON object with translated values. Do not wrap the result
 
       if (batchResult) {
         results = { ...batchResult };
-        // Identify segments that got translated
-        failedSegments = batch.filter((seg) => !batchResult[seg.id]);
+        // Identify segments that did not return any result
+        // 注意：不能用“真假值”判断，否则空字符串会被误判为失败
+        failedSegments = batch.filter((seg) => !(seg.id in batchResult));
       }
     } catch (batchError) {
       this.logger.warn('Batch translation failed, will retry individual segments', {

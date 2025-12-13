@@ -9,7 +9,7 @@ jest.mock('p-limit', () => {
     const limit = (fn, ...args) => fn(...args);
     limit.activeCount = 0;
     limit.pendingCount = 0;
-    limit.clearQueue = () => {};
+    limit.clearQueue = () => { };
     return limit;
   });
 });
@@ -155,5 +155,48 @@ describe('TranslationService', () => {
     // 段落原文和伪翻译都应该存在（双语模式）
     expect(translated).toContain('Paragraph line 1.');
     expect(translated).toContain('T(Paragraph line 1.');
+  });
+
+  test('constructor should preserve explicit 0 values in translation config', () => {
+    const service = new TranslationService({
+      config: {
+        logLevel: 'error',
+        translation: {
+          enabled: true,
+          retryDelay: 0,
+          maxSegmentRetries: 0,
+          maxDelay: 0,
+        },
+      },
+      logger,
+    });
+
+    expect(service.retryDelay).toBe(0);
+    expect(service.maxSegmentRetries).toBe(0);
+    expect(service.maxDelay).toBe(0);
+  });
+
+  test('_translateBatchWithRetry should not treat empty-string translations as failures', async () => {
+    const service = new TranslationService({ config: baseConfig, logger });
+
+    const batch = [
+      { id: 'seg1', text: 'Text 1' },
+      { id: 'seg2', text: 'Text 2' },
+    ];
+
+    // Mock batch translation result: seg1 -> '' (empty string), seg2 -> non-empty
+    const batchResult = {
+      seg1: '',
+      seg2: 'Translated 2',
+    };
+
+    service._translateBatch = jest.fn(async () => batchResult);
+    service._translateSingleSegment = jest.fn();
+
+    const result = await service._translateBatchWithRetry(batch);
+
+    expect(result).toEqual(batchResult);
+    // No segment-level retries should be triggered for empty-string translations
+    expect(service._translateSingleSegment).not.toHaveBeenCalled();
   });
 });
