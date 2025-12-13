@@ -157,6 +157,58 @@ describe('TranslationService', () => {
     expect(translated).toContain('T(Paragraph line 1.');
   });
 
+  test('translateMarkdown 应该将中文句子内部的 `_字_` 规范化为 `*字*` 以符合 Pandoc/Markdown 最佳实践', async () => {
+    const service = new TranslationService({
+      config: {
+        logLevel: 'error',
+        translation: {
+          enabled: true,
+          bilingual: true,
+          targetLanguage: 'Simplified Chinese (简体中文)',
+          concurrency: 1,
+          timeout: 60000,
+          maxRetries: 1,
+          retryDelay: 0,
+        },
+      },
+      logger,
+    });
+
+    // 伪造翻译结果：英文原文被翻译成包含中文 `_更_` 的句子
+    service._translateBatchWithRetry = jest.fn(async (batch) => {
+      const result = {};
+      batch.forEach((seg) => {
+        if (seg.text.includes('iterating with Claude has been')) {
+          result[seg.id] =
+            '有人说与 Claude 一起迭代变得_更_有趣，因为他们可以比对人类更挑剔地提出反馈意见。';
+        } else {
+          result[seg.id] = `T(${seg.text})`;
+        }
+      });
+      return result;
+    });
+
+    const markdown = [
+      '---',
+      'title: Test',
+      '---',
+      '',
+      'One person said that iterating with Claude has been _more_ fun, because they can be more picky with their feedback than with humans.',
+      '',
+    ].join('\n');
+
+    const translated = await service.translateMarkdown(markdown);
+
+    // 英文部分保持原样（不触碰 `_more_`）
+    expect(translated).toContain(
+      'One person said that iterating with Claude has been _more_ fun, because they can be more picky with their feedback than with humans.'
+    );
+
+    // 中文内部的 `_更_` 应当被规范化为 `*更*`，以便 Pandoc 正确解析为斜体
+    expect(translated).toContain('迭代变得*更*有趣');
+    expect(translated).not.toContain('迭代变得_更_有趣');
+  });
+
   test('translateMarkdown 应为图片行添加译文图注但不复制图片', async () => {
     const service = new TranslationService({
       config: {

@@ -23,6 +23,37 @@ describe('MarkdownService', () => {
     expect(markdown).toContain('Content');
   });
 
+  test('convertHtmlToMarkdown 应该使用 * 而不是 _ 作为强调符号', () => {
+    const service = new MarkdownService({ logger });
+    const html =
+      '<p>One person said that iterating with Claude has been <em>more</em> fun.</p>';
+
+    const markdown = service.convertHtmlToMarkdown(html);
+
+    expect(markdown).toContain('*more*');
+    expect(markdown).not.toContain('_more_');
+  });
+
+  test('convertHtmlToMarkdown 应该使用 ** 而不是 __ 作为 strong 符号', () => {
+    const service = new MarkdownService({ logger });
+    const html = '<p>This is <strong>very</strong> important.</p>';
+
+    const markdown = service.convertHtmlToMarkdown(html);
+
+    expect(markdown).toContain('**very**');
+    expect(markdown).not.toContain('__very__');
+  });
+
+  test('convertHtmlToMarkdown 应该使用 ~~ 作为删除线符号', () => {
+    const service = new MarkdownService({ logger });
+
+    const html = '<p>This is <del>deleted</del> text.</p>';
+
+    const markdown = service.convertHtmlToMarkdown(html);
+
+    expect(markdown).toContain('~~deleted~~');
+  });
+
   test('convertHtmlToMarkdown 应该去重图片后的重复斜体图注', () => {
     const service = new MarkdownService({ logger });
     const html =

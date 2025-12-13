@@ -22,6 +22,37 @@ export class MarkdownService {
 
     this.turndown = new TurndownService(turndownOptions);
 
+    // 使用 `*text*` 而不是 `_text_` 来表示 HTML <em>/<i> 强调，
+    // 这样生成的 Markdown 更符合 Pandoc / CommonMark 对“词内部强调优先使用 *”的最佳实践，
+    // 避免在中英文混排场景下由下划线强调带来的歧义。
+    this.turndown.addRule('emphasis', {
+      filter: ['em', 'i'],
+      replacement: (content) => {
+        if (!content) return '';
+        return `*${content}*`;
+      },
+    });
+
+    // 使用 `**text**` 而不是 `__text__` 表示 HTML <strong>/<b> 的粗体，
+    // 统一 strong 风格，便于在 Pandoc / CommonMark 中与 * / ** 规则配合使用。
+    this.turndown.addRule('strong', {
+      filter: ['strong', 'b'],
+      replacement: (content) => {
+        if (!content) return '';
+        return `**${content}**`;
+      },
+    });
+
+    // 使用 `~~text~~` 表示删除线，将 HTML <del>/<s>/<strike> 统一为 GFM/Pandoc
+    // 常用的删除风格，便于在 Markdown → PDF 流水线中得到一致展示。
+    this.turndown.addRule('strikethrough', {
+      filter: ['del', 's', 'strike'],
+      replacement: (content) => {
+        if (!content) return '';
+        return `~~${content}~~`;
+      },
+    });
+
     // 保留代码块语言标识（```js``` 等）
     this.turndown.addRule('fencedCodeBlockWithLanguage', {
       filter: (node) => {
