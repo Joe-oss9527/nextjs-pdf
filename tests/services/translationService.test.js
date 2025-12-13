@@ -157,6 +157,56 @@ describe('TranslationService', () => {
     expect(translated).toContain('T(Paragraph line 1.');
   });
 
+  test('translateMarkdown 应为图片行添加译文图注但不复制图片', async () => {
+    const service = new TranslationService({
+      config: {
+        ...baseConfig,
+        translation: {
+          ...baseConfig.translation,
+          enabled: true,
+          bilingual: true,
+        },
+      },
+      logger,
+    });
+
+    // 替换实际的批量翻译，实现一个可预测的伪翻译
+    const batchSpy = jest.fn(async (batch) => {
+      const result = {};
+      batch.forEach((seg) => {
+        result[seg.id] = `T(${seg.text})`;
+      });
+      return result;
+    });
+    service._translateBatchWithRetry = batchSpy;
+
+    const markdown = [
+      '![Figure 1: Caption here](/image.png)',
+      '',
+      'Paragraph under image.',
+      '',
+    ].join('\n');
+
+    const translated = await service.translateMarkdown(markdown);
+
+    // 图片行应当只出现一次，不应生成第二个 `![]()`
+    const imageOccurrences = (
+      translated.match(/!\[Figure 1: Caption here]\(\/image\.png\)/g) || []
+    ).length;
+    expect(imageOccurrences).toBe(1);
+
+    // 段落仍然应被翻译（双语模式：原文 + 译文）
+    expect(translated).toContain('Paragraph under image.');
+    expect(translated).toContain('T(Paragraph under image.)');
+
+    // 图注应当在图片下方以单独一行形式出现（这里使用伪翻译占位）
+    expect(translated).toContain('_T(Figure 1: Caption here)_');
+
+    // 批量翻译的文本中应该包含图片行的 alt 文本（用于生成译文图注）
+    const allTexts = batchSpy.mock.calls.flatMap((call) => call[0].map((seg) => seg.text));
+    expect(allTexts.some((t) => t === 'Figure 1: Caption here')).toBe(true);
+  });
+
   test('constructor should preserve explicit 0 values in translation config', () => {
     const service = new TranslationService({
       config: {
