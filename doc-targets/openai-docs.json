@@ -11,5 +11,11 @@
   ],
   "sectionEntryPoints": [],
   "enablePDFStyleProcessing": false,
-  "navigationStrategy": "domcontentloaded"
+  "navigationStrategy": "domcontentloaded",
+  "translation": {
+    "enabled": true,
+    "bilingual": true,
+    "targetLanguage": "Simplified Chinese (简体中文)",
+    "concurrency": 2
+  }
 }

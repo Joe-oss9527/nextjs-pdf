@@ -20,7 +20,7 @@ describe('TranslationService', () => {
     translation: {
       enabled: true,
       bilingual: false,
-      targetLanguage: 'Chinese',
+      targetLanguage: 'Simplified Chinese (简体中文)',
       concurrency: 2,
       timeout: 60000,
       maxRetries: 3,
@@ -108,7 +108,7 @@ describe('TranslationService', () => {
         translation: {
           enabled: true,
           bilingual: true,
-          targetLanguage: 'Chinese',
+          targetLanguage: 'Simplified Chinese (简体中文)',
           concurrency: 1,
           timeout: 60000,
           maxRetries: 1,

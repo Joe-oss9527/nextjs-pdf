@@ -64,7 +64,7 @@
   "translation": {
     "enabled": true,
     "bilingual": true,
-    "targetLanguage": "Chinese",
+    "targetLanguage": "Simplified Chinese (\u7b80\u4f53\u4e2d\u6587)",
     "concurrency": 2,
     "timeout": 60000,
     "maxRetries": 3,
