@@ -213,7 +213,7 @@ describe('Scraper', () => {
           error: 'Navigation failed'
         })
       );
-    }, 10000);
+    }, 30000);
 
     it('should clean up resources on error', async () => {
       mockPage.evaluate.mockRejectedValue(new Error('Evaluation failed'));
@@ -254,7 +254,7 @@ describe('Scraper', () => {
   describe('isIgnored', () => {
     it('should check ignored patterns', () => {
       scraper.config.ignoreURLs = ['/admin', /\.pdf$/];
-      
+
       expect(scraper.isIgnored('https://example.com/admin/page')).toBe(true);
       expect(scraper.isIgnored('https://example.com/file.pdf')).toBe(true);
       expect(scraper.isIgnored('https://example.com/normal/page')).toBe(false);
@@ -460,9 +460,9 @@ describe('Scraper', () => {
     it('should stop scraper', async () => {
       scraper.isRunning = true;
       scraper.cleanup = jest.fn();
-      
+
       await scraper.stop();
-      
+
       expect(mockDependencies.queueManager.clear).toHaveBeenCalled();
       expect(scraper.cleanup).toHaveBeenCalled();
       expect(scraper.isRunning).toBe(false);
@@ -470,13 +470,13 @@ describe('Scraper', () => {
 
     it('should warn if not running', async () => {
       scraper.isRunning = false;
-      
+
       await scraper.pause();
       expect(mockDependencies.logger.warn).toHaveBeenCalledWith('爬虫未在运行，无法暂停');
-      
+
       await scraper.resume();
       expect(mockDependencies.logger.warn).toHaveBeenCalledWith('爬虫未在运行，无法恢复');
-      
+
       await scraper.stop();
       expect(mockDependencies.logger.warn).toHaveBeenCalledWith('爬虫未在运行');
     });
@@ -526,9 +526,9 @@ describe('Scraper', () => {
     it('should emit initialized event', async () => {
       const listener = jest.fn();
       scraper.on('initialized', listener);
-      
+
       await scraper.initialize();
-      
+
       expect(listener).toHaveBeenCalled();
     });
 

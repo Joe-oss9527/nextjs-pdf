@@ -68,7 +68,10 @@
     "concurrency": 2,
     "timeout": 60000,
     "maxRetries": 3,
-    "retryDelay": 2000
+    "retryDelay": 2000,
+    "maxSegmentRetries": 2,
+    "maxDelay": 30000,
+    "jitterStrategy": "decorrelated"
   },
   "markdown": {
     "enabled": true,

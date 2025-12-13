@@ -240,6 +240,47 @@ describe('ConfigValidator', () => {
       expect(result.config.network.retryOn429).toBe(false);
     });
 
+    test('应该验证翻译配置并应用默认值', () => {
+      const config = {
+        rootURL: 'https://example.com',
+        pdfDir: './pdfs',
+        navLinksSelector: 'nav a',
+        contentSelector: 'main',
+        translation: {
+          enabled: true
+        }
+      };
+
+      const result = validateConfig(config);
+
+      expect(result.config.translation.enabled).toBe(true);
+      expect(result.config.translation.maxSegmentRetries).toBe(2);
+      expect(result.config.translation.maxDelay).toBe(30000);
+      expect(result.config.translation.jitterStrategy).toBe('decorrelated');
+    });
+
+    test('应该保留自定义翻译重试配置', () => {
+      const config = {
+        rootURL: 'https://example.com',
+        pdfDir: './pdfs',
+        navLinksSelector: 'nav a',
+        contentSelector: 'main',
+        translation: {
+          enabled: true,
+          maxSegmentRetries: 5,
+          maxDelay: 10000,
+          jitterStrategy: 'full'
+        }
+      };
+
+      const result = validateConfig(config);
+
+      expect(result.config.translation.enabled).toBe(true);
+      expect(result.config.translation.maxSegmentRetries).toBe(5);
+      expect(result.config.translation.maxDelay).toBe(10000);
+      expect(result.config.translation.jitterStrategy).toBe('full');
+    });
+
     test('应该剥离未知字段', () => {
       const config = {
         rootURL: 'https://example.com',
