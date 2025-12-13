@@ -16,7 +16,6 @@ import { ImageService } from '../services/imageService.js';
 import { PDFStyleService } from '../services/pdfStyleService.js';
 import { TranslationService } from '../services/translationService.js';
 import { MarkdownService } from '../services/markdownService.js';
-import { MarkdownToPdfService } from '../services/markdownToPdfService.js';
 import { PandocPdfService } from '../services/pandocPdfService.js';
 import { Scraper } from './scraper.js';
 import { PythonMergeService } from '../services/PythonMergeService.js';

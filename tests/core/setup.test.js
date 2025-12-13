@@ -68,9 +68,6 @@ jest.mock('../../src/services/translationService.js', () => ({
 jest.mock('../../src/services/markdownService.js', () => ({
   MarkdownService: jest.fn(),
 }));
-jest.mock('../../src/services/markdownToPdfService.js', () => ({
-  MarkdownToPdfService: jest.fn(),
-}));
 jest.mock('../../src/services/pandocPdfService.js', () => ({
   PandocPdfService: jest.fn(),
 }));

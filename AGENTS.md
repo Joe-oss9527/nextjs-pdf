@@ -9,7 +9,7 @@ Any other agent-specific files (for example `CLAUDE.md`) should treat this docum
 
 **Documentation PDF Scraper** - A Puppeteer-based system for generating PDFs from documentation sites with anti-bot bypass and collapsible content expansion capabilities.
 
-**Tech Stack:** Node.js ESM, Puppeteer-extra (stealth), Python PyMuPDF for merging  
+**Tech Stack:** Node.js ESM, Puppeteer-extra (stealth), Pandoc CLI (with a LaTeX engine such as xelatex), Python PyMuPDF for merging  
 **Test Coverage:** 516+ passing tests  
 **Status:** Production-ready
 
@@ -66,7 +66,8 @@ config-profiles/              # Kindle device profiles
 make install          # Install Node + Python deps (creates venv/)
 make run             # Scrape and generate PDFs
 npm start            # Alternative to make run
-make clean           # Remove pdfs/*, metadata, temp files
+make clean           # Remove pdfs/* and metadata
+make clean-cache     # Remove translation cache and metadata (keep PDFs)
 ```
 
 ### Testing & Quality
@@ -112,7 +113,7 @@ make clean-venv          # Remove and recreate Python venv
 ## Code Standards & Conventions
 
 ### Language & Style
-- **JavaScript:** ESM modules (`type: module`), Node.js ≥ 16
+- **JavaScript:** ESM modules (`type: module`), Node.js ≥ 18.18 (required by ESLint 9.x and tooling)
 - **Async patterns:** Use `async/await`, avoid callbacks
 - **Indentation:** 2 spaces (JavaScript), 4 spaces (Python)
 - **Naming:**
@@ -164,6 +165,23 @@ npm test -- --watch
 # Run specific test file
 npm test -- tests/services/fileService.test.js
 ```
+
+### Jest & Open Handles（异步 / 定时器注意事项）
+
+- 测试或被测代码里如果创建了长时间存活的定时器 / 句柄，需要**显式清理或解除对事件循环的保持**，否则 Jest 会在结束时报：
+  - `A worker process has failed to exit gracefully...`
+  - 或 `Jest has detected the following open handles...`
+- 推荐做法：
+  - 对超时保护类定时器：
+    - 保存 `setTimeout` 返回的 ID，在 `try/finally` 中 `clearTimeout(timeoutId)`；
+    - 如只是保护性定时器，又不要求阻止进程退出，可调用 `timeoutId.unref?.()`，避免影响 Node/Jest 退出。
+  - 在 Jest 测试中使用 fake timers 时（`jest.useFakeTimers()`）：
+    - 测试结束前调用 `jest.useRealTimers()`；
+    - 必要时配合 `jest.runAllTimers()` / `jest.advanceTimersByTime()` 来驱动定时逻辑。
+- 如果遇到疑似泄漏，可用：
+  - `npx jest --runInBand --detectOpenHandles`
+  - 或只对某个测试文件运行：`npx jest tests/services/translationService.test.js --runInBand --detectOpenHandles`
+  来定位具体未清理的 handle。
 
 ## Configuration
 

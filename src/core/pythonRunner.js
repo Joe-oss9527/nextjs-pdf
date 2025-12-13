@@ -245,12 +245,17 @@ class PythonRunner {
         process.kill('SIGTERM');
 
         // 如果5秒后仍未关闭，强制终止
-        setTimeout(() => {
+        const forceKillTimeout = setTimeout(() => {
           if (!process.killed) {
             process.kill('SIGKILL');
             this.logger.warning(`Force killed Python process`, { processId });
           }
         }, 5000);
+
+        // 不要因为这个保护性定时器阻止 Node/Jest 进程退出
+        if (forceKillTimeout && typeof forceKillTimeout.unref === 'function') {
+          forceKillTimeout.unref();
+        }
       }
     } catch (error) {
       this.logger.error(`Error killing Python process`, {

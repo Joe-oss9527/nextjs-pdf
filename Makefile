@@ -6,7 +6,7 @@ VENV_PYTHON = $(VENV_DIR)/bin/python
 VENV_PIP = $(VENV_DIR)/bin/pip
 NODE_MODULES = node_modules
 
-.PHONY: help install install-python install-node venv clean-venv clean clean-all run test lint kindle7 kindle-paperwhite kindle-oasis kindle-scribe kindle-all reset-config list-configs clean-kindle docs-openai docs-claude docs-current
+.PHONY: help install install-python install-node venv clean-venv clean clean-all clean-cache run test lint kindle7 kindle-paperwhite kindle-oasis kindle-scribe kindle-all reset-config list-configs clean-kindle docs-openai docs-claude docs-current
 
 help:
 	@echo "Available commands:"
@@ -19,8 +19,9 @@ help:
 	@echo "  run-clean     - Clean output and generate PDF documentation"
 	@echo "  test          - Run tests"
 	@echo "  lint          - Run linter"
-	@echo "  clean         - Clean generated PDFs and metadata"
-	@echo "  clean-all     - Clean everything including dependencies"
+		@echo "  clean         - Clean generated PDFs and metadata"
+		@echo "  clean-cache   - Clean translation cache and metadata (keep PDFs)"
+		@echo "  clean-all     - Clean everything including dependencies"
 	@echo ""
 	@echo "Kindle PDF optimization:"
 	@echo "  kindle7           - Generate PDFs for Kindle 7-inch"
@@ -125,6 +126,12 @@ clean-venv:
 clean:
 	@echo "Cleaning generated PDFs and metadata..."
 	npm run clean
+
+# Clean caches and metadata without removing generated PDFs
+clean-cache:
+		@echo "Cleaning translation cache and metadata (keeping PDFs)..."
+		rm -rf .temp
+		rm -rf pdfs/metadata/*
 
 # Clean all generated files and dependencies
 clean-all: clean
