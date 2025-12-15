@@ -18,6 +18,7 @@
     "enablePDFStyleProcessing": false,
     "navigationStrategy": "domcontentloaded",
     "maxPaginationPages": 10,
+    "targetUrls": [],
     "output": {
         "finalPdfDirectory": "finalPdf-cloudflare"
     },

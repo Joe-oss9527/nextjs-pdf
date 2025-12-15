@@ -1,13 +1,21 @@
 {
-  "rootURL": "https://www.anthropic.com/research/how-ai-is-transforming-work-at-anthropic",
-  "baseUrl": "https://www.anthropic.com/",
+  "rootURL": "https://code.claude.com/docs/en/overview",
+  "baseUrl": "https://code.claude.com/docs/en/",
   "pdfDir": "pdfs",
   "concurrency": 5,
   "screenshotDelay": 500,
-  "navLinksSelector": "a[href^='/research/']",
+  "navLinksSelector": "a[href^='/docs/en/'], [id*='sidebar'] a[href], nav a[href]",
   "paginationSelector": "",
-  "contentSelector": "main",
-  "sectionEntryPoints": [],
+  "contentSelector": "#content-area",
+  "sectionEntryPoints": [
+    "https://code.claude.com/docs/en/overview",
+    "https://code.claude.com/docs/en/sub-agents",
+    "https://code.claude.com/docs/en/third-party-integrations",
+    "https://code.claude.com/docs/en/setup",
+    "https://code.claude.com/docs/en/settings",
+    "https://code.claude.com/docs/en/cli-reference",
+    "https://code.claude.com/docs/en/legal-and-compliance"
+  ],
   "ignoreURLs": [],
   "maxRetries": 3,
   "retryDelay": 1000,
@@ -16,7 +24,7 @@
   "navigationRetries": 4,
   "imageTimeout": 10000,
   "allowedDomains": [
-    "www.anthropic.com"
+    "code.claude.com"
   ],
   "logLevel": "debug",
   "enablePDFStyleProcessing": true,
@@ -58,13 +66,21 @@
     "executable": "./venv/bin/python",
     "timeout": 300000
   },
-  "sectionTitles": {},
+  "sectionTitles": {
+    "https://code.claude.com/docs/en/overview": "Getting started",
+    "https://code.claude.com/docs/en/sub-agents": "Build with Claude Code",
+    "https://code.claude.com/docs/en/third-party-integrations": "Deployment",
+    "https://code.claude.com/docs/en/setup": "Administration",
+    "https://code.claude.com/docs/en/settings": "Configuration",
+    "https://code.claude.com/docs/en/cli-reference": "Reference",
+    "https://code.claude.com/docs/en/legal-and-compliance": "Resources"
+  },
   "navigationStrategy": "load",
   "maxPaginationPages": 1,
   "translation": {
-    "enabled": true,
+    "enabled": false,
     "bilingual": true,
-    "targetLanguage": "Simplified Chinese (\u7b80\u4f53\u4e2d\u6587)",
+    "targetLanguage": "Simplified Chinese (简体中文)",
     "concurrency": 2,
     "timeout": 60000,
     "maxRetries": 3,
@@ -86,7 +102,5 @@
       "margin": "20mm"
     }
   },
-  "targetUrls": [
-    "https://www.anthropic.com/research/how-ai-is-transforming-work-at-anthropic"
-  ]
+  "targetUrls": []
 }

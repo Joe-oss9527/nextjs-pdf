@@ -13,6 +13,7 @@
     "navigationStrategy": "load",
     "maxPaginationPages": 1,
     "paginationSelector": "",
+    "targetUrls": [],
     "translation": {
         "enabled": true,
         "bilingual": true,

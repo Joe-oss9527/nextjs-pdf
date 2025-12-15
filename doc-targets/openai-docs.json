@@ -12,6 +12,7 @@
   "sectionEntryPoints": [],
   "enablePDFStyleProcessing": false,
   "navigationStrategy": "domcontentloaded",
+  "targetUrls": [],
   "translation": {
     "enabled": true,
     "bilingual": true,

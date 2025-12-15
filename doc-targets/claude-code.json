@@ -27,8 +27,9 @@
   },
   "enablePDFStyleProcessing": true,
   "navigationStrategy": "load",
+  "targetUrls": [],
   "translation": {
-    "enabled": true,
+    "enabled": false,
     "bilingual": true,
     "targetLanguage": "Simplified Chinese (简体中文)",
     "concurrency": 2
