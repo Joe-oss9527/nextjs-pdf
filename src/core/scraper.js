@@ -888,6 +888,64 @@ export class Scraper extends EventEmitter {
   }
 
   /**
+   * 直接从 URL 获取 Markdown 源文件内容
+   * 用于支持提供原始 .md 文件的文档站点（如 code.claude.com）
+   * @param {string} url - 原始页面 URL
+   * @returns {Promise<{content: string, title: string}|null>}
+   */
+  async _fetchMarkdownSource(url) {
+    const suffix = this.config.markdownSource?.urlSuffix || '.md';
+    const mdUrl = url.endsWith(suffix) ? url : url + suffix;
+
+    this.logger.debug('尝试获取 Markdown 源文件', { url, mdUrl });
+
+    try {
+      const response = await fetch(mdUrl, {
+        headers: {
+          'User-Agent': this.config.browser?.userAgent || 'Mozilla/5.0',
+          'Accept': 'text/markdown, text/plain, */*',
+        },
+        signal: AbortSignal.timeout(this.config.pageTimeout || 30000),
+      });
+
+      if (!response.ok) {
+        this.logger.warn('Markdown 源文件获取失败', {
+          mdUrl,
+          status: response.status,
+          statusText: response.statusText,
+        });
+        return null;
+      }
+
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('markdown') && !contentType.includes('text/plain')) {
+        this.logger.debug('响应类型不是 Markdown', { mdUrl, contentType });
+        // 仍然尝试使用内容，某些服务器可能返回错误的 content-type
+      }
+
+      const content = await response.text();
+
+      // 从 Markdown 内容中提取标题（第一个 # 标题）
+      const titleMatch = content.match(/^#\s+(.+)$/m);
+      const title = titleMatch ? titleMatch[1].trim() : null;
+
+      this.logger.info('成功获取 Markdown 源文件', {
+        mdUrl,
+        contentLength: content.length,
+        title: title || '(未找到标题)',
+      });
+
+      return { content, title };
+    } catch (error) {
+      this.logger.warn('Markdown 源文件获取异常', {
+        mdUrl,
+        error: error.message,
+      });
+      return null;
+    }
+  }
+
+  /**
    * 渐进式导航策略 - 从快到慢尝试不同的等待策略
    * 支持通过 config.navigationStrategy 自定义首选策略
    */
@@ -1147,18 +1205,40 @@ export class Scraper extends EventEmitter {
 
       if (useMarkdownWorkflow) {
         try {
-          this.logger.info('使用 Markdown 工作流生成 PDF', {
-            url,
-            pdfPath,
-          });
+          let markdownContent;
+          let sourceTitle = null;
 
-          const markdownContent = await this.markdownService.extractAndConvertPage(
-            page,
-            this.config.contentSelector
-          );
+          // 优先尝试直接获取 Markdown 源文件
+          if (this.config.markdownSource?.enabled) {
+            const mdSource = await this._fetchMarkdownSource(url);
+            if (mdSource) {
+              markdownContent = mdSource.content;
+              sourceTitle = mdSource.title;
+              this.logger.info('使用直接获取的 Markdown 源文件', {
+                url,
+                pdfPath,
+                titleFromSource: sourceTitle,
+              });
+            }
+          }
+
+          // 如果未启用或获取失败，回退到 DOM 提取
+          if (!markdownContent) {
+            this.logger.info('使用 DOM 转换 Markdown 工作流', {
+              url,
+              pdfPath,
+            });
+            markdownContent = await this.markdownService.extractAndConvertPage(
+              page,
+              this.config.contentSelector
+            );
+          }
+
+          // 如果从源文件获取到标题，使用它覆盖 DOM 提取的标题
+          const finalTitle = sourceTitle || title;
 
           const markdownWithFrontmatter = this.markdownService.addFrontmatter(markdownContent, {
-            title,
+            title: finalTitle,
             url,
             index,
           });

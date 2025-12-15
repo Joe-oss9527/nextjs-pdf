@@ -7,6 +7,10 @@
     "code.claude.com"
   ],
   "ignoreURLs": [],
+  "markdownSource": {
+    "enabled": true,
+    "urlSuffix": ".md"
+  },
   "sectionEntryPoints": [
     "https://code.claude.com/docs/en/overview",
     "https://code.claude.com/docs/en/sub-agents",
