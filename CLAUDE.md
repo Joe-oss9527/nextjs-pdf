@@ -52,7 +52,7 @@
 - **配置与验证：**
   - `AGENTS.md` → “Configuration”  
   - `AGENTS.md` → “Configuration Validation Workflow”  
-    - 记忆要点：字段必须先加到 `src/config/configValidator.js` 的 Joi schema，再加到 `doc-targets/*.json`，否则会被 `stripUnknown: true` 悄悄丢弃。  
+    - 记忆要点：字段必须先加到 `src/config/configValidator.js` 的 Joi schema，再加到对应配置文件（`config.json` / `doc-targets/*.json` / `config-profiles/*.json`），否则会被 `stripUnknown: true` 悄悄丢弃。  
 - **测试与质量：**
   - `AGENTS.md` → “Testing Guidelines” / “Testing Requirements”  
     - 记忆要点：保持 516+ 通过；新公开函数要有测试；提交前 `make test && make lint`。  

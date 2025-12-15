@@ -66,27 +66,47 @@ make kindle-all
 
 ## Configuration
 
-### Basic Configuration (`config.json`)
+### Base Configuration (`config.json`)
+
+`config.json` 仅保留公共配置（PDF/翻译/Markdown 等）。文档站点相关的 URL、选择器等配置放在 `doc-targets/*.json` 中，并会根据 `docTarget` 自动合并进来。
+
+```json
+{
+  "docTarget": "openai",
+  "pdfDir": "pdfs",
+  "concurrency": 5,
+  "markdown": { "enabled": true },
+  "markdownPdf": { "enabled": true }
+}
+```
+
+### Doc Target Configuration (`doc-targets/*.json`)
+
+每个站点一个文件，例如 `doc-targets/openai-docs.json`：
 
 ```json
 {
   "rootURL": "https://docs.example.com",
   "baseUrl": "https://docs.example.com/docs/",
-  "concurrency": 5,
-  "sectionEntryPoints": [],
-  "targetUrls": [],
-  "pdf": {
-    "engine": "puppeteer",
-    "theme": "light",
-    "fontSize": "14px",
-    "bookmarks": true
-  }
+  "navLinksSelector": "nav a[href]",
+  "contentSelector": "main",
+  "allowedDomains": ["docs.example.com"]
 }
 ```
 
-### Scraping Specific URLs
+### Markdown Source (`markdownSource`, optional)
 
-To scrape specific URLs without crawling the entire site, use the `targetUrls` configuration:
+部分站点提供原始 Markdown 源文件（例如在页面 URL 后追加 `.md`）。可以在对应的 `doc-targets/*.json` 里启用：
+
+```json
+{
+  "markdownSource": { "enabled": true, "urlSuffix": ".md" }
+}
+```
+
+### Scraping Specific URLs (`targetUrls`)
+
+To scrape specific URLs without crawling the entire site, use the `targetUrls` configuration (通常放在对应的 `doc-targets/*.json` 里):
 
 ```json
 {
@@ -138,6 +158,8 @@ npm run docs:current
 # List all available doc targets
 npm run docs:list
 ```
+
+说明：这些命令会更新 `config.json` 里的 `docTarget` 字段；站点具体配置来自 `doc-targets/*.json` 并在运行时自动合并。
 
 ## Development
 

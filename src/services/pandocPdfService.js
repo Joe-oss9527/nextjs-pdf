@@ -70,7 +70,7 @@ export class PandocPdfService {
         // 清理临时文件
         try {
           fs.unlinkSync(tempFile);
-        } catch (err) {
+        } catch {
           // 忽略清理错误
         }
       }

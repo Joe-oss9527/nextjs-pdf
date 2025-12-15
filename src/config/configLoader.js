@@ -3,6 +3,14 @@ import path from 'path';
 import { validateConfig } from './configValidator.js';
 import { createLogger } from '../utils/logger.js';
 
+const DOC_TARGETS = {
+  openai: 'openai-docs.json',
+  'claude-code': 'claude-code.json',
+  'cloudflare-blog': 'cloudflare-blog.json',
+  'anthropic-research': 'anthropic-research.json',
+  'claude-blog': 'claude-blog.json',
+};
+
 /**
  * 配置加载器类
  * 负责加载、验证和管理应用程序配置
@@ -32,8 +40,11 @@ class ConfigLoader {
 
       this.logger.debug('Raw configuration loaded:', parsedConfig);
 
+      // 合并 doc-target 配置（如果配置了 docTarget 或环境变量 DOC_TARGET）
+      const mergedConfig = await this.applyDocTargetConfig(parsedConfig);
+
       // 处理配置
-      const processedConfig = await this.processConfig(parsedConfig);
+      const processedConfig = await this.processConfig(mergedConfig);
 
       // 验证配置
       const validationResult = validateConfig(processedConfig);
@@ -124,6 +135,133 @@ class ConfigLoader {
       this.logger.error('Error processing configuration:', error);
       throw new Error(`Configuration processing failed: ${error.message}`);
     }
+  }
+
+  /**
+   * 合并 doc-target 配置（doc-targets/*.json）到基础配置
+   * @private
+   */
+  async applyDocTargetConfig(baseConfig) {
+    const envDocTarget = process.env.DOC_TARGET ? String(process.env.DOC_TARGET).trim() : '';
+    const docTarget = envDocTarget || baseConfig?.docTarget;
+
+    if (!docTarget) {
+      return baseConfig;
+    }
+
+    if (typeof docTarget !== 'string' || docTarget.trim().length === 0) {
+      throw new Error('Invalid docTarget: expected a non-empty string');
+    }
+
+    const targetPath = await this.resolveDocTargetConfigPath(docTarget.trim());
+    const targetConfig = await this.readJsonFile(targetPath);
+
+    this.logger.info('Applying doc-target configuration', {
+      docTarget,
+      targetPath,
+    });
+
+    return this.deepMerge(baseConfig, targetConfig);
+  }
+
+  /**
+   * 解析 docTarget 对应的配置文件路径
+   * @private
+   */
+  async resolveDocTargetConfigPath(docTarget) {
+    const configDir = path.dirname(this.configPath);
+    const targetsDir = path.resolve(configDir, 'doc-targets');
+
+    const looksLikePath =
+      docTarget.includes('/') || docTarget.includes('\\') || docTarget.endsWith('.json');
+
+    if (looksLikePath) {
+      const resolvedPath = path.isAbsolute(docTarget)
+        ? docTarget
+        : path.resolve(configDir, docTarget);
+      this.assertPathInsideConfigDir(resolvedPath);
+      return resolvedPath;
+    }
+
+    // 1) 允许 docTarget 直接对应 doc-targets/<name>.json
+    const directPath = path.resolve(targetsDir, `${docTarget}.json`);
+    if (await this.isReadableFile(directPath)) {
+      return directPath;
+    }
+
+    // 2) 向后兼容：使用预定义映射（如 openai -> openai-docs.json）
+    const mapped = DOC_TARGETS[docTarget];
+    if (mapped) {
+      const mappedPath = path.resolve(targetsDir, mapped);
+      if (await this.isReadableFile(mappedPath)) {
+        return mappedPath;
+      }
+    }
+
+    throw new Error(`Doc target config not found for: ${docTarget}`);
+  }
+
+  /**
+   * 确保路径在 config.json 所在目录内（防止路径遍历）
+   * @private
+   */
+  assertPathInsideConfigDir(targetPath) {
+    const configDir = path.resolve(path.dirname(this.configPath));
+    const resolvedTarget = path.resolve(targetPath);
+    const relative = path.relative(configDir, resolvedTarget);
+
+    if (relative.startsWith('..') || path.isAbsolute(relative)) {
+      throw new Error(`Unsafe doc target path (outside config dir): ${targetPath}`);
+    }
+  }
+
+  /**
+   * 判断文件是否可读且为普通文件
+   * @private
+   */
+  async isReadableFile(filePath) {
+    try {
+      await fs.promises.access(filePath, fs.constants.R_OK);
+      const stats = await fs.promises.stat(filePath);
+      return stats.isFile();
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * 读取并解析 JSON 文件
+   * @private
+   */
+  async readJsonFile(filePath) {
+    const raw = await fs.promises.readFile(filePath, 'utf8');
+    try {
+      return JSON.parse(raw);
+    } catch (error) {
+      throw new Error(`Invalid JSON in ${filePath}: ${error.message}`);
+    }
+  }
+
+  /**
+   * 深度合并对象：对象递归合并，数组/基本类型覆盖
+   * @private
+   */
+  deepMerge(target, source) {
+    if (!target || typeof target !== 'object') target = {};
+    if (!source || typeof source !== 'object') return target;
+
+    const result = { ...target };
+
+    for (const key of Object.keys(source)) {
+      const value = source[key];
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        result[key] = this.deepMerge(result[key] || {}, value);
+      } else {
+        result[key] = value;
+      }
+    }
+
+    return result;
   }
 
   /**

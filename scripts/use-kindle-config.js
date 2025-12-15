@@ -88,7 +88,7 @@ function validateConfigStructure(config) {
   }
 
   // 基本结构验证
-  const requiredFields = ['rootURL', 'baseUrl', 'pdfDir'];
+  const requiredFields = ['pdfDir'];
   for (const field of requiredFields) {
     if (!(field in config)) {
       console.error(`❌ 配置缺少必需字段: ${field}`);

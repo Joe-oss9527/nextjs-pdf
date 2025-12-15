@@ -3,6 +3,7 @@
     "finalPdfDirectory": "finalPdf-oasis"
   },
   "pdf": {
+    "kindleOptimized": true,
     "deviceProfile": "oasis",
     "fontSize": "17px",
     "lineHeight": "1.65",

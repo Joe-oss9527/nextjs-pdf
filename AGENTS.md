@@ -40,7 +40,7 @@ src/
 
 tests/                        # Mirrors src/ structure
 pdfs/                         # Generated artifacts (gitignored)
-config.json                   # Root configuration
+config.json                   # Base (shared) configuration (includes docTarget)
 doc-targets/                  # Pre-configured site targets
 config-profiles/              # Kindle device profiles
 ```
@@ -80,8 +80,8 @@ npm run lint:fix     # Auto-fix linting issues
 
 ### Documentation Targets
 ```bash
-npm run docs:openai      # Switch to OpenAI config
-npm run docs:claude      # Switch to Claude Code config
+npm run docs:openai      # Set docTarget=openai
+npm run docs:claude      # Set docTarget=claude-code
 npm run docs:list        # List available targets
 make docs-current        # Show current root/base URLs
 ```
@@ -185,11 +185,18 @@ npm test -- tests/services/fileService.test.js
 
 ## Configuration
 
+### Configuration Sources
+
+- `config.json` holds **shared** settings (PDF/translation/markdown/etc) and a `docTarget` pointer.
+- `doc-targets/*.json` holds **site-specific** settings (root/base URLs, selectors, domains, entry points, etc).
+- `config-profiles/*.json` holds **device-specific** overrides (Kindle profiles) that are merged into `config.json` via scripts/Makefile.
+- `docTarget` can be overridden via env var `DOC_TARGET`.
+
 ### Essential Settings
 
 **URL Configuration:**
-- `rootURL` - Starting URL for scraping
-- `baseUrl` - URL prefix filter (only crawl URLs starting with this)
+- `rootURL` - Starting URL for scraping (typically in `doc-targets/*.json`)
+- `baseUrl` - URL prefix filter (only crawl URLs starting with this) (typically in `doc-targets/*.json`)
 - `allowedDomains` - Domain whitelist array (e.g., `["platform.openai.com"]`)
 - `sectionEntryPoints` - Additional root URLs for multi-section docs
 
@@ -216,11 +223,15 @@ npm test -- tests/services/fileService.test.js
   - `networkidle2` - Fallback for moderate background requests
   - `networkidle0` - Avoid (fails with analytics/websockets)
 
+**Markdown Source (optional):**
+- `markdownSource.enabled` - When true, try fetching `url + urlSuffix` as raw markdown before falling back to DOM → Markdown.
+- `markdownSource.urlSuffix` - Suffix appended to page URL (default: `.md`).
+
 ### Configuration Validation Workflow
 
 ⚠️ **CRITICAL - Prevents silent failures:**
 1. Add field to `src/config/configValidator.js` Joi schema FIRST
-2. Then add to `doc-targets/*.json`
+2. Then add to the appropriate config file (`config.json`, `doc-targets/*.json`, or `config-profiles/*.json`)
 3. Test with `node scripts/test-config-loading.js`
 4. Verify field appears with correct type (not undefined)
 
@@ -279,6 +290,8 @@ npm test -- tests/services/fileService.test.js
 4. **Run scraper:**
    ```bash
    node scripts/use-doc-target.js use new-site
+   # or one-off:
+   # DOC_TARGET=new-site npm start
    make clean && make run
    ```
 
@@ -289,7 +302,7 @@ npm test -- tests/services/fileService.test.js
    myNewOption: Joi.boolean().default(false).description('What it does'),
    ```
 
-2. **Update doc-targets** as needed
+2. **Update config files** as needed (`config.json`, `doc-targets/*.json`, or `config-profiles/*.json`)
 
 3. **Verify:**
    ```bash

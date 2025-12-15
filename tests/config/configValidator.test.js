@@ -281,6 +281,41 @@ describe('ConfigValidator', () => {
       expect(result.config.translation.jitterStrategy).toBe('full');
     });
 
+    test('应该验证 markdownSource 配置', () => {
+      const config = {
+        rootURL: 'https://example.com',
+        pdfDir: './pdfs',
+        navLinksSelector: 'nav a',
+        contentSelector: 'main',
+        markdownSource: {
+          enabled: true,
+          urlSuffix: '.md',
+        },
+      };
+
+      const result = validateConfig(config);
+
+      expect(result.config.markdownSource.enabled).toBe(true);
+      expect(result.config.markdownSource.urlSuffix).toBe('.md');
+    });
+
+    test('markdownSource 应该应用默认 urlSuffix', () => {
+      const config = {
+        rootURL: 'https://example.com',
+        pdfDir: './pdfs',
+        navLinksSelector: 'nav a',
+        contentSelector: 'main',
+        markdownSource: {
+          enabled: true,
+        },
+      };
+
+      const result = validateConfig(config);
+
+      expect(result.config.markdownSource.enabled).toBe(true);
+      expect(result.config.markdownSource.urlSuffix).toBe('.md');
+    });
+
     test('应该剥离未知字段', () => {
       const config = {
         rootURL: 'https://example.com',
@@ -422,6 +457,7 @@ describe('ConfigValidator', () => {
       expect(defaultConfig.queue).toBeDefined();
       expect(defaultConfig.images).toBeDefined();
       expect(defaultConfig.filesystem).toBeDefined();
+      expect(defaultConfig.output).toBeDefined();
       expect(defaultConfig.pdf).toBeDefined();
       expect(defaultConfig.python).toBeDefined();
       expect(defaultConfig.state).toBeDefined();

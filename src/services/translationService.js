@@ -116,7 +116,7 @@ export class TranslationService {
       try {
         const data = JSON.parse(fs.readFileSync(cachePath, 'utf8'));
         return data.translation;
-      } catch (e) {
+      } catch {
         return null;
       }
     }
@@ -470,7 +470,7 @@ export class TranslationService {
 
       // 结构性行（标题/列表项）尽量作为单独段落，方便上下文清晰
       const isHeading = /^#{1,6}\s+/.test(trimmed);
-      const isListItem = /^(\*|\-|\+)\s+/.test(trimmed) || /^\d+\.\s+/.test(trimmed);
+      const isListItem = /^(\*|-|\+)\s+/.test(trimmed) || /^\d+\.\s+/.test(trimmed);
 
       if ((isHeading || isListItem) && currentTextLines.length > 0) {
         flushCurrentSegment();

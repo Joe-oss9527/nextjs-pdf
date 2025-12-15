@@ -25,7 +25,67 @@ const DOC_TARGETS = {
 
 function validateSafePath(targetPath) {
   const resolved = path.resolve(targetPath);
-  return resolved.startsWith(rootDir);
+  const relative = path.relative(rootDir, resolved);
+  return !(relative.startsWith('..') || path.isAbsolute(relative));
+}
+
+function assertPathInsideDirectory(baseDir, targetPath) {
+  const resolvedBase = path.resolve(baseDir);
+  const resolvedTarget = path.resolve(targetPath);
+  const relative = path.relative(resolvedBase, resolvedTarget);
+
+  if (relative.startsWith('..') || path.isAbsolute(relative)) {
+    throw new Error(`Unsafe path (outside ${resolvedBase}): ${targetPath}`);
+  }
+}
+
+function isReadableFile(filePath) {
+  try {
+    const stats = fs.statSync(filePath);
+    return stats.isFile();
+  } catch {
+    return false;
+  }
+}
+
+function resolveDocTargetConfigPath(docTarget) {
+  const trimmed = String(docTarget || '').trim();
+  if (!trimmed) {
+    throw new Error('docTarget 不能为空');
+  }
+
+  const looksLikePath =
+    trimmed.includes('/') || trimmed.includes('\\') || trimmed.toLowerCase().endsWith('.json');
+
+  if (looksLikePath) {
+    const resolvedPath = path.isAbsolute(trimmed) ? trimmed : path.resolve(rootDir, trimmed);
+    if (!validateSafePath(resolvedPath)) {
+      throw new Error(`无效的站点配置路径: ${trimmed}`);
+    }
+    if (!isReadableFile(resolvedPath)) {
+      throw new Error(`站点配置文件不存在: ${resolvedPath}`);
+    }
+    return resolvedPath;
+  }
+
+  // 1) 允许 doc-targets/<name>.json
+  const directPath = path.resolve(TARGETS_DIR, `${trimmed}.json`);
+  assertPathInsideDirectory(TARGETS_DIR, directPath);
+  if (isReadableFile(directPath)) {
+    return directPath;
+  }
+
+  // 2) 向后兼容：使用别名映射（如 openai -> openai-docs.json）
+  const mappedFileName = DOC_TARGETS[trimmed];
+  if (mappedFileName) {
+    const mappedPath = path.resolve(TARGETS_DIR, mappedFileName);
+    assertPathInsideDirectory(TARGETS_DIR, mappedPath);
+    if (isReadableFile(mappedPath)) {
+      return mappedPath;
+    }
+  }
+
+  throw new Error(`Doc target config not found for: ${trimmed}`);
 }
 
 function deepMerge(target, source) {
@@ -55,6 +115,34 @@ function readJSON(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
 
+function stripDocSpecificConfig(config) {
+  const cleaned = { ...config };
+
+  // 这些字段应由 doc-targets/*.json 提供，config.json 仅保留公共配置
+  const docSpecificKeys = [
+    'rootURL',
+    'baseUrl',
+    'navLinksSelector',
+    'paginationSelector',
+    'maxPaginationPages',
+    'contentSelector',
+    'sectionEntryPoints',
+    'sectionTitles',
+    'targetUrls',
+    'ignoreURLs',
+    'allowedDomains',
+    'enablePDFStyleProcessing',
+    'navigationStrategy',
+    'markdownSource',
+  ];
+
+  for (const key of docSpecificKeys) {
+    delete cleaned[key];
+  }
+
+  return cleaned;
+}
+
 function showHelp() {
   console.log(`
 文档站点配置切换工具
@@ -63,7 +151,7 @@ function showHelp() {
   node scripts/use-doc-target.js <command> [target]
 
 命令:
-  use <target>    切换到指定站点 (openai, claude-code)
+  use <target>    设置 config.json 的 docTarget (别名或 doc-targets/<name>.json)
   list            列出可用站点
   current         显示当前根URL和域名
   help            查看帮助
@@ -71,15 +159,33 @@ function showHelp() {
 示例:
   node scripts/use-doc-target.js use claude-code
   node scripts/use-doc-target.js use openai
+  node scripts/use-doc-target.js use openai-docs
+  node scripts/use-doc-target.js use doc-targets/new-site.json
   node scripts/use-doc-target.js current
   `);
 }
 
 function listTargets() {
   console.log('可用文档站点配置:');
-  Object.keys(DOC_TARGETS).forEach((key) => {
-    console.log(`  - ${key}`);
-  });
+  console.log('\n别名（推荐）:');
+  for (const [key, file] of Object.entries(DOC_TARGETS)) {
+    console.log(`  - ${key} (${file})`);
+  }
+
+  console.log('\ndoc-targets/*.json:');
+  try {
+    const files = fs
+      .readdirSync(TARGETS_DIR)
+      .filter((f) => f.endsWith('.json'))
+      .sort((a, b) => a.localeCompare(b));
+
+    for (const file of files) {
+      const name = path.basename(file, '.json');
+      console.log(`  - ${name}`);
+    }
+  } catch {
+    console.log('  (无法读取 doc-targets 目录)');
+  }
 }
 
 function showCurrentConfig() {
@@ -88,8 +194,22 @@ function showCurrentConfig() {
     process.exit(1);
   }
 
-  const config = readJSON(CONFIG_FILE);
+  const baseConfig = readJSON(CONFIG_FILE);
+  const docTarget = baseConfig.docTarget;
+
+  let config = baseConfig;
+  if (typeof docTarget === 'string' && docTarget.trim()) {
+    try {
+      const targetFile = resolveDocTargetConfigPath(docTarget.trim());
+      const targetConfig = readJSON(targetFile);
+      config = deepMerge(baseConfig, targetConfig);
+    } catch (error) {
+      console.warn(`⚠️  docTarget 配置解析失败: ${error.message}`);
+    }
+  }
+
   console.log('\n当前文档配置:');
+  console.log(`  Doc Target    : ${docTarget || '(未设置)'}`);
   console.log(`  Root URL      : ${config.rootURL}`);
   console.log(`  Base URL      : ${config.baseUrl || '(未设置)'}`);
   console.log(
@@ -107,20 +227,18 @@ function showCurrentConfig() {
 }
 
 function useTarget(targetName) {
-  if (!DOC_TARGETS[targetName]) {
-    console.error(`❌ 未知站点: ${targetName}`);
-    console.log('可用站点: ' + Object.keys(DOC_TARGETS).join(', '));
-    process.exit(1);
-  }
-
   if (!validateSafePath(CONFIG_FILE)) {
     console.error('❌ 无效的配置文件路径');
     process.exit(1);
   }
 
-  const targetFile = path.resolve(TARGETS_DIR, DOC_TARGETS[targetName]);
-  if (!validateSafePath(targetFile)) {
-    console.error('❌ 无效的站点配置路径');
+  let targetFile;
+  try {
+    targetFile = resolveDocTargetConfigPath(targetName);
+  } catch (error) {
+    console.error(`❌ 未知站点: ${targetName}`);
+    console.error(`   ${error.message}`);
+    listTargets();
     process.exit(1);
   }
 
@@ -134,16 +252,17 @@ function useTarget(targetName) {
     process.exit(1);
   }
 
-  const baseConfig = readJSON(CONFIG_FILE);
+  const baseConfig = stripDocSpecificConfig(readJSON(CONFIG_FILE));
   const targetConfig = readJSON(targetFile);
-  const mergedConfig = deepMerge(baseConfig, targetConfig);
+  const updatedBaseConfig = { ...baseConfig, docTarget: String(targetName).trim() };
+  const mergedConfig = deepMerge(updatedBaseConfig, targetConfig);
 
   if (!validateConfigStructure(mergedConfig)) {
     console.error('❌ 合并后的配置缺少必要字段 (rootURL/baseUrl/pdfDir)');
     process.exit(1);
   }
 
-  fs.writeFileSync(CONFIG_FILE, JSON.stringify(mergedConfig, null, 2));
+  fs.writeFileSync(CONFIG_FILE, JSON.stringify(updatedBaseConfig, null, 2) + '\n');
   console.log(`✅ 已切换到 ${targetName} 文档配置`);
   showCurrentConfig();
 }

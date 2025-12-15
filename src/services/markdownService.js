@@ -101,7 +101,7 @@ export class MarkdownService {
         .replace(/[*_]+$/, '')
         .trim()
         // 去掉结尾的句号/感叹号等常见标点
-        .replace(/[。．\.!！]+$/u, '')
+        .replace(/[。．.!！]+$/u, '')
         .trim()
         .toLowerCase();
     };
@@ -218,7 +218,7 @@ export class MarkdownService {
             figure.appendChild(svg);
             figure.appendChild(caption);
           }
-        } catch (e) {
+        } catch {
           // SVG 处理失败不应该阻塞整体流程
           // 这里不在浏览器环境里打印日志，交给外层处理
         }

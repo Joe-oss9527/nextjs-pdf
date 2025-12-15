@@ -128,6 +128,44 @@ describe('ConfigLoader', () => {
         'Configuration loading failed: Validation failed'
       );
     });
+
+    test('应该根据 docTarget 合并 doc-targets 配置', async () => {
+      const baseConfig = {
+        docTarget: 'claude-code',
+        pdfDir: 'pdfs',
+        concurrency: 5,
+      };
+      const targetConfig = {
+        rootURL: 'https://example.com',
+        baseUrl: 'https://example.com',
+        navLinksSelector: 'nav a',
+        contentSelector: 'main',
+      };
+
+      const targetPath = path.resolve(process.cwd(), 'doc-targets', 'claude-code.json');
+
+      fs.promises.readFile.mockImplementation(async (filePath) => {
+        if (filePath === configLoader.configPath) {
+          return JSON.stringify(baseConfig);
+        }
+        if (filePath === targetPath) {
+          return JSON.stringify(targetConfig);
+        }
+        throw new Error(`Unexpected readFile: ${filePath}`);
+      });
+
+      validateConfig.mockImplementation((config) => ({ config }));
+
+      const config = await configLoader.load();
+
+      expect(config.docTarget).toBe('claude-code');
+      expect(config.rootURL).toBe('https://example.com');
+      expect(config.baseUrl).toBe('https://example.com');
+      expect(config.navLinksSelector).toBe('nav a');
+      expect(config.contentSelector).toBe('main');
+      expect(config.pdfDir).toBe(path.resolve(process.cwd(), 'pdfs'));
+      expect(config.allowedDomains).toContain('example.com');
+    });
   });
 
   describe('processConfig', () => {

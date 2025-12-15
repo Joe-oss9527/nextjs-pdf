@@ -147,11 +147,26 @@ class Application {
 
       const pythonMergeService = await this.container.get('pythonMergeService');
 
-      // 动态获取PDF目录
+      // 动态获取依赖
       const fs = await import('fs/promises');
       const path = await import('path');
       const config = await this.container.get('config');
       const pdfDir = config.pdfDir || 'pdfs';
+
+      // 为 Python 合并生成完整配置文件（config.json 仅保留公共配置，doc-target 在运行时合并）
+      const tempDirectory = path.resolve(config.output?.tempDirectory || '.temp');
+      const rootDir = path.resolve(process.cwd());
+      if (!tempDirectory.startsWith(rootDir)) {
+        throw new Error(`Unsafe temp directory: ${tempDirectory}`);
+      }
+
+      await fs.mkdir(tempDirectory, { recursive: true });
+
+      const mergedConfigPath = path.join(
+        tempDirectory,
+        `merged_config_${process.pid}_${Date.now()}.json`
+      );
+      await fs.writeFile(mergedConfigPath, JSON.stringify(config, null, 2), 'utf8');
 
       // 查找PDF源目录（排除finalPdf和metadata）
       let targetDirectory = null;
@@ -175,9 +190,18 @@ class Application {
       }
 
       // 使用新的Python合并服务
-      const result = await pythonMergeService.mergePDFs(
-        targetDirectory ? { directory: targetDirectory } : {}
-      );
+      let result;
+      try {
+        result = await pythonMergeService.mergePDFs(
+          targetDirectory ? { directory: targetDirectory, config: mergedConfigPath } : { config: mergedConfigPath }
+        );
+      } finally {
+        try {
+          await fs.unlink(mergedConfigPath);
+        } catch {
+          // ignore cleanup errors
+        }
+      }
 
       const mergeTime = Date.now() - mergeStartTime;
 

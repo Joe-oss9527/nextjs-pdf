@@ -22,13 +22,14 @@ export const applyJitter = (baseDelay, strategy = 'decorrelated', prevDelay = nu
       // Equal jitter: delay/2 + random(0, delay/2)
       return baseDelay / 2 + (Math.random() * baseDelay) / 2;
 
-    case 'decorrelated':
     default:
+    case 'decorrelated': {
       // Decorrelated jitter (AWS/Netflix recommended):
       // sleep = random_between(base, sleep * 3)
       // NOTE: The caller is responsible for applying any global cap (maxDelay)
       const prev = prevDelay || baseDelay;
       return Math.random() * (prev * 3 - baseDelay) + baseDelay;
+    }
   }
 };
 

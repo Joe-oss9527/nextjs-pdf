@@ -528,7 +528,7 @@ export class Scraper extends EventEmitter {
                   else if (targetDepth === hrefDepth + 1 && targetPath.startsWith(hrefPath + '/')) {
                     score = 300;
                   }
-                } catch (e) {
+                } catch {
                   // URL解析失败，跳过
                   continue;
                 }
@@ -633,7 +633,6 @@ export class Scraper extends EventEmitter {
     const maxPages = this.config.maxPaginationPages || 10; // 默认最多翻10页，防止无限循环
 
     while (true) {
-      const startTime = Date.now();
       this.logger.info(`开始导航到页面 [Page ${pageNum}]`, {
         currentUrl,
         waitUntil: 'domcontentloaded',
@@ -662,7 +661,7 @@ export class Scraper extends EventEmitter {
           try {
             const selector = this.config.navLinksSelector || 'a[href]';
             await page.waitForSelector(selector, { timeout: 5000 });
-          } catch (_) {
+          } catch {
             this.logger.debug('等待链接选择器超时，继续尝试提取');
           }
 

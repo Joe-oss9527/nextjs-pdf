@@ -3,6 +3,7 @@
     "finalPdfDirectory": "finalPdf-scribe"
   },
   "pdf": {
+    "kindleOptimized": true,
     "deviceProfile": "scribe",
     "fontSize": "18px",
     "lineHeight": "1.7",

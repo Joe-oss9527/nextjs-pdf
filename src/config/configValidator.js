@@ -5,6 +5,12 @@ import { createLogger } from '../utils/logger.js';
 const configSchema = Joi.object({
   rootURL: Joi.string().uri().required().description('Root URL to start scraping from'),
 
+  docTarget: Joi.string()
+    .trim()
+    .min(1)
+    .optional()
+    .description('Doc target key/path used to merge doc-targets/*.json into the base config'),
+
   baseUrl: Joi.string()
     .uri()
     .optional()
@@ -213,6 +219,19 @@ const configSchema = Joi.object({
   })
     .default()
     .description('File system settings'),
+
+  // 输出目录配置（Python merge 等）
+  output: Joi.object({
+    finalPdfDirectory: Joi.string()
+      .default('finalPdf')
+      .description('Final merged PDF output directory (relative to pdfDir)'),
+
+    tempDirectory: Joi.string()
+      .default('.temp')
+      .description('Temporary directory used for intermediate files'),
+  })
+    .default()
+    .description('Output directory settings'),
 
   // PDF生成配置
   pdf: Joi.object({
@@ -465,6 +484,20 @@ const configSchema = Joi.object({
   })
     .default()
     .description('Markdown to PDF settings'),
+
+  // Markdown 源文件抓取配置（直接请求 *.md 等原始内容）
+  markdownSource: Joi.object({
+    enabled: Joi.boolean()
+      .default(false)
+      .description('Fetch markdown source directly by appending urlSuffix to page URL'),
+
+    urlSuffix: Joi.string()
+      .min(1)
+      .default('.md')
+      .description('Suffix appended to page URL to fetch markdown source (e.g., ".md")'),
+  })
+    .default()
+    .description('Markdown source fetching settings'),
 
   // 翻译配置
   translation: Joi.object({

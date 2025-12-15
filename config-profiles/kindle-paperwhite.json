@@ -3,6 +3,7 @@
     "finalPdfDirectory": "finalPdf-paperwhite"
   },
   "pdf": {
+    "kindleOptimized": true,
     "deviceProfile": "paperwhite",
     "fontSize": "16px",
     "lineHeight": "1.6",

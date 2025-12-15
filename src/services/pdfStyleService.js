@@ -100,7 +100,7 @@ export class PDFStyleService {
           try {
             localStorage.removeItem(key);
             sessionStorage.removeItem(key);
-          } catch (e) {
+          } catch {
             // localStorage 可能被禁用，忽略错误
           }
         });
@@ -718,7 +718,9 @@ export class PDFStyleService {
             contentElement.querySelectorAll(sel).forEach((el) => {
               try {
                 el.remove();
-              } catch {}
+              } catch {
+                // ignore remove errors
+              }
             });
           });
 
@@ -828,7 +830,6 @@ export class PDFStyleService {
 
           // 处理所有可能的深色容器
           const allElements = document.querySelectorAll('*');
-          let darkElementsFixed = 0;
 
           allElements.forEach((el) => {
             const computedStyle = window.getComputedStyle(el);
@@ -846,7 +847,6 @@ export class PDFStyleService {
                 // 如果背景色的RGB值都小于50（很深的颜色）
                 if (r < 50 && g < 50 && b < 50) {
                   el.style.setProperty('background-color', '#ffffff', 'important');
-                  darkElementsFixed++;
                 }
               }
             }
@@ -1118,12 +1118,12 @@ export class PDFStyleService {
 
         // 6. 隐藏侧边目录和浮动页操作按钮（PDF不需要）
         const selectorsToHide = [
-          'astro-island[component-url*=\"TableOfContents\"]',
+          'astro-island[component-url*="TableOfContents"]',
           '.table-of-contents, .toc, #on-this-page, .on-this-page',
-          'nav[data-hk], nav[data-component=\"TableOfContents\"]',
-          'astro-island[component-url*=\"PageActions\"]',
+          'nav[data-hk], nav[data-component="TableOfContents"]',
+          'astro-island[component-url*="PageActions"]',
           '[data-page-actions]',
-          '.copy-page, [data-action=\"copy-page\"]',
+          '.copy-page, [data-action="copy-page"]',
           '[data-anchor-id]',
         ];
         selectorsToHide.forEach((sel) => {
