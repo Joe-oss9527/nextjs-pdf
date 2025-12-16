@@ -28,7 +28,11 @@ export class PandocPdfService {
         outputPath,
       });
 
-      await this._runPandoc(markdownPath, outputPath, options);
+      // 读取文件内容
+      const content = fs.readFileSync(markdownPath, 'utf8');
+
+      // 使用 convertContentToPdf 处理（它包含清理逻辑）
+      await this.convertContentToPdf(content, outputPath, options);
 
       this.logger?.info?.('Pandoc Markdown 文件转换 PDF 完成', {
         outputPath,
@@ -62,7 +66,11 @@ export class PandocPdfService {
       }
 
       const tempFile = path.join(tempDir, `temp_${Date.now()}.md`);
-      fs.writeFileSync(tempFile, markdownContent, 'utf8');
+
+      // 清理 Markdown 内容（修复代码块语法问题）
+      const cleanedContent = this._cleanMarkdownContent(markdownContent);
+
+      fs.writeFileSync(tempFile, cleanedContent, 'utf8');
 
       try {
         await this._runPandoc(tempFile, outputPath, options);
@@ -142,6 +150,26 @@ export class PandocPdfService {
   }
 
   /**
+   * 清理 Markdown 内容，修复 Pandoc 不支持的语法
+   * @param {string} content
+   * @returns {string}
+   * @private
+   */
+  _cleanMarkdownContent(content) {
+    if (!content) return content;
+
+    // 1. 修复代码块中的 theme={...} 属性
+    // ```markdown theme={null} -> ```markdown
+    let cleaned = content.replace(/^```(\w+)\s+theme=\{[^}]+\}/gm, '```$1');
+
+    // 2. 修复代码块中一般的 React 属性 (key=value 或 key={value})
+    // ```javascript filename="app.js" -> ```javascript
+    cleaned = cleaned.replace(/^```(\w+)\s+[\w-]+=(?:"[^"]*"|\{[^}]+\})/gm, '```$1');
+
+    return cleaned;
+  }
+
+  /**
    * 构建 Pandoc 命令行参数
    * @param {string} inputPath
    * @param {string} outputPath
@@ -164,6 +192,8 @@ export class PandocPdfService {
       'CJKmainfont=Arial Unicode MS', // 主字体（支持中文）
       '--variable',
       'geometry:margin=1in', // 页边距
+      '--variable',
+      'header-includes=\\usepackage{fvextra} \\DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\\\\{\\}}', // 启用代码换行
     ];
 
     // 添加其他选项
