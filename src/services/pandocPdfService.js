@@ -166,6 +166,27 @@ export class PandocPdfService {
     // ```javascript filename="app.js" -> ```javascript
     cleaned = cleaned.replace(/^```(\w+)\s+[\w-]+=(?:"[^"]*"|\{[^}]+\})/gm, '```$1');
 
+    // 3. 规范化表格分隔符行，防止某一列过宽导致其他列被压缩 (修复表格重叠问题)
+    // 查找类似 | --- | :--- | ---: | 的行
+    cleaned = cleaned.replace(/^\|?(\s*:?-+:?\s*\|)+$/gm, (match) => {
+      // 如果不是表格分隔线（防止误判），直接返回
+      if (!match.includes('-')) return match;
+
+      return match.replace(/:?-+:?/g, (dashes) => {
+        // 保留对齐冒号
+        const hasLeftColon = dashes.startsWith(':');
+        const hasRightColon = dashes.endsWith(':');
+
+        let dashCount = dashes.length - (hasLeftColon ? 1 : 0) - (hasRightColon ? 1 : 0);
+
+        // 限制 dash 数量在 10 到 50 之间
+        // 既保证最小宽度，又防止某一列过度占用
+        let newCount = Math.max(10, Math.min(dashCount, 50));
+
+        return (hasLeftColon ? ':' : '') + '-'.repeat(newCount) + (hasRightColon ? ':' : '');
+      });
+    });
+
     return cleaned;
   }
 
@@ -193,7 +214,7 @@ export class PandocPdfService {
       '--variable',
       'geometry:margin=1in', // 页边距
       '--variable',
-      'header-includes=\\usepackage{fvextra} \\DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\\\\{\\}}', // 启用代码换行
+      'header-includes=\\usepackage{fvextra} \\DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\\\\{\\}} \\usepackage{ltablex} \\keepXColumns', // 启用代码换行和表格宽度自动调整
     ];
 
     // 添加其他选项
