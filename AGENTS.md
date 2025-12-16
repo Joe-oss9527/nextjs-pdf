@@ -338,6 +338,34 @@ make kindle-oasis
 # All devices
 make kindle-all  # Generates PDFs for kindle7, paperwhite, oasis, scribe
 
+
 # Check current config
 node scripts/use-kindle-config.js current
 ```
+
+## Troubleshooting & Known Issues
+
+### Configuration Issues
+- **Problem**: Configuration field is `undefined` at runtime.
+- **Cause**: Joi validation strips unknown fields by default (`stripUnknown: true`).
+- **Fix**: You MUST define the field in `src/config/configValidator.js` BEFORE adding it to JSON files.
+
+### Service State Conflicts
+- **Problem**: Table of Contents (TOC) or titles are missing/wrong in merged PDF.
+- **Cause**: Conflict between `stateManager` and `metadataService`.
+- **Fix**: adherence to SSOT. `metadataService` is the ONLY truth for content metadata (titles, sections). `stateManager` only tracks process state (URLs visited).
+
+### PDF Generation & Pandoc
+- **Problem**: Code blocks run off the page or tables render as raw text.
+- **Cause**:
+  - Long lines without breaks.
+  - Indentation in Markdown (Pandoc treats indented blocks inside HTML as code).
+- **Fixes**:
+  - **Overflow**: `src/services/pandocPdfService.js` uses `xurl` and disables `breakanywhere` inside critical tags if needed.
+  - **Tables**: Ensure empty lines before/after tables.
+  - **Indentation**: Remove indentation for `<table>` or custom components inside HTML wrappers to prevent "code block" rendering.
+  - **Ltablex**: Do NOT use `ltablex` if it causes column overflow; we use standard tabular environments or calibrated widths.
+
+### Visual Glitches
+- **Problem**: Floating headers/footers appear in PDF.
+- **Fix**: Use `enablePDFStyleProcessing: true` and configure `hideSelectors` in `doc-targets/*.json` to remove fixed-position elements.

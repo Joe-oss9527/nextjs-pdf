@@ -162,6 +162,27 @@ export class PandocPdfService {
     // ```markdown theme={null} -> ```markdown
     let cleaned = content.replace(/^```(\w+)\s+theme=\{[^}]+\}/gm, '```$1');
 
+    // 0. 处理 <Step> 组件
+    // <Steps> / </Steps> -> remove
+    cleaned = cleaned.replace(/<\/?Steps>/g, '');
+
+    // <Step title="..."> -> ### ...
+    cleaned = cleaned.replace(/<Step[^>]*title="([^"]+)"[^>]*>/g, '\n### $1\n');
+
+    // </Step> -> remove
+    cleaned = cleaned.replace(/<\/Step>/g, '\n');
+
+    // 0.1 修复缩进
+    // 移除 2-4 个空格的缩进 (修复 <Step> 内容被识别为代码块的问题)
+    // 注意：这将影响所有缩进文本，但在这种上下文中通常是安全的
+    cleaned = cleaned.replace(/^[ \t]{2,4}(?=[^ \t\n])/gm, '');
+    // 移除以 | 开头的行前面的缩进 (修复表格被识别为代码块的问题)
+    cleaned = cleaned.replace(/^\s+(\|.*\|)\s*$/gm, '$1');
+
+    // 0.2 强制在表格前添加空行 (防止表格跟在文本后面被当成普通文本)
+    // 查找: 非空行(不以|开头) + 换行 + 表格头(|...|) + 换行 + 分隔线(|---|)
+    cleaned = cleaned.replace(/(^[^|\n\r].*(?:\r?\n|\r))(\s*\|.*\|.*(?:\r?\n|\r)\s*\|[-: ]+\|)/gm, '$1\n$2');
+
     // 2. 修复代码块中一般的 React 属性 (key=value 或 key={value})
     // ```javascript filename="app.js" -> ```javascript
     cleaned = cleaned.replace(/^```(\w+)\s+[\w-]+=(?:"[^"]*"|\{[^}]+\})/gm, '```$1');
@@ -214,7 +235,7 @@ export class PandocPdfService {
       '--variable',
       'geometry:margin=1in', // 页边距
       '--variable',
-      'header-includes=\\usepackage{fvextra} \\DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\\\\{\\}} \\usepackage{ltablex} \\keepXColumns', // 启用代码换行和表格宽度自动调整
+      'header-includes=\\usepackage{fvextra} \\DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,breakanywhere,commandchars=\\\\\\{\\}} \\usepackage{xurl}', // 启用代码换行(支持任意位置) 和 URL 换行。不再使用 ltablex 防止表格溢出
     ];
 
     // 添加其他选项

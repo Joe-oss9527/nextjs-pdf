@@ -10,3 +10,4 @@ venv/
 .temp/
 *.log
 logs/
+reproduce_output/
