@@ -171,7 +171,11 @@ describe('PandocPdfService', () => {
 
       await service.convertToPdf(inputPath, outputPath);
 
-      expect(service._runPandoc).toHaveBeenCalledWith(inputPath, outputPath, expect.any(Object));
+      expect(service._runPandoc).toHaveBeenCalledWith(
+        expect.stringContaining('.temp/temp_'),
+        outputPath,
+        expect.any(Object)
+      );
       expect(mockLogger.info).toHaveBeenCalled();
     });
 
@@ -179,11 +183,49 @@ describe('PandocPdfService', () => {
       const inputPath = path.join(tempDir, 'input.md');
       const outputPath = path.join(tempDir, 'output.pdf');
 
+      fs.writeFileSync(inputPath, '# Test', 'utf8');
+
       service._runPandoc = jest.fn().mockRejectedValue(new Error('File error'));
 
       await expect(service.convertToPdf(inputPath, outputPath)).rejects.toThrow('File error');
 
       expect(mockLogger.error).toHaveBeenCalled();
+    });
+  });
+
+  describe('_cleanMarkdownContent', () => {
+    it('should remove theme={null} from standard code blocks', () => {
+      const input = '```markdown theme={null}\ncontent\n```';
+      const expected = '```markdown\ncontent\n```';
+      const result = service._cleanMarkdownContent(input);
+      expect(result).toBe(expected);
+    });
+
+    it('should remove theme={null} from code blocks with 4 backticks', () => {
+      const input = '````markdown theme={null}\ncontent\n````';
+      const expected = '````markdown\ncontent\n````';
+      const result = service._cleanMarkdownContent(input);
+      expect(result).toBe(expected);
+    });
+
+    it('should remove generic props from code blocks with 4 backticks', () => {
+      const input = '````javascript filename="test.js"\ncontent\n````';
+      const expected = '````javascript\ncontent\n````';
+      const result = service._cleanMarkdownContent(input);
+      expect(result).toBe(expected);
+    });
+
+    it('should handle mixed backtick lengths correctly', () => {
+      const input =
+        '````markdown theme={null}\n' +
+        '```bash\n' +
+        'echo "hello"\n' +
+        '```\n' +
+        '````';
+      const expected =
+        '````markdown\n' + '```bash\n' + 'echo "hello"\n' + '```\n' + '````';
+      const result = service._cleanMarkdownContent(input);
+      expect(result).toBe(expected);
     });
   });
 

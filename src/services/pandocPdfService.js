@@ -160,7 +160,8 @@ export class PandocPdfService {
 
     // 1. 修复代码块中的 theme={...} 属性
     // ```markdown theme={null} -> ```markdown
-    let cleaned = content.replace(/^```(\w+)\s+theme=\{[^}]+\}/gm, '```$1');
+    // 支持任意数量的反引号 (>=3)
+    let cleaned = content.replace(/^(`{3,})(\w+)\s+theme=\{[^}]+\}/gm, '$1$2');
 
     // 0. 处理 <Step> 组件
     // <Steps> / </Steps> -> remove
@@ -185,7 +186,7 @@ export class PandocPdfService {
 
     // 2. 修复代码块中一般的 React 属性 (key=value 或 key={value})
     // ```javascript filename="app.js" -> ```javascript
-    cleaned = cleaned.replace(/^```(\w+)\s+[\w-]+=(?:"[^"]*"|\{[^}]+\})/gm, '```$1');
+    cleaned = cleaned.replace(/^(`{3,})(\w+)\s+[\w-]+=(?:"[^"]*"|\{[^}]+\})/gm, '$1$2');
 
     // 3. 规范化表格分隔符行，防止某一列过宽导致其他列被压缩 (修复表格重叠问题)
     // 查找类似 | --- | :--- | ---: | 的行
