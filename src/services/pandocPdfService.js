@@ -13,6 +13,7 @@ export class PandocPdfService {
     this.logger = options.logger;
     this.config = options.config || {};
     this.pandocBinary = options.pandocBinary || 'pandoc';
+    this.metadataService = options.metadataService || null;
   }
 
   /**
@@ -255,7 +256,8 @@ export class PandocPdfService {
     // 添加 TOC（目录）
     if (markdownPdfConfig.toc !== false) {
       args.push('--toc');
-      args.push('--toc-depth=3');
+      const tocDepth = markdownPdfConfig.tocDepth || 3;
+      args.push(`--toc-depth=${tocDepth}`);
     }
 
     // 语法高亮（Pandoc 3+ 使用 --highlight-style）
@@ -267,5 +269,340 @@ export class PandocPdfService {
     }
 
     return args;
+  }
+
+  /**
+   * Generate a single PDF from all markdown files in a directory (batch mode)
+   * This bypasses individual PDF generation and creates the final PDF directly
+   *
+   * @param {string} markdownDir - Directory containing markdown files
+   * @param {string} outputPath - Path for the output PDF
+   * @param {Object} options - PDF generation options
+   * @returns {Promise<{success: boolean, filesProcessed: number, outputPath: string}>}
+   */
+  async generateBatchPdf(markdownDir, outputPath, options = {}) {
+    try {
+      this.logger?.info?.('Starting batch PDF generation', {
+        markdownDir,
+        outputPath,
+      });
+
+      // 1. Get all markdown files sorted by index
+      const files = this._getMarkdownFiles(markdownDir);
+      if (files.length === 0) {
+        throw new Error(`No markdown files found in ${markdownDir}`);
+      }
+
+      this.logger?.info?.(`Found ${files.length} markdown files for batch processing`);
+
+      // 2. Load section structure and article titles for hierarchical TOC
+      let sectionStructure = null;
+      let articleTitles = {};
+
+      if (this.metadataService) {
+        try {
+          sectionStructure = await this.metadataService.getSectionStructure();
+          articleTitles = await this.metadataService.getArticleTitles();
+          this.logger?.debug?.('Loaded metadata for batch PDF', {
+            sections: sectionStructure?.sections?.length || 0,
+            titles: Object.keys(articleTitles).length,
+          });
+        } catch (metaError) {
+          this.logger?.warn?.('Could not load metadata, using flat structure', {
+            error: metaError.message,
+          });
+        }
+      }
+
+      // 3. Concatenate markdown files with page breaks
+      const combinedContent = this._concatenateMarkdownFiles(
+        markdownDir,
+        files,
+        sectionStructure,
+        articleTitles
+      );
+
+      this.logger?.info?.('Markdown files concatenated', {
+        totalLength: combinedContent.length,
+        filesProcessed: files.length,
+      });
+
+      // 4. Clean the combined content
+      const cleanedContent = this._cleanMarkdownContent(combinedContent);
+
+      // 5. Write to temp file and run Pandoc
+      const tempDir = path.join(process.cwd(), '.temp');
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+      }
+
+      const tempFile = path.join(tempDir, `batch_${Date.now()}.md`);
+      fs.writeFileSync(tempFile, cleanedContent, 'utf8');
+
+      // Ensure output directory exists
+      const outputDir = path.dirname(outputPath);
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+      }
+
+      try {
+        await this._runPandoc(tempFile, outputPath, {
+          ...options,
+          toc: true,
+          tocDepth: options.tocDepth || 3,
+        });
+
+        this.logger?.info?.('Batch PDF generation completed', {
+          outputPath,
+          filesProcessed: files.length,
+        });
+
+        return {
+          success: true,
+          filesProcessed: files.length,
+          outputPath,
+        };
+      } finally {
+        // Cleanup temp file
+        try {
+          fs.unlinkSync(tempFile);
+        } catch {
+          // Ignore cleanup errors
+        }
+      }
+    } catch (error) {
+      this.logger?.error?.('Batch PDF generation failed', {
+        markdownDir,
+        outputPath,
+        error: error.message,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Get markdown files from directory, sorted by numeric index
+   * @param {string} dir - Directory path
+   * @returns {string[]} - Sorted array of filenames
+   * @private
+   */
+  _getMarkdownFiles(dir) {
+    if (!fs.existsSync(dir)) {
+      return [];
+    }
+
+    const files = fs.readdirSync(dir)
+      .filter(f => f.endsWith('.md') || f.endsWith('_translated.md'));
+
+    // Prefer translated files if available, otherwise use original
+    const fileMap = new Map();
+    for (const file of files) {
+      const baseName = file.replace('_translated.md', '.md');
+      const isTranslated = file.endsWith('_translated.md');
+
+      if (!fileMap.has(baseName) || isTranslated) {
+        fileMap.set(baseName, file);
+      }
+    }
+
+    // Sort by numeric prefix (e.g., 000-page.md, 001-page.md)
+    return Array.from(fileMap.values()).sort((a, b) => {
+      const aPrefix = a.split('-')[0];
+      const bPrefix = b.split('-')[0];
+
+      const aNum = parseInt(aPrefix, 10);
+      const bNum = parseInt(bPrefix, 10);
+
+      if (!isNaN(aNum) && !isNaN(bNum)) {
+        return aNum - bNum;
+      }
+
+      return a.localeCompare(b);
+    });
+  }
+
+  /**
+   * Concatenate markdown files with section headers and page breaks
+   * @param {string} dir - Directory path
+   * @param {string[]} files - Sorted array of filenames
+   * @param {Object|null} sectionStructure - Section structure from metadata
+   * @param {Object} articleTitles - Article titles mapping
+   * @returns {string} - Combined markdown content
+   * @private
+   */
+  _concatenateMarkdownFiles(dir, files, sectionStructure, articleTitles) {
+    const sections = sectionStructure?.sections || [];
+    // urlToSection is available for future use if needed
+
+    // Build index to file mapping
+    const indexToFile = new Map();
+    for (const file of files) {
+      const prefix = file.split('-')[0];
+      if (/^\d+$/.test(prefix)) {
+        indexToFile.set(String(parseInt(prefix, 10)), file);
+      }
+    }
+
+    // If we have section structure, organize by sections
+    if (sections.length > 0) {
+      return this._concatenateWithSections(dir, files, sections, articleTitles, indexToFile);
+    }
+
+    // Fallback: flat concatenation
+    return this._concatenateFlat(dir, files, articleTitles);
+  }
+
+  /**
+   * Concatenate with section headers for hierarchical TOC
+   * @private
+   */
+  _concatenateWithSections(dir, files, sections, articleTitles, indexToFile) {
+    const parts = [];
+    const processedIndices = new Set();
+
+    for (const section of sections) {
+      const sectionTitle = section.title || 'Untitled Section';
+      const sectionPages = section.pages || [];
+
+      if (sectionPages.length === 0) continue;
+
+      // Add section header (H1 for TOC level 1)
+      parts.push(`# ${sectionTitle}\n`);
+
+      for (const pageInfo of sectionPages) {
+        const pageIndex = pageInfo.index;
+        if (!pageIndex || processedIndices.has(pageIndex)) continue;
+
+        const file = indexToFile.get(pageIndex);
+        if (!file) continue;
+
+        const filePath = path.join(dir, file);
+        if (!fs.existsSync(filePath)) continue;
+
+        let content = fs.readFileSync(filePath, 'utf8');
+
+        // Remove frontmatter if present
+        content = this._removeFrontmatter(content);
+
+        // Get article title
+        const title = articleTitles[pageIndex] || this._extractTitleFromContent(content) || `Page ${pageIndex}`;
+
+        // Strip leading title from content if it duplicates the injected title
+        const cleanedContent = this._stripLeadingTitle(content, title);
+
+        // Add article header (H2 for TOC level 2) and page break
+        parts.push(`\\newpage\n\n## ${title}\n\n${cleanedContent}\n`);
+
+        processedIndices.add(pageIndex);
+      }
+    }
+
+    // Add any remaining files not in sections
+    for (const file of files) {
+      const prefix = file.split('-')[0];
+      const index = /^\d+$/.test(prefix) ? String(parseInt(prefix, 10)) : null;
+
+      if (index && processedIndices.has(index)) continue;
+
+      const filePath = path.join(dir, file);
+      if (!fs.existsSync(filePath)) continue;
+
+      let content = fs.readFileSync(filePath, 'utf8');
+      content = this._removeFrontmatter(content);
+
+      const title = (index && articleTitles[index]) || this._extractTitleFromContent(content) || file;
+      const cleanedContent = this._stripLeadingTitle(content, title);
+      parts.push(`\\newpage\n\n## ${title}\n\n${cleanedContent}\n`);
+
+      if (index) processedIndices.add(index);
+    }
+
+    return parts.join('\n');
+  }
+
+  /**
+   * Flat concatenation without section structure
+   * @private
+   */
+  _concatenateFlat(dir, files, articleTitles) {
+    const parts = [];
+
+    for (const file of files) {
+      const filePath = path.join(dir, file);
+      if (!fs.existsSync(filePath)) continue;
+
+      let content = fs.readFileSync(filePath, 'utf8');
+      content = this._removeFrontmatter(content);
+
+      // Extract index from filename
+      const prefix = file.split('-')[0];
+      const index = /^\d+$/.test(prefix) ? String(parseInt(prefix, 10)) : null;
+
+      const title = (index && articleTitles[index]) || this._extractTitleFromContent(content) || file;
+      const cleanedContent = this._stripLeadingTitle(content, title);
+
+      // Add with page break (first page doesn't need break)
+      if (parts.length > 0) {
+        parts.push(`\\newpage\n\n## ${title}\n\n${cleanedContent}\n`);
+      } else {
+        parts.push(`## ${title}\n\n${cleanedContent}\n`);
+      }
+    }
+
+    return parts.join('\n');
+  }
+
+  /**
+   * Remove YAML frontmatter from markdown content
+   * @private
+   */
+  _removeFrontmatter(content) {
+    if (!content || !content.startsWith('---\n')) {
+      return content;
+    }
+
+    const endIndex = content.indexOf('\n---\n', 4);
+    if (endIndex === -1) {
+      return content;
+    }
+
+    return content.slice(endIndex + 5).trim();
+  }
+
+  /**
+   * Extract title from markdown content (first H1 or H2)
+   * @private
+   */
+  _extractTitleFromContent(content) {
+    const match = content.match(/^#{1,2}\s+(.+)$/m);
+    return match ? match[1].trim() : null;
+  }
+
+  /**
+   * Strip the first heading from content if it matches the injected title
+   * This prevents duplicate titles in the TOC
+   * @param {string} content - Markdown content
+   * @param {string} title - Title being injected
+   * @returns {string} - Content with leading title removed if it was a duplicate
+   * @private
+   */
+  _stripLeadingTitle(content, title) {
+    if (!content || !title) return content;
+
+    // Match first H1 or H2 at the start of content (after possible whitespace)
+    const match = content.match(/^\s*(#{1,2})\s+(.+?)(\r?\n|$)/);
+    if (!match) return content;
+
+    const headingTitle = match[2].trim();
+    // Compare normalized titles (case-insensitive, ignore extra whitespace)
+    const normalizedInjected = title.toLowerCase().replace(/\s+/g, ' ').trim();
+    const normalizedExisting = headingTitle.toLowerCase().replace(/\s+/g, ' ').trim();
+
+    if (normalizedInjected === normalizedExisting) {
+      // Remove the duplicate heading
+      return content.slice(match[0].length).trim();
+    }
+
+    return content;
   }
 }

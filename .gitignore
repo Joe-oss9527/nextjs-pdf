@@ -11,3 +11,8 @@ venv/
 *.log
 logs/
 reproduce_output/
+
+# AI tool artifacts
+.codex/
+_bmad-output/
+.claude/settings.local.json

@@ -14,7 +14,10 @@
   },
   "markdownPdf": {
     "enabled": true,
+    "batchMode": true,
     "highlightStyle": "github",
+    "toc": true,
+    "tocDepth": 3,
     "pdfOptions": {
       "format": "A4",
       "margin": "20mm"

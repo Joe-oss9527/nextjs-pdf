@@ -63,4 +63,32 @@ export const configSchema = Joi.object({
   pythonExecutable: Joi.string().default('python3'),
   pythonTimeout: Joi.number().integer().min(30000).max(600000).default(300000),
   maxBuffer: Joi.number().integer().min(1048576).default(10485760),
+
+  // Markdown workflow configuration
+  markdown: Joi.object({
+    enabled: Joi.boolean().default(false),
+    outputDir: Joi.string().default('markdown'),
+    includeFrontmatter: Joi.boolean().default(true),
+  }).default(),
+
+  // Markdown to PDF configuration
+  markdownPdf: Joi.object({
+    enabled: Joi.boolean().default(false),
+    batchMode: Joi.boolean()
+      .default(false)
+      .description('When true, skip individual PDF generation and create final PDF directly from all markdown files'),
+    highlightStyle: Joi.string().default('github'),
+    toc: Joi.boolean().default(true),
+    tocDepth: Joi.number().integer().min(1).max(6).default(3),
+    pdfOptions: Joi.object({
+      format: Joi.string().default('A4'),
+      margin: Joi.string().default('20mm'),
+    }).default(),
+  }).default(),
+
+  // Markdown source configuration (for fetching raw .md files)
+  markdownSource: Joi.object({
+    enabled: Joi.boolean().default(false),
+    urlSuffix: Joi.string().default('.md'),
+  }).default(),
 });

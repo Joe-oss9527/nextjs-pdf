@@ -1202,6 +1202,10 @@ export class Scraper extends EventEmitter {
         !!this.markdownService &&
         !!this.markdownToPdfService;
 
+      // Track actual output path (markdown in batch mode, PDF otherwise)
+      let actualOutputPath = pdfPath;
+      let isBatchMode = false;
+
       if (useMarkdownWorkflow) {
         try {
           let markdownContent;
@@ -1257,13 +1261,24 @@ export class Scraper extends EventEmitter {
           await this.fileService.writeText(originalMarkdownPath, markdownWithFrontmatter);
           await this.fileService.writeText(translatedMarkdownPath, translatedMarkdown);
 
-          await this.markdownToPdfService.convertContentToPdf(
-            translatedMarkdown,
-            pdfPath,
-            this.config.markdownPdf
-          );
-
-          this.logger.info('Markdown 工作流 PDF 已生成', { pdfPath });
+          // Check if batch mode is enabled - skip individual PDF generation
+          if (this.config.markdownPdf?.batchMode) {
+            this.logger.info('Batch mode enabled - skipping individual PDF generation', {
+              url,
+              markdownPath: translatedMarkdownPath,
+            });
+            // PDF will be generated in batch after all pages are scraped
+            // Track markdown path instead of non-existent PDF path
+            actualOutputPath = translatedMarkdownPath;
+            isBatchMode = true;
+          } else {
+            await this.markdownToPdfService.convertContentToPdf(
+              translatedMarkdown,
+              pdfPath,
+              this.config.markdownPdf
+            );
+            this.logger.info('Markdown 工作流 PDF 已生成', { pdfPath });
+          }
         } catch (markdownError) {
           this.logger.warn('Markdown 工作流失败，回退到 Puppeteer PDF', {
             url,
@@ -1321,8 +1336,8 @@ export class Scraper extends EventEmitter {
       // 保存URL到索引的映射，用于追溯和调试
       this.stateManager.setUrlIndex(url, index);
 
-      // 标记为已处理
-      this.stateManager.markProcessed(url, pdfPath);
+      // 标记为已处理 (use actual output path - markdown in batch mode, PDF otherwise)
+      this.stateManager.markProcessed(url, actualOutputPath);
       this.progressTracker.success(url);
 
       // 清理并保存标题映射（使用字符串索引以匹配Python期望）
@@ -1365,14 +1380,16 @@ export class Scraper extends EventEmitter {
         url,
         index,
         title,
-        pdfPath,
+        outputPath: actualOutputPath,
+        isBatchMode,
         imagesLoaded,
       });
 
       return {
         status: 'success',
         title,
-        pdfPath,
+        outputPath: actualOutputPath,
+        isBatchMode,
         imagesLoaded,
       };
     } catch (error) {

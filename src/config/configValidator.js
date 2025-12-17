@@ -466,11 +466,26 @@ const configSchema = Joi.object({
       .default(false)
       .description('Use md-to-pdf instead of Puppeteer for PDF generation'),
 
+    batchMode: Joi.boolean()
+      .default(false)
+      .description('When true, skip individual PDF generation and create final PDF directly from all markdown files'),
+
     stylesheet: Joi.string().optional().description('Custom CSS stylesheet for md-to-pdf'),
 
     highlightStyle: Joi.string()
       .default('github')
       .description('Code highlight theme for markdown PDF'),
+
+    toc: Joi.boolean()
+      .default(true)
+      .description('Include table of contents in PDF'),
+
+    tocDepth: Joi.number()
+      .integer()
+      .min(1)
+      .max(6)
+      .default(3)
+      .description('Maximum heading depth for table of contents'),
 
     pdfOptions: Joi.object({
       format: Joi.string().default('A4').description('PDF page format for md-to-pdf'),

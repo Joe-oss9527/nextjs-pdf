@@ -1,3 +1,4 @@
+import path from 'path';
 import { createContainer, shutdownContainer, getContainerHealth } from './core/setup.js';
 import PythonRunner from './core/pythonRunner.js';
 import { createLogger } from './utils/logger.js';
@@ -229,6 +230,60 @@ class Application {
   }
 
   /**
+   * 运行批量PDF生成（跳过Python合并，直接从markdown生成最终PDF）
+   */
+  async runBatchPdfGeneration() {
+    try {
+      this.logger.info('📄 Starting batch PDF generation (direct from markdown)...');
+      const batchStartTime = Date.now();
+
+      const config = await this.container.get('config');
+      const markdownToPdfService = await this.container.get('markdownToPdfService');
+
+      const pdfDir = config.pdfDir || 'pdfs';
+      const markdownDir = path.join(pdfDir, config.markdown?.outputDir || 'markdown');
+
+      // Generate output filename
+      const url = new URL(config.rootURL);
+      const domain = url.hostname.replace(/\./g, '_');
+      const currentDate = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const timestamp = Date.now().toString().slice(-6);
+
+      const finalPdfDir = path.join(pdfDir, config.output?.finalPdfDirectory || 'finalPdf');
+      const outputPath = path.join(finalPdfDir, `${domain}_batch_${currentDate}_${timestamp}.pdf`);
+
+      const result = await markdownToPdfService.generateBatchPdf(
+        markdownDir,
+        outputPath,
+        config.markdownPdf || {}
+      );
+
+      const batchTime = Date.now() - batchStartTime;
+
+      if (result.success) {
+        this.logger.info('✅ Batch PDF generation completed successfully', {
+          duration: batchTime,
+          outputFile: result.outputPath,
+          filesProcessed: result.filesProcessed,
+        });
+      } else {
+        this.logger.error('❌ Batch PDF generation failed');
+      }
+
+      return {
+        ...result,
+        duration: batchTime,
+      };
+    } catch (error) {
+      this.logger.error('❌ Batch PDF generation process failed:', error);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
+  /**
    * 运行完整的应用程序流程
    */
   async run() {
@@ -244,10 +299,21 @@ class Application {
         throw new Error(`Scraping failed: ${scrapeResult.error}`);
       }
 
-      // 2. 执行PDF合并
-      const mergeResult = await this.runPythonMerge();
+      // 2. 执行PDF生成（根据配置选择批量模式或Python合并）
+      const config = await this.container.get('config');
+      const useBatchMode = config.markdownPdf?.batchMode === true;
+
+      let mergeResult;
+      if (useBatchMode) {
+        this.logger.info('📦 Using batch mode - generating PDF directly from markdown...');
+        mergeResult = await this.runBatchPdfGeneration();
+      } else {
+        this.logger.info('📦 Using standard mode - merging individual PDFs via Python...');
+        mergeResult = await this.runPythonMerge();
+      }
+
       if (!mergeResult.success) {
-        this.logger.error('PDF merge failed, but scraping was successful');
+        this.logger.error('PDF generation failed, but scraping was successful');
         // 不抛出错误，因为爬虫部分已经成功
       }
 
@@ -258,6 +324,7 @@ class Application {
         totalDuration: totalTime,
         scraping: scrapeResult,
         merge: mergeResult,
+        batchMode: useBatchMode,
         timestamp: new Date().toISOString(),
       };
 

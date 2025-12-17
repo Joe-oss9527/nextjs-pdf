@@ -265,12 +265,12 @@ async function setupContainer() {
     // Markdown 转 PDF 服务 - 使用 Pandoc 以获得更好的 CJK 支持
     container.register(
       'markdownToPdfService',
-      (config, logger) => {
-        return new PandocPdfService({ config, logger });
+      (config, logger, metadataService) => {
+        return new PandocPdfService({ config, logger, metadataService });
       },
       {
         singleton: true,
-        dependencies: ['config', 'logger'],
+        dependencies: ['config', 'logger', 'metadataService'],
         lifecycle: 'singleton',
       }
     );
