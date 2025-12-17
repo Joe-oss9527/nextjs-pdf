@@ -1,7 +1,7 @@
 {
-  "name": "nextjs-pdf-scraper",
+  "name": "documentation-pdf-scraper",
   "version": "2.0.0",
-  "description": "Next.js documentation PDF scraper with improved architecture",
+  "description": "Professional documentation scraper & Markdown-to-PDF converter with device optimization",
   "main": "src/app.js",
   "type": "module",
   "scripts": {
