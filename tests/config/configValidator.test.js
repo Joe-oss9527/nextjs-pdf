@@ -36,6 +36,36 @@ describe('ConfigValidator', () => {
       expect(result.config.rootURL).toBe('https://example.com');
     });
 
+    test('应该验证 navExcludeSelector 配置', () => {
+      const config = {
+        rootURL: 'https://example.com',
+        pdfDir: './pdfs',
+        navLinksSelector: 'nav a',
+        navExcludeSelector: '.nav-tabs, [role=tablist]',
+        contentSelector: 'main',
+      };
+
+      const result = validateConfig(config);
+
+      expect(result.valid).toBe(true);
+      expect(result.config.navExcludeSelector).toBe('.nav-tabs, [role=tablist]');
+    });
+
+    test('navExcludeSelector 应该 trim 并将空值视为关闭', () => {
+      const config = {
+        rootURL: 'https://example.com',
+        pdfDir: './pdfs',
+        navLinksSelector: 'nav a',
+        navExcludeSelector: '   ',
+        contentSelector: 'main',
+      };
+
+      const result = validateConfig(config);
+
+      expect(result.valid).toBe(true);
+      expect(result.config.navExcludeSelector).toBe('');
+    });
+
     test('应该为缺少的必需字段返回错误', () => {
       const config = {
         pdfDir: './pdfs',

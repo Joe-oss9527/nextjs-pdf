@@ -260,7 +260,7 @@ describe('setup', () => {
         expect.any(Function),
         expect.objectContaining({
           singleton: true,
-          dependencies: ['config', 'logger'],
+          dependencies: ['config', 'logger', 'metadataService'],
           lifecycle: 'singleton',
         })
       );

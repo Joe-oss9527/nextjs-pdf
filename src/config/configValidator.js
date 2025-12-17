@@ -33,6 +33,14 @@ const configSchema = Joi.object({
 
   navLinksSelector: Joi.string().required().description('CSS selector for navigation links'),
 
+  navExcludeSelector: Joi.string()
+    .trim()
+    .allow('')
+    .default('')
+    .description(
+      'CSS selector for navigation elements to exclude during URL collection (e.g., ".nav-tabs, [role=tablist]")'
+    ),
+
   paginationSelector: Joi.string()
     .allow('')
     .optional()

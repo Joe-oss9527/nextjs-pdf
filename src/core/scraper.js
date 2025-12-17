@@ -163,8 +163,8 @@ export class Scraper extends EventEmitter {
           // 提取section标题
           const sectionTitle = await this._extractSectionTitle(page, entryUrl);
 
-          // 收集该入口页面侧边栏的URLs（内部已过滤顶栏nav-tabs）
-          const entryUrls = await this._collectUrlsFromEntryPoint(page, entryUrl);
+          // 收集该入口页面侧边栏的URLs（入口点列表在此处统一计算，避免重复日志与计算）
+          const entryUrls = await this._collectUrlsFromEntryPoint(page, entryUrl, entryPoints);
 
           // 记录section信息
           const sectionInfo = {
@@ -459,6 +459,18 @@ export class Scraper extends EventEmitter {
     return deduplicated;
   }
 
+  _normalizeUrlForEntryPointComparison(url) {
+    try {
+      const urlObj = new URL(url);
+      urlObj.pathname = urlObj.pathname.replace(/\/$/, '');
+      urlObj.search = '';
+      urlObj.hash = '';
+      return urlObj.toString();
+    } catch {
+      return url;
+    }
+  }
+
   /**
    * 从导航菜单中提取section标题
    * @param {import('puppeteer').Page} page
@@ -622,15 +634,22 @@ export class Scraper extends EventEmitter {
    * 从单个入口页面收集URL
    * @param {import('puppeteer').Page} page
    * @param {string} entryUrl
+   * @param {string[] | null} allEntryPoints
    * @returns {Promise<string[]>}
    */
-  async _collectUrlsFromEntryPoint(page, entryUrl) {
+  async _collectUrlsFromEntryPoint(page, entryUrl, allEntryPoints = null) {
     this.logger.info('处理入口页面', { entryUrl });
 
     const allUrls = [];
     let currentUrl = entryUrl;
     let pageNum = 1;
     const maxPages = this.config.maxPaginationPages || 10; // 默认最多翻10页，防止无限循环
+    const otherEntryPoints = Array.isArray(allEntryPoints)
+      ? allEntryPoints.filter((ep) => ep !== entryUrl)
+      : [];
+    const otherEntryPointSet = new Set(
+      otherEntryPoints.map((url) => this._normalizeUrlForEntryPointComparison(url))
+    );
 
     while (true) {
       this.logger.info(`开始导航到页面 [Page ${pageNum}]`, {
@@ -679,16 +698,70 @@ export class Scraper extends EventEmitter {
         }
       );
 
-      // 2. 提取当前页面的链接
-      const urls = await page.evaluate((selector) => {
-        const elements = Array.from(document.querySelectorAll(selector));
-        return elements
-          .map((el) => {
-            const href = el.href || el.getAttribute('href');
-            return href ? href.trim() : null;
-          })
-          .filter((href) => href && !href.startsWith('#') && !href.startsWith('javascript:'));
-      }, this.config.navLinksSelector);
+      // 2. 提取当前页面的链接（排除选择器在页面端防御性处理；跨-section入口过滤在Node端使用统一规范化）
+      const excludeSelector = this.config.navExcludeSelector || '';
+
+      const rawUrls = await page.evaluate(
+        (selector, excludeSel) => {
+          const isHttpUrl = (url) => {
+            try {
+              const u = new URL(url, window.location.href);
+              return u.protocol === 'http:' || u.protocol === 'https:';
+            } catch {
+              return false;
+            }
+          };
+
+          let elements = Array.from(document.querySelectorAll(selector));
+
+          if (excludeSel) {
+            let validExcludeSel = excludeSel;
+            try {
+              document.querySelector(validExcludeSel);
+            } catch {
+              validExcludeSel = '';
+            }
+
+            if (validExcludeSel) {
+              elements = elements.filter((el) => !el.closest(validExcludeSel));
+            }
+          }
+
+          return elements
+            .map((el) => {
+              const href = el?.href || el?.getAttribute?.('href');
+              return typeof href === 'string' ? href.trim() : null;
+            })
+            .filter((href) => {
+              if (!href) return false;
+              if (href.startsWith('#')) return false;
+              if (href.toLowerCase().startsWith('javascript:')) return false;
+              return isHttpUrl(href);
+            });
+        },
+        this.config.navLinksSelector,
+        excludeSelector
+      );
+
+      const urls = rawUrls
+        .map((href) => (typeof href === 'string' ? href.trim() : ''))
+        .filter((href) => href && !href.startsWith('#') && !href.toLowerCase().startsWith('javascript:'))
+        .map((href) => {
+          try {
+            const resolvedUrl = new URL(href, currentUrl);
+            if (!['http:', 'https:'].includes(resolvedUrl.protocol)) {
+              return null;
+            }
+            return resolvedUrl.toString();
+          } catch {
+            return null;
+          }
+        })
+        .filter(Boolean)
+        .filter((resolvedUrl) => {
+          const normalized = this._normalizeUrlForEntryPointComparison(resolvedUrl);
+          return !otherEntryPointSet.has(normalized);
+        });
 
       this.logger.info(`Page ${pageNum} 提取到 ${urls.length} 个链接`);
 

@@ -1,7 +1,7 @@
 {
   "rootURL": "https://code.claude.com/docs/en/overview",
   "baseUrl": "https://code.claude.com/docs/en/",
-  "navLinksSelector": "a[href^='/docs/en/'], [id*='sidebar'] a[href], nav a[href]",
+  "navLinksSelector": "[id*='sidebar'] a[href*='/docs/en/']",
   "contentSelector": "#content-area",
   "allowedDomains": [
     "code.claude.com"
@@ -12,7 +12,6 @@
     "urlSuffix": ".md"
   },
   "sectionEntryPoints": [
-    "https://code.claude.com/docs/en/overview",
     "https://code.claude.com/docs/en/sub-agents",
     "https://code.claude.com/docs/en/third-party-integrations",
     "https://code.claude.com/docs/en/setup",

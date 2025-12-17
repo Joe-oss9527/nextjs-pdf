@@ -240,6 +240,39 @@ describe('Scraper', () => {
     });
   });
 
+  describe('_collectUrlsFromEntryPoint', () => {
+    beforeEach(() => {
+      mockPage.goto.mockResolvedValue({ status: () => 200 });
+      mockPage.waitForSelector.mockResolvedValue();
+    });
+
+    it('should filter other entry points (ignore hash/query) and non-http(s) URLs', async () => {
+      scraper.config.navExcludeSelector = '.nav-tabs';
+
+      const getEntryPointsSpy = jest.spyOn(scraper, '_getEntryPoints');
+
+      mockPage.evaluate.mockResolvedValue([
+        'https://example.com/page1',
+        'https://example.com/section2',
+        'https://example.com/section2#hash',
+        'https://example.com/section2?utm=1',
+        'mailto:test@example.com',
+        'tel:+123',
+        '#anchor',
+        'javascript:void(0)',
+      ]);
+
+      const urls = await scraper._collectUrlsFromEntryPoint(
+        mockPage,
+        'https://example.com/section1',
+        ['https://example.com/section1', 'https://example.com/section2']
+      );
+
+      expect(getEntryPointsSpy).not.toHaveBeenCalled();
+      expect(urls).toEqual(['https://example.com/section1', 'https://example.com/page1']);
+    });
+  });
+
   describe('validateUrl', () => {
     it('should accept valid URLs', () => {
       expect(scraper.validateUrl('https://example.com/page')).toBe(true);
@@ -298,7 +331,8 @@ describe('Scraper', () => {
       expect(result).toEqual({
         status: 'success',
         title: 'Page Title',
-        pdfPath: './pdfs/001-page.pdf',
+        outputPath: './pdfs/001-page.pdf',
+        isBatchMode: false,
         imagesLoaded: true,
       });
 
@@ -608,7 +642,8 @@ describe('Scraper', () => {
         expect.objectContaining({
           url: 'https://example.com/page',
           index: 0,
-          pdfPath: './pdfs/001-page.pdf',
+          outputPath: './pdfs/001-page.pdf',
+          isBatchMode: false,
           imagesLoaded: true,
         })
       );
