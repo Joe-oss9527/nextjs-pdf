@@ -15,3 +15,4 @@ reproduce_output/
 # AI tool artifacts
 .codex/
 .claude/settings.local.json
+_bmad-output/
