@@ -186,7 +186,8 @@ describe('PDFStyleService', () => {
       expect(mockPage.evaluate).toHaveBeenCalledWith(
         expect.any(Function),
         '.content',
-        expect.stringContaining('webkit-print-color-adjust')
+        expect.stringContaining('webkit-print-color-adjust'),
+        []
       );
     });
 

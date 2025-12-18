@@ -1,0 +1,20 @@
+{
+  "rootURL": "https://www.53ai.com/news/tishicijiqiao/2025120413274.html",
+  "baseUrl": "https://www.53ai.com/news/tishicijiqiao/2025120413274.html",
+  "targetUrls": [
+    "https://www.53ai.com/news/tishicijiqiao/2025120413274.html"
+  ],
+  "navLinksSelector": "a[href]",
+  "contentSelector": "div.detail-wrapper",
+  "allowedDomains": ["53ai.com", "www.53ai.com"],
+  "ignoreURLs": [],
+  "enablePDFStyleProcessing": true,
+  "navigationStrategy": "domcontentloaded",
+  "markdownPdf": {
+    "batchMode": true
+  },
+  "translation": {
+    "enabled": false
+  },
+  "removeSelectors": ["div.share-lable", "div.detail-ai", "div.author > .hover-detail"]
+}

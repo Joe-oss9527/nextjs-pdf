@@ -223,6 +223,7 @@ async function setupContainer() {
           fontFamily: pdfConfig.fontFamily || 'system-ui, -apple-system, sans-serif',
           codeFont:
             pdfConfig.codeFont || 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+          removeSelectors: config.removeSelectors || [],
         });
       },
       {

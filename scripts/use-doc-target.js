@@ -126,6 +126,7 @@ function stripDocSpecificConfig(config) {
     'paginationSelector',
     'maxPaginationPages',
     'contentSelector',
+    'removeSelectors',
     'sectionEntryPoints',
     'sectionTitles',
     'targetUrls',

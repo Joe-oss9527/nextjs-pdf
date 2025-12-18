@@ -16,6 +16,7 @@ export class PDFStyleService {
       preserveCodeHighlighting: true,
       enableCodeWrap: true,
       maxCodeLineLength: 80,
+      removeSelectors: [],
       fontSize: '14px',
       fontFamily: 'system-ui, -apple-system, sans-serif',
       codeFont: 'Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
@@ -26,6 +27,9 @@ export class PDFStyleService {
     };
 
     this.settings = { ...this.defaults, ...config };
+    this.settings.removeSelectors = Array.isArray(this.settings.removeSelectors)
+      ? this.settings.removeSelectors
+      : [];
 
     // 设备配置预设
     this.deviceProfiles = {
@@ -672,13 +676,16 @@ export class PDFStyleService {
       this.logger.info('应用最简化PDF样式', { contentSelector });
 
       // 只做最基础的内容提取和样式优化
-      await page.evaluate(
-        (selector, css) => {
+      const evaluateResult = await page.evaluate(
+        (selector, css, removeSelectors) => {
           // 提取内容
           const contentElement = document.querySelector(selector);
           if (!contentElement) {
             throw new Error(`内容选择器未找到: ${selector}`);
           }
+
+          const invalid = [];
+          let removed = 0;
 
           // 移除交互和导航元素（在内容区域内执行，避免全站影响）
           const elementsToRemove = [
@@ -714,14 +721,21 @@ export class PDFStyleService {
             '[data-action="copy-page"]',
           ];
 
+          // 添加配置的移除选择器
+          if (Array.isArray(removeSelectors)) {
+            elementsToRemove.push(...removeSelectors);
+          }
+
           elementsToRemove.forEach((sel) => {
-            contentElement.querySelectorAll(sel).forEach((el) => {
-              try {
-                el.remove();
-              } catch {
-                // ignore remove errors
-              }
-            });
+            let found;
+            try {
+              found = contentElement.querySelectorAll(sel);
+            } catch {
+              invalid.push(sel);
+              return;
+            }
+            removed += found.length;
+            found.forEach((el) => el.remove());
           });
 
           // 强制移除深色主题类和属性
@@ -877,10 +891,27 @@ export class PDFStyleService {
           style.id = 'pdf-style';
           style.textContent = css;
           document.head.appendChild(style);
+
+          return { removedCount: removed, invalidSelectors: invalid };
         },
         contentSelector,
-        this.getPDFOptimizedCSS()
+        this.getPDFOptimizedCSS(),
+        this.settings.removeSelectors
       );
+
+      const removedCount =
+        typeof evaluateResult?.removedCount === 'number' ? evaluateResult.removedCount : 0;
+      const invalidSelectors = Array.isArray(evaluateResult?.invalidSelectors)
+        ? evaluateResult.invalidSelectors
+        : [];
+
+      if (invalidSelectors.length > 0) {
+        this.logger.warn('removeSelectors 包含无效 CSS selector，已跳过', {
+          invalidSelectors,
+        });
+      }
+
+      this.logger.debug('PDF样式处理 DOM 清理统计', { removedCount });
 
       this.logger.debug('PDF样式应用完成');
       return { success: true };

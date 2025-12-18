@@ -431,6 +431,7 @@ describe('setup', () => {
         fontSize: '16px',
         fontFamily: 'system-ui, -apple-system, sans-serif',
         codeFont: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+        removeSelectors: [],
       });
 
       // Test translationService factory
@@ -599,6 +600,7 @@ describe('setup', () => {
         fontSize: '14px',
         fontFamily: 'system-ui, -apple-system, sans-serif',
         codeFont: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+        removeSelectors: [],
       });
     });
 

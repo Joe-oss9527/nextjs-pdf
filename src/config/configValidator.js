@@ -54,6 +54,12 @@ const configSchema = Joi.object({
 
   contentSelector: Joi.string().required().description('CSS selector for main content'),
 
+  removeSelectors: Joi.array()
+    .items(Joi.string().trim().min(1))
+    .unique()
+    .default([])
+    .description('CSS selectors (inside content) to remove before PDF generation'),
+
   sectionEntryPoints: Joi.array()
     .items(Joi.string().uri())
     .default([])

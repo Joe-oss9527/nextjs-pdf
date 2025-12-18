@@ -6,7 +6,7 @@ VENV_PYTHON = $(VENV_DIR)/bin/python
 VENV_PIP = $(VENV_DIR)/bin/pip
 NODE_MODULES = node_modules
 
-.PHONY: help install install-python install-node venv clean-venv clean clean-all clean-cache run run-clean test demo lint lint-fix check-venv python-info kindle7 kindle-paperwhite kindle-oasis kindle-scribe kindle-all reset-config list-configs clean-kindle docs-openai docs-claude docs-cloudflare docs-anthropic docs-claude-blog docs-current
+.PHONY: help install install-python install-node venv clean-venv clean clean-all clean-cache run run-clean test demo lint lint-fix check-venv python-info kindle7 kindle-paperwhite kindle-oasis kindle-scribe kindle-all reset-config list-configs clean-kindle docs-openai docs-claude docs-cloudflare docs-anthropic docs-53ai docs-claude-blog docs-current
 
 help:
 	@echo "Available commands:"
@@ -38,6 +38,7 @@ help:
 	@echo "  docs-claude       - Apply Claude Code docs configuration"
 	@echo "  docs-cloudflare   - Apply Cloudflare Blog configuration"
 	@echo "  docs-anthropic    - Apply Anthropic Research configuration"
+	@echo "  docs-53ai         - Apply 53ai configuration"
 	@echo "  docs-claude-blog  - Apply Claude Blog configuration"
 	@echo "  docs-current      - Show current doc configuration"
 
@@ -227,6 +228,9 @@ docs-cloudflare:
 
 docs-anthropic:
 	@node $(DOC_TARGET_SCRIPT) use anthropic-research
+
+docs-53ai:
+	@node $(DOC_TARGET_SCRIPT) use 53ai
 
 docs-claude-blog:
 	@node $(DOC_TARGET_SCRIPT) use claude-blog
