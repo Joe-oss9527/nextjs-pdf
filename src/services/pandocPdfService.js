@@ -189,6 +189,21 @@ export class PandocPdfService {
     // ```javascript filename="app.js" -> ```javascript
     cleaned = cleaned.replace(/^(`{3,})(\w+)\s+[\w-]+=(?:"[^"]*"|\{[^}]+\})/gm, '$1$2');
 
+    // 2.1 清理代码块 info string 中多余的 token（例如文件路径）
+    // ```markdown path/to/file.md theme={null} -> ```markdown
+    // 保留 Pandoc 支持的属性块（{#id .class key=val}）
+    cleaned = cleaned.replace(/^(`{3,})(\w+)([^\n]*)$/gm, (match, fence, lang, rest) => {
+      const trimmed = rest.trim();
+      if (!trimmed) return match;
+
+      const attrMatch = trimmed.match(/(^|\s)(\{[^}]*\})/);
+      if (attrMatch) {
+        return `${fence}${lang} ${attrMatch[2]}`;
+      }
+
+      return `${fence}${lang}`;
+    });
+
     // 3. 规范化表格分隔符行，防止某一列过宽导致其他列被压缩 (修复表格重叠问题)
     // 查找类似 | --- | :--- | ---: | 的行
     cleaned = cleaned.replace(/^\|?(\s*:?-+:?\s*\|)+$/gm, (match) => {
